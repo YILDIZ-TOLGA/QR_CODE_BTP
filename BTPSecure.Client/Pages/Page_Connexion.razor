@@ -1,0 +1,62 @@
+@page "/connexion"
+@page "/"
+@inject S_Auth SAuth
+@inject NavigationManager Navigation
+@inject NotificationService Notification
+
+<RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 80px;">
+    <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+        <RadzenCard>
+            <RadzenText TextStyle="TextStyle.H4" Style="text-align:center; margin-bottom:1rem;">Connexion à BTPSecure</RadzenText>
+
+            <RadzenTemplateForm TItem="DTO_Connexion" Data="_dto" Submit="Connecter">
+                <RadzenStack Gap="1rem">
+                    <RadzenFormField Text="Email" Style="width:100%;">
+                        <RadzenTextBox @bind-Value="_dto.Email" Name="Email" Style="width:100%;" />
+                        <RadzenRequiredValidator Component="Email" Text="L'email est obligatoire." />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Mot de passe" Style="width:100%;">
+                        <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width:100%;" />
+                        <RadzenRequiredValidator Component="MotDePasse" Text="Le mot de passe est obligatoire." />
+                    </RadzenFormField>
+
+                    <RadzenButton Text="Se connecter" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary"
+                                  Style="width:100%;" IsBusy="_enChargement" />
+
+                    <RadzenText TextStyle="TextStyle.Body2" Style="text-align:center;">
+                        Pas encore de compte ?
+                        <RadzenLink Path="/inscription" Text="S'inscrire" />
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private DTO_Connexion _dto = new();
+    private bool _enChargement;
+
+    private async Task Connecter()
+    {
+        _enChargement = true;
+        var (_succes, _message, _reponse) = await SAuth.Connecter(_dto);
+        _enChargement = false;
+
+        if (!_succes)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+            return;
+        }
+
+        var _url = _reponse!.Role switch
+        {
+            Enum_Role.Patron => "/patron",
+            Enum_Role.Salarie => "/salarie",
+            Enum_Role.Fournisseur => "/fournisseur",
+            _ => "/"
+        };
+        Navigation.NavigateTo(_url);
+    }
+}

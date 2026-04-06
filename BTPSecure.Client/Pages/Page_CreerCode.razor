@@ -1,0 +1,165 @@
+@page "/patron/creer-code"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@inject Services.S_Code SCode
+@inject Services.S_Entreprise SEntreprise
+@inject NavigationManager Navigation
+@inject NotificationService Notification
+
+<RadzenText TextStyle="TextStyle.H4">Créer un code d'autorisation</RadzenText>
+
+<RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top:1rem;">
+    <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+        @if (_codeGenere != null)
+        {
+            <RadzenCard Style="text-align:center;">
+                <RadzenText TextStyle="TextStyle.H5" Style="color:green;">Code créé avec succès !</RadzenText>
+                <RadzenText TextStyle="TextStyle.H3" Style="font-family:monospace; margin:1rem 0; letter-spacing:3px;">
+                    @_codeGenere.Valeur
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">Salarié : @_codeGenere.PrenomSalarie @_codeGenere.NomSalarie</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">Commande : @_codeGenere.NumeroCommande</RadzenText>
+                @if (_codeGenere.DateExpiration.HasValue)
+                {
+                    <RadzenText TextStyle="TextStyle.Body2">Expire le : @_codeGenere.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</RadzenText>
+                }
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="0.5rem" Style="margin-top:1rem;">
+                    <RadzenButton Text="Créer un autre code" Icon="add_circle" Click="Reinitialiser" />
+                    <RadzenButton Text="Retour au tableau de bord" Icon="dashboard" ButtonStyle="ButtonStyle.Light"
+                                  Click='() => Navigation.NavigateTo("/patron")' />
+                </RadzenStack>
+            </RadzenCard>
+        }
+        else
+        {
+            <RadzenCard>
+                <RadzenTemplateForm TItem="DTO_CreerCode" Data="_dto" Submit="Creer">
+                    <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="Salarié" Style="width:100%;">
+                            <RadzenDropDown @bind-Value="_dto.SalarieId" Data="_salaries" TextProperty="Label"
+                                            ValueProperty="SalarieId" Name="Salarie" Style="width:100%;"
+                                            Placeholder="Sélectionner un salarié..." />
+                            <RadzenRequiredValidator Component="Salarie" Text="Le salarié est obligatoire." DefaultValue="0" />
+                        </RadzenFormField>
+
+                        <RadzenFormField Text="Numéro de commande" Style="width:100%;">
+                            <RadzenTextBox @bind-Value="_dto.NumeroCommande" Name="NumCmd" Style="width:100%;" />
+                            <RadzenRequiredValidator Component="NumCmd" Text="Le numéro de commande est obligatoire." />
+                        </RadzenFormField>
+
+                        <RadzenFormField Text="Type de code" Style="width:100%;">
+                            <RadzenRadioButtonList @bind-Value="_dto.TypeCode" TValue="Enum_TypeCode" Orientation="Orientation.Horizontal">
+                                <Items>
+                                    <RadzenRadioButtonListItem Text="Confiance (durée limitée)" Value="Enum_TypeCode.Confiance" />
+                                    <RadzenRadioButtonListItem Text="Liste (matériaux définis)" Value="Enum_TypeCode.Liste" />
+                                </Items>
+                            </RadzenRadioButtonList>
+                        </RadzenFormField>
+
+                        @if (_dto.TypeCode == Enum_TypeCode.Confiance)
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                <RadzenFormField Text="Durée" Style="flex:1;">
+                                    <RadzenNumeric @bind-Value="_dureeNumerique" Min="1" Style="width:100%;" />
+                                </RadzenFormField>
+                                <RadzenFormField Text="Unité" Style="flex:1;">
+                                    <RadzenDropDown @bind-Value="_unite" Data="_unites" TextProperty="Text" ValueProperty="Value"
+                                                    Style="width:100%;" />
+                                </RadzenFormField>
+                            </RadzenStack>
+                        }
+
+                        @if (_dto.TypeCode == Enum_TypeCode.Liste)
+                        {
+                            <RadzenFormField Text="Liste des matériaux" Style="width:100%;">
+                                <RadzenTextArea @bind-Value="_dto.ListeMateriaux" Rows="4" Name="Materiaux" Style="width:100%;"
+                                                Placeholder="Ex: 10 sacs de ciment, 5 plaques de plâtre..." />
+                                <RadzenRequiredValidator Component="Materiaux" Text="La liste des matériaux est obligatoire." />
+                            </RadzenFormField>
+                        }
+
+                        <RadzenFormField Text="Informations complémentaires (optionnel)" Style="width:100%;">
+                            <RadzenTextArea @bind-Value="_dto.Info" Rows="2" Style="width:100%;" />
+                        </RadzenFormField>
+
+                        <RadzenButton Text="Générer le code" ButtonType="ButtonType.Submit" Icon="add_circle"
+                                      ButtonStyle="ButtonStyle.Primary" Style="width:100%;" IsBusy="_enChargement" />
+                    </RadzenStack>
+                </RadzenTemplateForm>
+            </RadzenCard>
+        }
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.Confiance };
+    private DTO_CodeAffichage? _codeGenere;
+    private bool _enChargement;
+    private int _dureeNumerique = 24;
+    private string _unite = "heures";
+    private List<SalarieItem> _salaries = new();
+    private DTO_EntrepriseAffichage? _entreprise;
+
+    private List<object> _unites = new()
+    {
+        new { Text = "Heures", Value = "heures" },
+        new { Text = "Jours", Value = "jours" },
+        new { Text = "Semaines", Value = "semaines" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _entreprise = await SEntreprise.ObtenirMonEntreprise();
+        if (_entreprise != null)
+        {
+            _dto.EntrepriseId = _entreprise.Id;
+            var _listeSalaries = await SEntreprise.ObtenirSalaries();
+            _salaries = _listeSalaries.Select(s => new SalarieItem
+            {
+                SalarieId = s.SalarieId,
+                Label = $"{s.Prenom} {s.Nom} ({s.Email})"
+            }).ToList();
+        }
+    }
+
+    private async Task Creer()
+    {
+        _enChargement = true;
+
+        if (_dto.TypeCode == Enum_TypeCode.Confiance)
+        {
+            _dto.DureeValiditeHeures = _unite switch
+            {
+                "jours" => _dureeNumerique * 24,
+                "semaines" => _dureeNumerique * 24 * 7,
+                _ => _dureeNumerique
+            };
+        }
+
+        var (_succes, _message, _code) = await SCode.Creer(_dto);
+        _enChargement = false;
+
+        if (_succes)
+        {
+            _codeGenere = _code;
+            Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private void Reinitialiser()
+    {
+        _codeGenere = null;
+        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Confiance, EntrepriseId = _entreprise?.Id ?? 0 };
+        _dureeNumerique = 24;
+        _unite = "heures";
+    }
+
+    private class SalarieItem
+    {
+        public int SalarieId { get; set; }
+        public string Label { get; set; } = string.Empty;
+    }
+}

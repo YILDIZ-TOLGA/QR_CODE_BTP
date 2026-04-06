@@ -1,0 +1,57 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject S_Auth SAuth
+
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0 1rem; width:100%;">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenButton Icon="menu" Click="@(() => _sidebarExpanded = !_sidebarExpanded)" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" />
+                <RadzenText TextStyle="TextStyle.H5" Style="margin:0; color:white; cursor:pointer;" @onclick='() => Navigation.NavigateTo("/")'>BTPSecure</RadzenText>
+            </RadzenStack>
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body1" Style="color:white;">@context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</RadzenText>
+                        <RadzenButton Text="Déconnexion" Icon="logout" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="Deconnecter" />
+                    </RadzenStack>
+                </Authorized>
+            </AuthorizeView>
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenSidebar @bind-Expanded="_sidebarExpanded">
+        <RadzenPanelMenu>
+            <AuthorizeView Roles="Patron">
+                <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" />
+                <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" />
+            </AuthorizeView>
+            <AuthorizeView Roles="Salarie">
+                <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="salarie" />
+            </AuthorizeView>
+            <AuthorizeView Roles="Fournisseur">
+                <RadzenPanelMenuItem Text="Valider un code" Icon="verified" Path="fournisseur" />
+            </AuthorizeView>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+    <RadzenBody>
+        <RadzenRow Style="padding: 1rem;">
+            <RadzenColumn>
+                @Body
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenBody>
+</RadzenLayout>
+
+<RadzenComponents />
+
+@code {
+    private bool _sidebarExpanded = true;
+
+    private async Task Deconnecter()
+    {
+        await SAuth.Deconnecter();
+        Navigation.NavigateTo("/connexion", true);
+    }
+}

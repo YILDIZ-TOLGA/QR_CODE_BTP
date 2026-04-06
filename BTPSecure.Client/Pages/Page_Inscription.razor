@@ -1,0 +1,90 @@
+@page "/inscription"
+@inject S_Auth SAuth
+@inject NavigationManager Navigation
+@inject NotificationService Notification
+
+<RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 40px;">
+    <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+        <RadzenCard>
+            <RadzenText TextStyle="TextStyle.H4" Style="text-align:center; margin-bottom:1rem;">Inscription</RadzenText>
+
+            <RadzenTemplateForm TItem="DTO_Inscription" Data="_dto" Submit="Inscrire">
+                <RadzenStack Gap="1rem">
+                    <RadzenFormField Text="Nom" Style="width:100%;">
+                        <RadzenTextBox @bind-Value="_dto.Nom" Name="Nom" Style="width:100%;" />
+                        <RadzenRequiredValidator Component="Nom" Text="Le nom est obligatoire." />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Prénom" Style="width:100%;">
+                        <RadzenTextBox @bind-Value="_dto.Prenom" Name="Prenom" Style="width:100%;" />
+                        <RadzenRequiredValidator Component="Prenom" Text="Le prénom est obligatoire." />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Email" Style="width:100%;">
+                        <RadzenTextBox @bind-Value="_dto.Email" Name="Email" Style="width:100%;" />
+                        <RadzenRequiredValidator Component="Email" Text="L'email est obligatoire." />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Téléphone (optionnel)" Style="width:100%;">
+                        <RadzenTextBox @bind-Value="_dto.Telephone" Style="width:100%;" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Mot de passe" Style="width:100%;">
+                        <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width:100%;" />
+                        <RadzenRequiredValidator Component="MotDePasse" Text="Le mot de passe est obligatoire." />
+                        <RadzenLengthValidator Component="MotDePasse" Min="8" Text="Minimum 8 caractères." />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Confirmer le mot de passe" Style="width:100%;">
+                        <RadzenPassword @bind-Value="_confirmMotDePasse" Name="ConfirmMdp" Style="width:100%;" />
+                        <RadzenCompareValidator Component="ConfirmMdp" Value="_dto.MotDePasse" Text="Les mots de passe ne correspondent pas." />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Rôle" Style="width:100%;">
+                        <RadzenDropDown @bind-Value="_dto.Role" Data="_roles" TextProperty="Text" ValueProperty="Value"
+                                        Name="Role" Style="width:100%;" Placeholder="Choisir un rôle..." />
+                        <RadzenRequiredValidator Component="Role" Text="Le rôle est obligatoire." DefaultValue="default(Enum_Role)" />
+                    </RadzenFormField>
+
+                    <RadzenButton Text="S'inscrire" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary"
+                                  Style="width:100%;" IsBusy="_enChargement" />
+
+                    <RadzenText TextStyle="TextStyle.Body2" Style="text-align:center;">
+                        Déjà un compte ?
+                        <RadzenLink Path="/connexion" Text="Se connecter" />
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private DTO_Inscription _dto = new();
+    private string _confirmMotDePasse = string.Empty;
+    private bool _enChargement;
+
+    private List<object> _roles = new()
+    {
+        new { Text = "Patron", Value = Enum_Role.Patron },
+        new { Text = "Salarié", Value = Enum_Role.Salarie },
+        new { Text = "Fournisseur", Value = Enum_Role.Fournisseur }
+    };
+
+    private async Task Inscrire()
+    {
+        _enChargement = true;
+        var (_succes, _message) = await SAuth.Inscrire(_dto);
+        _enChargement = false;
+
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+            Navigation.NavigateTo("/connexion");
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+}

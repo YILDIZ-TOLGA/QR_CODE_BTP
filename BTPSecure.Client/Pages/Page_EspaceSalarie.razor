@@ -1,0 +1,62 @@
+@page "/salarie"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Salarie")]
+@inject Services.S_Code SCode
+
+<RadzenText TextStyle="TextStyle.H4">Mes codes d'achat</RadzenText>
+
+@if (_chargement)
+{
+    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="margin-top:2rem;" />
+}
+else if (_codes.Count == 0)
+{
+    <RadzenCard Style="margin-top:1rem; text-align:center;">
+        <RadzenText TextStyle="TextStyle.H6" Style="color:gray;">Aucun code actif pour le moment.</RadzenText>
+    </RadzenCard>
+}
+else
+{
+    <RadzenRow Gap="1rem" Style="margin-top:1rem;">
+        @foreach (var _code in _codes)
+        {
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                <RadzenCard>
+                    <RadzenText TextStyle="TextStyle.H3" Style="font-family:monospace; text-align:center; letter-spacing:3px; margin-bottom:0.5rem;">
+                        @_code.Valeur
+                    </RadzenText>
+                    <RadzenStack Gap="0.3rem">
+                        <RadzenBadge BadgeStyle="@(_code.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                     Text="@_code.TypeCode.ToString()" />
+                        <RadzenText TextStyle="TextStyle.Body1"><strong>Entreprise :</strong> @_code.NomEntreprise</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1"><strong>Commande :</strong> @_code.NumeroCommande</RadzenText>
+                        @if (!string.IsNullOrEmpty(_code.Info))
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2"><strong>Info :</strong> @_code.Info</RadzenText>
+                        }
+                        @if (!string.IsNullOrEmpty(_code.ListeMateriaux))
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2"><strong>Matériaux :</strong> @_code.ListeMateriaux</RadzenText>
+                        }
+                        @if (_code.DateExpiration.HasValue)
+                        {
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color:gray;">
+                                Expire le : @_code.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </RadzenText>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        }
+    </RadzenRow>
+}
+
+@code {
+    private List<DTO_CodeAffichage> _codes = new();
+    private bool _chargement = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _codes = await SCode.ObtenirParSalarie();
+        _chargement = false;
+    }
+}

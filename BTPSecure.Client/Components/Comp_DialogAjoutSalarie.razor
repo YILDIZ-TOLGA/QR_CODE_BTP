@@ -1,0 +1,20 @@
+@inject DialogService Dialog
+
+<RadzenStack Gap="1rem" Style="padding:1rem;">
+    <RadzenFormField Text="Email du salarié" Style="width:100%;">
+        <RadzenTextBox @bind-Value="_email" Style="width:100%;" Placeholder="salarie@email.com" />
+    </RadzenFormField>
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+        <RadzenButton Text="Annuler" ButtonStyle="ButtonStyle.Light" Click="() => Dialog.Close()" />
+        <RadzenButton Text="Ajouter" ButtonStyle="ButtonStyle.Primary" Icon="person_add" Click="Valider" Disabled="@string.IsNullOrWhiteSpace(_email)" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private string _email = string.Empty;
+
+    private void Valider()
+    {
+        Dialog.Close(_email.Trim());
+    }
+}

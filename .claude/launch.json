@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "BTPSecure.Server (API + Client Host)",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "BTPSecure.Server"],
+      "port": 5137
+    },
+    {
+      "name": "BTPSecure.Client (Standalone WASM)",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "BTPSecure.Client"],
+      "port": 5094
+    }
+  ]
+}

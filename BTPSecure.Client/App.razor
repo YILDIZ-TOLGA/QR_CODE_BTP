@@ -1,0 +1,27 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <Page_Connexion />
+                    }
+                    else
+                    {
+                        <Page_NonAutorise />
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <RadzenCard Style="text-align:center; margin-top:50px;">
+                    <RadzenText TextStyle="TextStyle.H4">Page non trouvée</RadzenText>
+                    <RadzenLink Path="/" Text="Retour à l'accueil" />
+                </RadzenCard>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
