@@ -2,21 +2,24 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
 WORKDIR /src
 
-# Copier TOUT d'un coup (moins de layers = plus rapide)
+# Copier les csproj et restaurer (layer cachee)
+COPY BTPSecure.Shared/BTPSecure.Shared.csproj BTPSecure.Shared/
+COPY BTPSecure.Client/BTPSecure.Client.csproj BTPSecure.Client/
+COPY BTPSecure.Server/BTPSecure.Server.csproj BTPSecure.Server/
+COPY BTPSecure.slnx .
+RUN dotnet restore BTPSecure.Server/BTPSecure.Server.csproj
+
+# Copier tout le code source
 COPY . .
 
-# Restore + Publish en une seule commande — desactiver le trim et la compression Blazor pour accelerer
-RUN dotnet publish BTPSecure.Server/BTPSecure.Server.csproj \
-    -c Release \
-    -o /app/publish \
-    -p:BlazorEnableCompression=false \
-    -p:PublishTrimmed=false
+# Build puis publish separement pour eviter le bug static web assets
+RUN dotnet build BTPSecure.Server/BTPSecure.Server.csproj -c Release --no-restore
+RUN dotnet publish BTPSecure.Server/BTPSecure.Server.csproj -c Release -o /app/publish --no-build
 
 # ---- Runtime Stage ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
 WORKDIR /app
 
-# QuestPDF a besoin de libfontconfig sur Linux
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*

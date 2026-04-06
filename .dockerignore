@@ -1,9 +1,7 @@
 **/bin/
-**/obj/
 **/publish/
 **/.vs/
 **/.vscode/
-**/node_modules/
 .git
 .gitignore
 *.md
