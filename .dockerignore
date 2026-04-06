@@ -1,8 +1,11 @@
 **/bin/
-**/publish/
+**/obj/
 **/.vs/
 **/.vscode/
 .git
 .gitignore
 *.md
 .claude/
+BTPSecure.Shared/
+BTPSecure.Client/
+BTPSecure.Server/

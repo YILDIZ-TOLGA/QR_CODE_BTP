@@ -1,12 +1,9 @@
 ## .NET
 bin/
 obj/
-publish/
 *.user
 *.suo
 *.cache
-*.dll
-*.exe
 
 ## IDE
 .vs/
