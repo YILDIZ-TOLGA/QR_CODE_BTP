@@ -20,8 +20,8 @@ public class S_Auth
         if (_reponse.IsSuccessStatusCode)
             return (true, "Inscription réussie !");
 
-        var _erreur = await _reponse.Content.ReadFromJsonAsync<MessageReponse>();
-        return (false, _erreur?.Message ?? "Erreur lors de l'inscription.");
+        var _message = await LireMessageErreur(_reponse);
+        return (false, _message ?? "Erreur lors de l'inscription.");
     }
 
     public async Task<(bool Succes, string Message, DTO_ReponseAuth? Reponse)> Connecter(DTO_Connexion p_dto)
@@ -29,13 +29,26 @@ public class S_Auth
         var _reponse = await _http.PostAsJsonAsync("api/auth/connexion", p_dto);
         if (!_reponse.IsSuccessStatusCode)
         {
-            var _erreur = await _reponse.Content.ReadFromJsonAsync<MessageReponse>();
-            return (false, _erreur?.Message ?? "Erreur de connexion.", null);
+            var _message = await LireMessageErreur(_reponse);
+            return (false, _message ?? "Erreur de connexion.", null);
         }
 
         var _auth = await _reponse.Content.ReadFromJsonAsync<DTO_ReponseAuth>();
         await _authProvider.Connecter(_auth!.Token);
         return (true, "Connexion réussie.", _auth);
+    }
+
+    private static async Task<string?> LireMessageErreur(HttpResponseMessage p_reponse)
+    {
+        try
+        {
+            var _body = await p_reponse.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(_body)) return null;
+            var _erreur = System.Text.Json.JsonSerializer.Deserialize<MessageReponse>(_body,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return _erreur?.Message;
+        }
+        catch { return null; }
     }
 
     public async Task Deconnecter()

@@ -23,6 +23,15 @@ var _emetteur = Environment.GetEnvironmentVariable("JWT_EMETTEUR")
 var _audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
     ?? builder.Configuration["Jwt:Audience"]
     ?? "BTPSecure";
+var _dureeHeures = Environment.GetEnvironmentVariable("JWT_DUREE_HEURES")
+    ?? builder.Configuration["Jwt:DureeHeures"]
+    ?? "24";
+
+// Injecter les valeurs JWT dans la configuration pour les services
+builder.Configuration["Jwt:Cle"] = _cleJwt;
+builder.Configuration["Jwt:Emetteur"] = _emetteur;
+builder.Configuration["Jwt:Audience"] = _audience;
+builder.Configuration["Jwt:DureeHeures"] = _dureeHeures;
 
 builder.Services.AddAuthentication(options =>
 {
@@ -61,6 +70,27 @@ var app = builder.Build();
 
 // Healthcheck rapide — Railway ping /health AVANT que la DB soit prête
 app.MapGet("/health", () => Results.Ok("ok"));
+
+// Diagnostic BDD — pour vérifier la connexion et les migrations
+app.MapGet("/db-status", async (AppDbContext db) =>
+{
+    try
+    {
+        var _canConnect = await db.Database.CanConnectAsync();
+        var _pendingMigrations = await db.Database.GetPendingMigrationsAsync();
+        var _appliedMigrations = await db.Database.GetAppliedMigrationsAsync();
+        return Results.Ok(new
+        {
+            connected = _canConnect,
+            pending = _pendingMigrations.ToList(),
+            applied = _appliedMigrations.ToList()
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Ok(new { connected = false, error = ex.Message });
+    }
+});
 
 // Migration BDD en arrière-plan (ne bloque pas le démarrage)
 _ = Task.Run(async () =>
