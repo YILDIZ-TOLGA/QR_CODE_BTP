@@ -71,6 +71,17 @@ var app = builder.Build();
 // Healthcheck rapide — Railway ping /health AVANT que la DB soit prête
 app.MapGet("/health", () => Results.Ok("ok"));
 
+// Debug: liste les noms de toutes les variables d'environnement
+app.MapGet("/env-keys", () =>
+{
+    var _vars = Environment.GetEnvironmentVariables();
+    var _keys = new List<string>();
+    foreach (System.Collections.DictionaryEntry entry in _vars)
+        _keys.Add(entry.Key?.ToString() ?? "");
+    _keys.Sort();
+    return Results.Ok(new { count = _keys.Count, keys = _keys });
+});
+
 // Diagnostic BDD — pour vérifier la connexion et les migrations
 app.MapGet("/db-status", async (AppDbContext db) =>
 {
