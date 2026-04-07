@@ -8,10 +8,6 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// PORT Railway — Railway injecte $PORT, on écoute dessus
-var _port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://+:{_port}");
-
 // PostgreSQL — Railway fournit DATABASE_URL au format postgresql://user:pass@host:port/db
 var _connectionString = ObtenirConnectionString(builder.Configuration);
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -63,21 +59,24 @@ builder.Services.AddSingleton<S_Pdf>();
 
 var app = builder.Build();
 
-// Healthcheck rapide — Railway ping /health pour vérifier que l'app tourne
+// Healthcheck rapide — Railway ping /health AVANT que la DB soit prête
 app.MapGet("/health", () => Results.Ok("ok"));
 
-// Auto-migration au démarrage (non bloquante)
-try
+// Migration BDD en arrière-plan (ne bloque pas le démarrage)
+_ = Task.Run(async () =>
 {
-    using var _scope = app.Services.CreateScope();
-    var _db = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    _db.Database.Migrate();
-    app.Logger.LogInformation("Migration BDD réussie.");
-}
-catch (Exception ex)
-{
-    app.Logger.LogError(ex, "Erreur lors de la migration BDD. L'app démarre quand même.");
-}
+    try
+    {
+        using var _scope = app.Services.CreateScope();
+        var _db = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await _db.Database.MigrateAsync();
+        app.Logger.LogInformation("Migration BDD réussie.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Erreur migration BDD.");
+    }
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -93,7 +92,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 
-app.Logger.LogInformation("BTPSecure démarre sur le port {Port}", _port);
 app.Run();
 
 // Convertit DATABASE_URL (format Railway) en connection string Npgsql
@@ -105,9 +103,8 @@ static string ObtenirConnectionString(IConfiguration p_config)
         return p_config.GetConnectionString("DefaultConnection")
             ?? "Host=localhost;Database=btpsecure;Username=postgres;Password=postgres";
 
-    // Format Railway : postgresql://user:password@host:port/database
     var _uri = new Uri(_databaseUrl);
     var _userInfo = _uri.UserInfo.Split(':');
 
-    return $"Host={_uri.Host};Port={_uri.Port};Database={_uri.AbsolutePath.TrimStart('/')};Username={_userInfo[0]};Password={_userInfo[1]};SSL Mode=Require;Trust Server Certificate=true;";
+    return $"Host={_uri.Host};Port={_uri.Port};Database={_uri.AbsolutePath.TrimStart('/')};Username={_userInfo[0]};Password={_userInfo[1]};SSL Mode=Require;Trust Server Certificate=true;Timeout=5;";
 }

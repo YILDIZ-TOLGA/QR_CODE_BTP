@@ -8,6 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY publish/ .
 
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
 
-ENTRYPOINT ["dotnet", "BTPSecure.Server.dll"]
+# Utiliser un shell pour que $PORT soit interprété au runtime
+CMD ["sh", "-c", "dotnet BTPSecure.Server.dll --urls http://+:${PORT:-8080}"]
