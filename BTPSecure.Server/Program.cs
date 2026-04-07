@@ -76,19 +76,29 @@ app.MapGet("/db-status", async (AppDbContext db) =>
 {
     try
     {
+        var _dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
         var _canConnect = await db.Database.CanConnectAsync();
         var _pendingMigrations = await db.Database.GetPendingMigrationsAsync();
         var _appliedMigrations = await db.Database.GetAppliedMigrationsAsync();
         return Results.Ok(new
         {
             connected = _canConnect,
+            databaseUrlPresent = !string.IsNullOrEmpty(_dbUrl),
+            databaseUrlHost = string.IsNullOrEmpty(_dbUrl) ? "N/A" : new Uri(_dbUrl).Host,
             pending = _pendingMigrations.ToList(),
             applied = _appliedMigrations.ToList()
         });
     }
     catch (Exception ex)
     {
-        return Results.Ok(new { connected = false, error = ex.Message });
+        var _dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        return Results.Ok(new
+        {
+            connected = false,
+            databaseUrlPresent = !string.IsNullOrEmpty(_dbUrl),
+            databaseUrlPreview = string.IsNullOrEmpty(_dbUrl) ? "NOT SET" : _dbUrl[..Math.Min(30, _dbUrl.Length)] + "...",
+            error = ex.Message
+        });
     }
 });
 
