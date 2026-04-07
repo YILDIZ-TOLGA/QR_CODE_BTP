@@ -8,9 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// PORT Railway (Railway injecte la variable PORT)
-var _port = Environment.GetEnvironmentVariable("PORT") ?? "5137";
-builder.WebHost.UseUrls($"http://0.0.0.0:{_port}");
+// PORT Railway — Railway injecte $PORT, on écoute dessus
+var _port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://+:{_port}");
 
 // PostgreSQL — Railway fournit DATABASE_URL au format postgresql://user:pass@host:port/db
 var _connectionString = ObtenirConnectionString(builder.Configuration);
@@ -19,13 +19,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // JWT — lire depuis les variables d'environnement Railway ou appsettings
 var _cleJwt = Environment.GetEnvironmentVariable("JWT_CLE")
-    ?? builder.Configuration["Jwt:Cle"]!;
+    ?? builder.Configuration["Jwt:Cle"]
+    ?? "DevSecretKeyMinimum32CaracteresLong!";
 var _emetteur = Environment.GetEnvironmentVariable("JWT_EMETTEUR")
-    ?? builder.Configuration["Jwt:Emetteur"]!;
+    ?? builder.Configuration["Jwt:Emetteur"]
+    ?? "BTPSecure";
 var _audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-    ?? builder.Configuration["Jwt:Audience"]!;
-var _dureeHeures = int.Parse(Environment.GetEnvironmentVariable("JWT_DUREE_HEURES")
-    ?? builder.Configuration["Jwt:DureeHeures"] ?? "24");
+    ?? builder.Configuration["Jwt:Audience"]
+    ?? "BTPSecure";
 
 builder.Services.AddAuthentication(options =>
 {
@@ -62,11 +63,20 @@ builder.Services.AddSingleton<S_Pdf>();
 
 var app = builder.Build();
 
-// Auto-migration au démarrage (pratique pour Railway)
-using (var _scope = app.Services.CreateScope())
+// Healthcheck rapide — Railway ping /health pour vérifier que l'app tourne
+app.MapGet("/health", () => Results.Ok("ok"));
+
+// Auto-migration au démarrage (non bloquante)
+try
 {
+    using var _scope = app.Services.CreateScope();
     var _db = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
     _db.Database.Migrate();
+    app.Logger.LogInformation("Migration BDD réussie.");
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Erreur lors de la migration BDD. L'app démarre quand même.");
 }
 
 if (app.Environment.IsDevelopment())
@@ -83,6 +93,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 
+app.Logger.LogInformation("BTPSecure démarre sur le port {Port}", _port);
 app.Run();
 
 // Convertit DATABASE_URL (format Railway) en connection string Npgsql
@@ -91,7 +102,8 @@ static string ObtenirConnectionString(IConfiguration p_config)
     var _databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
     if (string.IsNullOrEmpty(_databaseUrl))
-        return p_config.GetConnectionString("DefaultConnection")!;
+        return p_config.GetConnectionString("DefaultConnection")
+            ?? "Host=localhost;Database=btpsecure;Username=postgres;Password=postgres";
 
     // Format Railway : postgresql://user:password@host:port/database
     var _uri = new Uri(_databaseUrl);
