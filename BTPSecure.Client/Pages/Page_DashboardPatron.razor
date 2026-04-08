@@ -6,108 +6,186 @@
 @inject NotificationService Notification
 @inject DialogService Dialog
 
-<RadzenText TextStyle="TextStyle.H4">Tableau de bord Patron</RadzenText>
-
-@if (_entreprise == null)
+@if (_entreprise == null && !_chargement)
 {
-    <RadzenCard Style="margin-top:1rem;">
-        <RadzenText TextStyle="TextStyle.H5">Créer votre entreprise</RadzenText>
-        <RadzenTemplateForm TItem="DTO_CreerEntreprise" Data="_dtoEntreprise" Submit="CreerEntreprise">
-            <RadzenStack Gap="1rem" Style="margin-top:1rem;">
-                <RadzenFormField Text="Nom de l'entreprise" Style="width:100%;">
-                    <RadzenTextBox @bind-Value="_dtoEntreprise.Nom" Name="NomEntreprise" Style="width:100%;" />
-                    <RadzenRequiredValidator Component="NomEntreprise" Text="Le nom est obligatoire." />
-                </RadzenFormField>
-                <RadzenFormField Text="Adresse (optionnel)" Style="width:100%;">
-                    <RadzenTextBox @bind-Value="_dtoEntreprise.Adresse" Style="width:100%;" />
-                </RadzenFormField>
-                <RadzenFormField Text="SIRET (optionnel)" Style="width:100%;">
-                    <RadzenTextBox @bind-Value="_dtoEntreprise.Siret" Style="width:100%;" />
-                </RadzenFormField>
-                <RadzenButton Text="Créer l'entreprise" ButtonType="ButtonType.Submit" Icon="business" ButtonStyle="ButtonStyle.Primary" />
-            </RadzenStack>
-        </RadzenTemplateForm>
-    </RadzenCard>
+    <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 70vh;">
+        <RadzenColumn Size="12" SizeMD="8" SizeLG="5">
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
+                    <RadzenIcon Icon="domain_add" Style="font-size: 3rem; color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.H4" TextAlign="TextAlign.Center">Créer votre entreprise</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Subtitle1" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color); margin-top: -1rem;">
+                        Commencez par enregistrer votre société
+                    </RadzenText>
+
+                    <RadzenTemplateForm TItem="DTO_CreerEntreprise" Data="_dtoEntreprise" Submit="CreerEntreprise" Style="width: 100%;">
+                        <RadzenStack Gap="1.25rem">
+                            <RadzenFormField Text="Nom de l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="business" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="_dtoEntreprise.Nom" Name="NomEntreprise" Style="width: 100%;" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="NomEntreprise" Text="Le nom est obligatoire." />
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Adresse" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="location_on" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="_dtoEntreprise.Adresse" Style="width: 100%;" Placeholder="Optionnel" />
+                                </ChildContent>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="SIRET" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="pin" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="_dtoEntreprise.Siret" Style="width: 100%;" Placeholder="Optionnel" />
+                                </ChildContent>
+                            </RadzenFormField>
+
+                            <RadzenButton Text="Créer l'entreprise" ButtonType="ButtonType.Submit" Icon="rocket_launch"
+                                          ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+}
+else if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
 }
 else
 {
-    <RadzenCard Style="margin-top:1rem;">
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-            <RadzenStack>
-                <RadzenText TextStyle="TextStyle.H5">@_entreprise.Nom</RadzenText>
-                @if (!string.IsNullOrEmpty(_entreprise.Adresse)) { <RadzenText TextStyle="TextStyle.Body2">@_entreprise.Adresse</RadzenText> }
-                @if (!string.IsNullOrEmpty(_entreprise.Siret)) { <RadzenText TextStyle="TextStyle.Body2">SIRET : @_entreprise.Siret</RadzenText> }
-            </RadzenStack>
-        </RadzenStack>
-    </RadzenCard>
-
-    <!-- Salariés -->
-    <RadzenCard Style="margin-top:1rem;">
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom:0.5rem;">
-            <RadzenText TextStyle="TextStyle.H5">Salariés</RadzenText>
-            <RadzenButton Text="Ajouter un salarié" Icon="person_add" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Click="OuvrirAjoutSalarie" />
-        </RadzenStack>
-        <RadzenDataGrid Data="_salaries" TItem="DTO_SalarieAffichage" AllowPaging="true" PageSize="10">
-            <Columns>
-                <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Nom" Title="Nom" />
-                <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Prenom" Title="Prénom" />
-                <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Email" Title="Email" />
-                <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Title="Actions" Width="120px" TextAlign="TextAlign.Center">
-                    <Template Context="s">
-                        <RadzenButton Icon="person_remove" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
-                                      Click="() => RetirerSalarie(s)" />
-                    </Template>
-                </RadzenDataGridColumn>
-            </Columns>
-        </RadzenDataGrid>
-    </RadzenCard>
-
-    <!-- Codes -->
-    <RadzenCard Style="margin-top:1rem;">
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom:0.5rem;">
-            <RadzenText TextStyle="TextStyle.H5">Codes d'autorisation</RadzenText>
-            <RadzenButton Text="Créer un code" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
-                          Click='() => Navigation.NavigateTo("/patron/creer-code")' />
-        </RadzenStack>
-        <RadzenDataGrid Data="_codes" TItem="DTO_CodeAffichage" AllowPaging="true" PageSize="10" AllowSorting="true">
-            <Columns>
-                <RadzenDataGridColumn TItem="DTO_CodeAffichage" Property="Valeur" Title="Code" Width="130px">
-                    <Template Context="c">
-                        <RadzenText Style="font-family:monospace; font-weight:bold;">@c.Valeur</RadzenText>
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Salarié">
-                    <Template Context="c">@c.PrenomSalarie @c.NomSalarie</Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Type" Width="100px">
-                    <Template Context="c">
-                        <RadzenBadge BadgeStyle="@(c.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
-                                     Text="@c.TypeCode.ToString()" />
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Statut" Width="100px">
-                    <Template Context="c">
-                        <RadzenBadge BadgeStyle="@ObtenirStyleStatut(c.Statut)" Text="@c.Statut.ToString()" />
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="DTO_CodeAffichage" Property="NumeroCommande" Title="N° Commande" />
-                <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Expiration" Width="160px">
-                    <Template Context="c">
-                        @(c.DateExpiration?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Actions" Width="100px" TextAlign="TextAlign.Center">
-                    <Template Context="c">
-                        @if (c.Statut == Enum_StatutCode.Actif)
+    <RadzenStack Gap="1.5rem">
+        <!-- En-tête entreprise -->
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="1rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="business" Style="font-size: 2.5rem; color: var(--rz-primary);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.H5" Style="margin: 0;">@_entreprise!.Nom</RadzenText>
+                        @if (!string.IsNullOrEmpty(_entreprise.Siret))
                         {
-                            <RadzenButton Icon="block" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
-                                          Click="() => RevoquerCode(c)" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">SIRET : @_entreprise.Siret</RadzenText>
                         }
-                    </Template>
-                </RadzenDataGridColumn>
-            </Columns>
-        </RadzenDataGrid>
-    </RadzenCard>
+                        @if (!string.IsNullOrEmpty(_entreprise.Adresse))
+                        {
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@_entreprise.Adresse</RadzenText>
+                        }
+                    </RadzenStack>
+                </RadzenStack>
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_salaries.Count} salarié(s)")" />
+                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@($"{_codes.Count(c => c.Statut == Enum_StatutCode.Actif)} code(s) actif(s)")" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+
+        <!-- Salariés -->
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1rem;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenIcon Icon="groups" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Salariés</RadzenText>
+                </RadzenStack>
+                <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Success"
+                              Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutSalarie" />
+            </RadzenStack>
+
+            @if (_salaries.Count == 0)
+            {
+                <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+                    <RadzenIcon Icon="group_off" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
+                    <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun salarié pour le moment</RadzenText>
+                </RadzenStack>
+            }
+            else
+            {
+                <RadzenDataGrid Data="_salaries" TItem="DTO_SalarieAffichage" AllowPaging="true" PageSize="10"
+                                Density="Density.Compact" AllowColumnResize="true" GridLines="DataGridGridLines.Horizontal">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Nom" Title="Nom" MinWidth="120px" />
+                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Prenom" Title="Prénom" MinWidth="120px" />
+                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Email" Title="Email" MinWidth="200px" />
+                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Title="Actions" Width="80px" TextAlign="TextAlign.Center" Sortable="false" Filterable="false">
+                            <Template Context="s">
+                                <RadzenButton Icon="person_remove" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
+                                              Size="ButtonSize.Medium" Click="() => RetirerSalarie(s)" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
+        </RadzenCard>
+
+        <!-- Codes -->
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1rem;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenIcon Icon="qr_code_2" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Codes d'autorisation</RadzenText>
+                </RadzenStack>
+                <RadzenButton Text="Créer un code" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
+                              Variant="Variant.Flat" Size="ButtonSize.Small"
+                              Click='() => Navigation.NavigateTo("/patron/creer-code")' />
+            </RadzenStack>
+
+            @if (_codes.Count == 0)
+            {
+                <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+                    <RadzenIcon Icon="code_off" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
+                    <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun code créé</RadzenText>
+                </RadzenStack>
+            }
+            else
+            {
+                <RadzenDataGrid Data="_codes" TItem="DTO_CodeAffichage" AllowPaging="true" PageSize="10" AllowSorting="true"
+                                Density="Density.Compact" AllowColumnResize="true" GridLines="DataGridGridLines.Horizontal">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Property="Valeur" Title="Code" Width="140px">
+                            <Template Context="c">
+                                <RadzenText Style="font-family: monospace; font-weight: 700; font-size: 1rem; letter-spacing: 1px;">@c.Valeur</RadzenText>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Salarié" MinWidth="150px">
+                            <Template Context="c">@c.PrenomSalarie @c.NomSalarie</Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Type" Width="110px" TextAlign="TextAlign.Center">
+                            <Template Context="c">
+                                <RadzenBadge BadgeStyle="@(c.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                             Text="@c.TypeCode.ToString()" IsPill="true" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Statut" Width="110px" TextAlign="TextAlign.Center">
+                            <Template Context="c">
+                                <RadzenBadge BadgeStyle="@ObtenirStyleStatut(c.Statut)" Text="@c.Statut.ToString()" IsPill="true" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Property="NumeroCommande" Title="N° Commande" MinWidth="130px" />
+                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Expiration" Width="160px">
+                            <Template Context="c">
+                                @(c.DateExpiration?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="" Width="60px" TextAlign="TextAlign.Center" Sortable="false" Filterable="false">
+                            <Template Context="c">
+                                @if (c.Statut == Enum_StatutCode.Actif)
+                                {
+                                    <RadzenButton Icon="block" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
+                                                  Size="ButtonSize.Medium" Click="() => RevoquerCode(c)" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
+        </RadzenCard>
+    </RadzenStack>
 }
 
 @code {
@@ -115,10 +193,12 @@ else
     private DTO_CreerEntreprise _dtoEntreprise = new();
     private List<DTO_SalarieAffichage> _salaries = new();
     private List<DTO_CodeAffichage> _codes = new();
+    private bool _chargement = true;
 
     protected override async Task OnInitializedAsync()
     {
         await ChargerDonnees();
+        _chargement = false;
     }
 
     private async Task ChargerDonnees()
@@ -133,21 +213,20 @@ else
 
     private async Task CreerEntreprise()
     {
-        var (_succes, _message, _ent) = await SEntreprise.Creer(_dtoEntreprise);
+        var (_succes, _message, _) = await SEntreprise.Creer(_dtoEntreprise);
         if (_succes)
         {
             Notification.Notify(NotificationSeverity.Success, "Succès", _message);
             await ChargerDonnees();
         }
         else
-        {
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
-        }
     }
 
     private async Task OuvrirAjoutSalarie()
     {
-        var _email = await Dialog.OpenAsync<Comp_DialogAjoutSalarie>("Ajouter un salarié");
+        var _email = await Dialog.OpenAsync<Comp_DialogAjoutSalarie>("Ajouter un salarié",
+            options: new DialogOptions { Width = "480px", CloseDialogOnOverlayClick = true });
         if (_email is string email && !string.IsNullOrWhiteSpace(email))
         {
             var (_succes, _message, _) = await SEntreprise.AjouterSalarie(email);
@@ -157,15 +236,16 @@ else
                 _salaries = await SEntreprise.ObtenirSalaries();
             }
             else
-            {
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
-            }
         }
     }
 
     private async Task RetirerSalarie(DTO_SalarieAffichage p_salarie)
     {
-        var _confirm = await Dialog.Confirm($"Retirer {p_salarie.Prenom} {p_salarie.Nom} ? Ses codes liés seront révoqués.", "Confirmation");
+        var _confirm = await Dialog.Confirm(
+            $"Retirer {p_salarie.Prenom} {p_salarie.Nom} de l'entreprise ? Ses codes actifs seront révoqués.",
+            "Confirmer le retrait",
+            new ConfirmOptions { OkButtonText = "Retirer", CancelButtonText = "Annuler" });
         if (_confirm == true)
         {
             var (_succes, _message) = await SEntreprise.RetirerSalarie(p_salarie.Id);
@@ -175,15 +255,16 @@ else
                 await ChargerDonnees();
             }
             else
-            {
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
-            }
         }
     }
 
     private async Task RevoquerCode(DTO_CodeAffichage p_code)
     {
-        var _confirm = await Dialog.Confirm($"Révoquer le code {p_code.Valeur} ?", "Confirmation");
+        var _confirm = await Dialog.Confirm(
+            $"Révoquer le code {p_code.Valeur} ? Cette action est irréversible.",
+            "Confirmer la révocation",
+            new ConfirmOptions { OkButtonText = "Révoquer", CancelButtonText = "Annuler" });
         if (_confirm == true)
         {
             var (_succes, _message) = await SCode.Revoquer(p_code.Id);
@@ -193,9 +274,7 @@ else
                 _codes = await SCode.ObtenirParPatron();
             }
             else
-            {
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
-            }
         }
     }
 

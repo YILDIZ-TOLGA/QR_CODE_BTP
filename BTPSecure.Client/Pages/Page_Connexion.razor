@@ -4,32 +4,58 @@
 @inject NavigationManager Navigation
 @inject NotificationService Notification
 
-<RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 80px;">
-    <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-        <RadzenCard>
-            <RadzenText TextStyle="TextStyle.H4" Style="text-align:center; margin-bottom:1rem;">Connexion à BTPSecure</RadzenText>
+<RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 85vh;">
+    <RadzenColumn Size="12" SizeSM="10" SizeMD="6" SizeLG="4" SizeXL="3">
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
 
-            <RadzenTemplateForm TItem="DTO_Connexion" Data="_dto" Submit="Connecter">
-                <RadzenStack Gap="1rem">
-                    <RadzenFormField Text="Email" Style="width:100%;">
-                        <RadzenTextBox @bind-Value="_dto.Email" Name="Email" Style="width:100%;" />
-                        <RadzenRequiredValidator Component="Email" Text="L'email est obligatoire." />
-                    </RadzenFormField>
+                <RadzenIcon Icon="shield" Style="font-size: 3rem; color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" TextAlign="TextAlign.Center">
+                    Connexion
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Subtitle1" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color); margin-top: -1rem;">
+                    Accédez à votre espace BTPSecure
+                </RadzenText>
 
-                    <RadzenFormField Text="Mot de passe" Style="width:100%;">
-                        <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width:100%;" />
-                        <RadzenRequiredValidator Component="MotDePasse" Text="Le mot de passe est obligatoire." />
-                    </RadzenFormField>
+                <RadzenTemplateForm TItem="DTO_Connexion" Data="_dto" Submit="Connecter" Style="width: 100%;">
+                    <RadzenStack Gap="1.25rem">
+                        <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start>
+                                <RadzenIcon Icon="mail" />
+                            </Start>
+                            <ChildContent>
+                                <RadzenTextBox @bind-Value="_dto.Email" Name="Email" Style="width: 100%;" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="Email" Text="L'email est obligatoire." />
+                            </Helper>
+                        </RadzenFormField>
 
-                    <RadzenButton Text="Se connecter" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary"
-                                  Style="width:100%;" IsBusy="_enChargement" />
+                        <RadzenFormField Text="Mot de passe" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start>
+                                <RadzenIcon Icon="lock" />
+                            </Start>
+                            <ChildContent>
+                                <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width: 100%;" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="MotDePasse" Text="Le mot de passe est obligatoire." />
+                            </Helper>
+                        </RadzenFormField>
 
-                    <RadzenText TextStyle="TextStyle.Body2" Style="text-align:center;">
+                        <RadzenButton Text="Se connecter" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary"
+                                      Size="ButtonSize.Large" Style="width: 100%;" IsBusy="_enChargement" Icon="login" />
+                    </RadzenStack>
+                </RadzenTemplateForm>
+
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.25rem">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
                         Pas encore de compte ?
-                        <RadzenLink Path="/inscription" Text="S'inscrire" />
                     </RadzenText>
+                    <RadzenLink Path="/inscription" Text="S'inscrire" Style="font-weight: 600;" />
                 </RadzenStack>
-            </RadzenTemplateForm>
+
+            </RadzenStack>
         </RadzenCard>
     </RadzenColumn>
 </RadzenRow>

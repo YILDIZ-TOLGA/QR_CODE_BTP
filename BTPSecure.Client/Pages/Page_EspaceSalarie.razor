@@ -2,47 +2,93 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Salarie")]
 @inject Services.S_Code SCode
 
-<RadzenText TextStyle="TextStyle.H4">Mes codes d'achat</RadzenText>
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenIcon Icon="qr_code" Style="font-size: 2rem; color: var(--rz-primary);" />
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Mes codes d'achat</RadzenText>
+</RadzenStack>
 
 @if (_chargement)
 {
-    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="margin-top:2rem;" />
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
 }
 else if (_codes.Count == 0)
 {
-    <RadzenCard Style="margin-top:1rem; text-align:center;">
-        <RadzenText TextStyle="TextStyle.H6" Style="color:gray;">Aucun code actif pour le moment.</RadzenText>
-    </RadzenCard>
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 2rem 0;">
+                    <RadzenIcon Icon="code_off" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-text-secondary-color);">
+                        Aucun code actif
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
+                        Votre patron n'a pas encore généré de code à votre nom.
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
 }
 else
 {
-    <RadzenRow Gap="1rem" Style="margin-top:1rem;">
+    <RadzenRow Gap="1rem">
         @foreach (var _code in _codes)
         {
             <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-                <RadzenCard>
-                    <RadzenText TextStyle="TextStyle.H3" Style="font-family:monospace; text-align:center; letter-spacing:3px; margin-bottom:0.5rem;">
-                        @_code.Valeur
-                    </RadzenText>
-                    <RadzenStack Gap="0.3rem">
-                        <RadzenBadge BadgeStyle="@(_code.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
-                                     Text="@_code.TypeCode.ToString()" />
-                        <RadzenText TextStyle="TextStyle.Body1"><strong>Entreprise :</strong> @_code.NomEntreprise</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1"><strong>Commande :</strong> @_code.NumeroCommande</RadzenText>
-                        @if (!string.IsNullOrEmpty(_code.Info))
-                        {
-                            <RadzenText TextStyle="TextStyle.Body2"><strong>Info :</strong> @_code.Info</RadzenText>
-                        }
-                        @if (!string.IsNullOrEmpty(_code.ListeMateriaux))
-                        {
-                            <RadzenText TextStyle="TextStyle.Body2"><strong>Matériaux :</strong> @_code.ListeMateriaux</RadzenText>
-                        }
-                        @if (_code.DateExpiration.HasValue)
-                        {
-                            <RadzenText TextStyle="TextStyle.Caption" Style="color:gray;">
-                                Expire le : @_code.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                    <RadzenStack Gap="1rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+                            <RadzenBadge BadgeStyle="@(_code.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                         Text="@_code.TypeCode.ToString()" IsPill="true" />
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Actif" IsPill="true" />
+                        </RadzenStack>
+
+                        <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-primary);">
+                            <RadzenText TextStyle="TextStyle.H3" TextAlign="TextAlign.Center"
+                                        Style="font-family: monospace; letter-spacing: 4px; color: white; margin: 0;">
+                                @_code.Valeur
                             </RadzenText>
-                        }
+                        </RadzenCard>
+
+                        <RadzenStack Gap="0.4rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="business" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Body2">@_code.NomEntreprise</RadzenText>
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Body2">@_code.NumeroCommande</RadzenText>
+                            </RadzenStack>
+
+                            @if (!string.IsNullOrEmpty(_code.Info))
+                            {
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
+                                    <RadzenIcon Icon="info" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Body2">@_code.Info</RadzenText>
+                                </RadzenStack>
+                            }
+
+                            @if (!string.IsNullOrEmpty(_code.ListeMateriaux))
+                            {
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
+                                    <RadzenIcon Icon="inventory" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Body2">@_code.ListeMateriaux</RadzenText>
+                                </RadzenStack>
+                            }
+
+                            @if (_code.DateExpiration.HasValue)
+                            {
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                    <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                        Expire le @_code.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </RadzenText>
+                                </RadzenStack>
+                            }
+                        </RadzenStack>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>

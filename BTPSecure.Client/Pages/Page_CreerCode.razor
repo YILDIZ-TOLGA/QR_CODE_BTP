@@ -5,84 +5,145 @@
 @inject NavigationManager Navigation
 @inject NotificationService Notification
 
-<RadzenText TextStyle="TextStyle.H4">Créer un code d'autorisation</RadzenText>
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenButton Icon="arrow_back" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Large"
+                  Click='() => Navigation.NavigateTo("/patron")' />
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Créer un code d'autorisation</RadzenText>
+</RadzenStack>
 
-<RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top:1rem;">
+<RadzenRow JustifyContent="JustifyContent.Center">
     <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
         @if (_codeGenere != null)
         {
-            <RadzenCard Style="text-align:center;">
-                <RadzenText TextStyle="TextStyle.H5" Style="color:green;">Code créé avec succès !</RadzenText>
-                <RadzenText TextStyle="TextStyle.H3" Style="font-family:monospace; margin:1rem 0; letter-spacing:3px;">
-                    @_codeGenere.Valeur
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1">Salarié : @_codeGenere.PrenomSalarie @_codeGenere.NomSalarie</RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1">Commande : @_codeGenere.NumeroCommande</RadzenText>
-                @if (_codeGenere.DateExpiration.HasValue)
-                {
-                    <RadzenText TextStyle="TextStyle.Body2">Expire le : @_codeGenere.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</RadzenText>
-                }
-                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="0.5rem" Style="margin-top:1rem;">
-                    <RadzenButton Text="Créer un autre code" Icon="add_circle" Click="Reinitialiser" />
-                    <RadzenButton Text="Retour au tableau de bord" Icon="dashboard" ButtonStyle="ButtonStyle.Light"
-                                  Click='() => Navigation.NavigateTo("/patron")' />
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
+                    <RadzenIcon Icon="check_circle" Style="font-size: 4rem; color: var(--rz-success);" />
+                    <RadzenText TextStyle="TextStyle.H5" TextAlign="TextAlign.Center" Style="color: var(--rz-success);">
+                        Code créé avec succès
+                    </RadzenText>
+
+                    <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-primary); width: 100%;">
+                        <RadzenText TextStyle="TextStyle.H2" TextAlign="TextAlign.Center"
+                                    Style="font-family: monospace; letter-spacing: 6px; color: white; margin: 0.5rem 0;">
+                            @_codeGenere.Valeur
+                        </RadzenText>
+                    </RadzenCard>
+
+                    <RadzenStack Gap="0.5rem" Style="width: 100%;">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                            <RadzenText Style="color: var(--rz-text-secondary-color);">Salarié</RadzenText>
+                            <RadzenText Style="font-weight: 600;">@_codeGenere.PrenomSalarie @_codeGenere.NomSalarie</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                            <RadzenText Style="color: var(--rz-text-secondary-color);">Commande</RadzenText>
+                            <RadzenText Style="font-weight: 600;">@_codeGenere.NumeroCommande</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                            <RadzenText Style="color: var(--rz-text-secondary-color);">Type</RadzenText>
+                            <RadzenBadge BadgeStyle="@(_codeGenere.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                         Text="@_codeGenere.TypeCode.ToString()" IsPill="true" />
+                        </RadzenStack>
+                        @if (_codeGenere.DateExpiration.HasValue)
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">Expiration</RadzenText>
+                                <RadzenText Style="font-weight: 600;">@_codeGenere.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</RadzenText>
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.75rem" Style="width: 100%;">
+                        <RadzenButton Text="Créer un autre" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
+                                      Variant="Variant.Outlined" Style="flex: 1;" Click="Reinitialiser" />
+                        <RadzenButton Text="Tableau de bord" Icon="dashboard" ButtonStyle="ButtonStyle.Primary"
+                                      Style="flex: 1;" Click='() => Navigation.NavigateTo("/patron")' />
+                    </RadzenStack>
                 </RadzenStack>
             </RadzenCard>
         }
         else
         {
-            <RadzenCard>
+            <RadzenCard Variant="Variant.Outlined">
                 <RadzenTemplateForm TItem="DTO_CreerCode" Data="_dto" Submit="Creer">
-                    <RadzenStack Gap="1rem">
-                        <RadzenFormField Text="Salarié" Style="width:100%;">
-                            <RadzenDropDown @bind-Value="_dto.SalarieId" Data="_salaries" TextProperty="Label"
-                                            ValueProperty="SalarieId" Name="Salarie" Style="width:100%;"
-                                            Placeholder="Sélectionner un salarié..." />
-                            <RadzenRequiredValidator Component="Salarie" Text="Le salarié est obligatoire." DefaultValue="0" />
+                    <RadzenStack Gap="1.25rem">
+                        <RadzenFormField Text="Salarié" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="person" /></Start>
+                            <ChildContent>
+                                <RadzenDropDown @bind-Value="_dto.SalarieId" Data="_salaries" TextProperty="Label"
+                                                ValueProperty="SalarieId" Name="Salarie" Style="width: 100%;"
+                                                Placeholder="Sélectionner un salarié..." />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="Salarie" Text="Le salarié est obligatoire." DefaultValue="0" />
+                            </Helper>
                         </RadzenFormField>
 
-                        <RadzenFormField Text="Numéro de commande" Style="width:100%;">
-                            <RadzenTextBox @bind-Value="_dto.NumeroCommande" Name="NumCmd" Style="width:100%;" />
-                            <RadzenRequiredValidator Component="NumCmd" Text="Le numéro de commande est obligatoire." />
+                        <RadzenFormField Text="Numéro de commande" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="receipt_long" /></Start>
+                            <ChildContent>
+                                <RadzenTextBox @bind-Value="_dto.NumeroCommande" Name="NumCmd" Style="width: 100%;" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="NumCmd" Text="Le numéro de commande est obligatoire." />
+                            </Helper>
                         </RadzenFormField>
 
-                        <RadzenFormField Text="Type de code" Style="width:100%;">
-                            <RadzenRadioButtonList @bind-Value="_dto.TypeCode" TValue="Enum_TypeCode" Orientation="Orientation.Horizontal">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2">Type de code</RadzenText>
+                            <RadzenSelectBar @bind-Value="_dto.TypeCode" TValue="Enum_TypeCode" Size="ButtonSize.Medium" Style="width: 100%;">
                                 <Items>
-                                    <RadzenRadioButtonListItem Text="Confiance (durée limitée)" Value="Enum_TypeCode.Confiance" />
-                                    <RadzenRadioButtonListItem Text="Liste (matériaux définis)" Value="Enum_TypeCode.Liste" />
+                                    <RadzenSelectBarItem Text="Confiance" Value="Enum_TypeCode.Confiance" Icon="schedule" />
+                                    <RadzenSelectBarItem Text="Liste matériaux" Value="Enum_TypeCode.Liste" Icon="list_alt" />
                                 </Items>
-                            </RadzenRadioButtonList>
-                        </RadzenFormField>
+                            </RadzenSelectBar>
+                        </RadzenStack>
 
                         @if (_dto.TypeCode == Enum_TypeCode.Confiance)
                         {
-                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                                <RadzenFormField Text="Durée" Style="flex:1;">
-                                    <RadzenNumeric @bind-Value="_dureeNumerique" Min="1" Style="width:100%;" />
-                                </RadzenFormField>
-                                <RadzenFormField Text="Unité" Style="flex:1;">
-                                    <RadzenDropDown @bind-Value="_unite" Data="_unites" TextProperty="Text" ValueProperty="Value"
-                                                    Style="width:100%;" />
-                                </RadzenFormField>
-                            </RadzenStack>
+                            <RadzenRow Gap="1rem" AlignItems="AlignItems.End">
+                                <RadzenColumn Size="6">
+                                    <RadzenFormField Text="Durée" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <Start><RadzenIcon Icon="timer" /></Start>
+                                        <ChildContent>
+                                            <RadzenNumeric @bind-Value="_dureeNumerique" Min="1" Style="width: 100%;" />
+                                        </ChildContent>
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="6">
+                                    <RadzenFormField Text="Unité" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <ChildContent>
+                                            <RadzenDropDown @bind-Value="_unite" Data="_unites" TextProperty="Text" ValueProperty="Value"
+                                                            Style="width: 100%;" />
+                                        </ChildContent>
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
                         }
 
                         @if (_dto.TypeCode == Enum_TypeCode.Liste)
                         {
-                            <RadzenFormField Text="Liste des matériaux" Style="width:100%;">
-                                <RadzenTextArea @bind-Value="_dto.ListeMateriaux" Rows="4" Name="Materiaux" Style="width:100%;"
-                                                Placeholder="Ex: 10 sacs de ciment, 5 plaques de plâtre..." />
-                                <RadzenRequiredValidator Component="Materiaux" Text="La liste des matériaux est obligatoire." />
+                            <RadzenFormField Text="Liste des matériaux" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="inventory" /></Start>
+                                <ChildContent>
+                                    <RadzenTextArea @bind-Value="_dto.ListeMateriaux" Rows="4" Name="Materiaux" Style="width: 100%;"
+                                                    Placeholder="Ex: 10 sacs de ciment, 5 plaques de plâtre..." />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="Materiaux" Text="La liste des matériaux est obligatoire." />
+                                </Helper>
                             </RadzenFormField>
                         }
 
-                        <RadzenFormField Text="Informations complémentaires (optionnel)" Style="width:100%;">
-                            <RadzenTextArea @bind-Value="_dto.Info" Rows="2" Style="width:100%;" />
+                        <RadzenFormField Text="Informations complémentaires" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="info" /></Start>
+                            <ChildContent>
+                                <RadzenTextArea @bind-Value="_dto.Info" Rows="2" Style="width: 100%;" Placeholder="Optionnel" />
+                            </ChildContent>
                         </RadzenFormField>
 
-                        <RadzenButton Text="Générer le code" ButtonType="ButtonType.Submit" Icon="add_circle"
-                                      ButtonStyle="ButtonStyle.Primary" Style="width:100%;" IsBusy="_enChargement" />
+                        <RadzenButton Text="Générer le code" ButtonType="ButtonType.Submit" Icon="qr_code_2"
+                                      ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large"
+                                      Style="width: 100%;" IsBusy="_enChargement" />
                     </RadzenStack>
                 </RadzenTemplateForm>
             </RadzenCard>
@@ -144,9 +205,7 @@
             Notification.Notify(NotificationSeverity.Success, "Succès", _message);
         }
         else
-        {
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
-        }
     }
 
     private void Reinitialiser()

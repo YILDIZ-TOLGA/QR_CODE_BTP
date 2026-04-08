@@ -1,12 +1,24 @@
 @page "/non-autorise"
 
-<RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top:80px;">
+<RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 70vh;">
     <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-        <RadzenCard Style="text-align:center;">
-            <RadzenIcon Icon="lock" Style="font-size:3rem; color:gray;" />
-            <RadzenText TextStyle="TextStyle.H5" Style="margin-top:1rem;">Accès non autorisé</RadzenText>
-            <RadzenText TextStyle="TextStyle.Body1" Style="color:gray;">Vous n'avez pas accès à cette page.</RadzenText>
-            <RadzenLink Path="/" Text="Retour à l'accueil" Style="margin-top:1rem; display:block;" />
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
+                <RadzenIcon Icon="gpp_bad" Style="font-size: 4rem; color: var(--rz-danger);" />
+                <RadzenText TextStyle="TextStyle.H4" TextAlign="TextAlign.Center">
+                    Accès refusé
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
+                    Vous n'avez pas les droits nécessaires pour accéder à cette page.
+                </RadzenText>
+                <RadzenButton Text="Retour à l'accueil" Icon="home" ButtonStyle="ButtonStyle.Primary"
+                              Variant="Variant.Outlined" Size="ButtonSize.Large"
+                              Click='() => Navigation.NavigateTo("/")' />
+            </RadzenStack>
         </RadzenCard>
     </RadzenColumn>
 </RadzenRow>
+
+@code {
+    [Inject] NavigationManager Navigation { get; set; } = default!;
+}

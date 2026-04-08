@@ -4,53 +4,90 @@
 @inject NotificationService Notification
 @inject IJSRuntime JS
 
-<RadzenText TextStyle="TextStyle.H4">Validation de code</RadzenText>
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenIcon Icon="verified_user" Style="font-size: 2rem; color: var(--rz-primary);" />
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Validation de code</RadzenText>
+</RadzenStack>
 
-<RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top:1rem;">
+<RadzenRow JustifyContent="JustifyContent.Center">
     <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
-        <RadzenCard>
-            <RadzenStack Gap="1rem">
-                <RadzenFormField Text="Code d'autorisation" Style="width:100%;">
-                    <RadzenTextBox @bind-Value="_valeurCode" Style="width:100%; font-family:monospace; font-size:1.2rem; text-transform:uppercase;"
-                                   Placeholder="XXXX-XXXX" MaxLength="9" />
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="1.25rem">
+                <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">
+                    Saisissez le code d'autorisation présenté par le salarié pour vérifier sa validité.
+                </RadzenText>
+
+                <RadzenFormField Text="Code d'autorisation" Variant="Variant.Outlined" Style="width: 100%;">
+                    <Start><RadzenIcon Icon="key" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="_valeurCode"
+                                       Style="width: 100%; font-family: monospace; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 2px;"
+                                       Placeholder="XXXX-XXXX" MaxLength="9" />
+                    </ChildContent>
                 </RadzenFormField>
-                <RadzenButton Text="Valider le code" Icon="verified" ButtonStyle="ButtonStyle.Primary"
-                              Style="width:100%;" Click="Valider" IsBusy="_enChargement"
+
+                <RadzenButton Text="Vérifier le code" Icon="search" ButtonStyle="ButtonStyle.Primary"
+                              Size="ButtonSize.Large" Style="width: 100%;" Click="Valider" IsBusy="_enChargement"
                               Disabled="@(string.IsNullOrWhiteSpace(_valeurCode))" />
             </RadzenStack>
         </RadzenCard>
 
         @if (_resultat != null)
         {
-            <RadzenCard Style="margin-top:1rem;">
+            <RadzenCard Variant="Variant.Outlined" Style="margin-top: 1.5rem;">
                 @if (_resultat.EstValide)
                 {
-                    <RadzenAlert AlertStyle="AlertStyle.Success" ShowIcon="true" Title="Code valide">
-                        Le code a été validé avec succès.
-                    </RadzenAlert>
-                    <RadzenStack Gap="0.5rem" Style="margin-top:1rem;">
-                        <RadzenText TextStyle="TextStyle.Body1"><strong>Salarié :</strong> @_resultat.PrenomSalarie @_resultat.NomSalarie</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1"><strong>N° Commande :</strong> @_resultat.NumeroCommande</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1"><strong>Entreprise :</strong> @_resultat.NomEntreprise</RadzenText>
-                        @if (!string.IsNullOrEmpty(_resultat.ListeMateriaux))
-                        {
-                            <RadzenText TextStyle="TextStyle.Body1"><strong>Matériaux :</strong></RadzenText>
-                            <RadzenCard Style="background:#f5f5f5;">
-                                <RadzenText>@_resultat.ListeMateriaux</RadzenText>
-                            </RadzenCard>
-                        }
+                    <RadzenStack Gap="1.25rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+                            <RadzenIcon Icon="check_circle" Style="font-size: 2.5rem; color: var(--rz-success);" />
+                            <RadzenStack Gap="0">
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin: 0; color: var(--rz-success);">Code valide</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">La transaction est autorisée</RadzenText>
+                            </RadzenStack>
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">Salarié</RadzenText>
+                                <RadzenText Style="font-weight: 600;">@_resultat.PrenomSalarie @_resultat.NomSalarie</RadzenText>
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">Entreprise</RadzenText>
+                                <RadzenText Style="font-weight: 600;">@_resultat.NomEntreprise</RadzenText>
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">N° Commande</RadzenText>
+                                <RadzenText Style="font-weight: 600;">@_resultat.NumeroCommande</RadzenText>
+                            </RadzenStack>
+
+                            @if (!string.IsNullOrEmpty(_resultat.ListeMateriaux))
+                            {
+                                <RadzenStack Gap="0.25rem" Style="margin-top: 0.5rem;">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2">Matériaux autorisés</RadzenText>
+                                    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.75rem;">
+                                        <RadzenText TextStyle="TextStyle.Body2">@_resultat.ListeMateriaux</RadzenText>
+                                    </RadzenCard>
+                                </RadzenStack>
+                            }
+                        </RadzenStack>
+
                         @if (!string.IsNullOrEmpty(_resultat.PdfBase64))
                         {
-                            <RadzenButton Text="Télécharger le PDF" Icon="download" ButtonStyle="ButtonStyle.Secondary"
-                                          Click="TelechargerPdf" Style="margin-top:0.5rem;" />
+                            <RadzenButton Text="Télécharger la confirmation PDF" Icon="picture_as_pdf"
+                                          ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined"
+                                          Size="ButtonSize.Medium" Style="width: 100%;" Click="TelechargerPdf" />
                         }
                     </RadzenStack>
                 }
                 else
                 {
-                    <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" Title="Code invalide">
-                        @_resultat.Message
-                    </RadzenAlert>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+                        <RadzenIcon Icon="cancel" Style="font-size: 2.5rem; color: var(--rz-danger);" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.H5" Style="margin: 0; color: var(--rz-danger);">Code invalide</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">@_resultat.Message</RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
                 }
             </RadzenCard>
         }
@@ -72,9 +109,7 @@
         _enChargement = false;
 
         if (!_succes)
-        {
             Notification.Notify(NotificationSeverity.Error, "Erreur", _resultat?.Message ?? "Code invalide.");
-        }
     }
 
     private async Task TelechargerPdf()

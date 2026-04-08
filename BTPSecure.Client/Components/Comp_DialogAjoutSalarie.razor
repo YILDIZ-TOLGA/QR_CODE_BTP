@@ -1,12 +1,23 @@
 @inject DialogService Dialog
 
-<RadzenStack Gap="1rem" Style="padding:1rem;">
-    <RadzenFormField Text="Email du salarié" Style="width:100%;">
-        <RadzenTextBox @bind-Value="_email" Style="width:100%;" Placeholder="salarie@email.com" />
+<RadzenStack Gap="1.5rem" Style="min-width: 400px;">
+    <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">
+        Entrez l'email du salarié déjà inscrit sur BTPSecure pour l'ajouter à votre entreprise.
+    </RadzenText>
+
+    <RadzenFormField Text="Email du salarié" Variant="Variant.Outlined" Style="width: 100%;">
+        <Start>
+            <RadzenIcon Icon="person_search" />
+        </Start>
+        <ChildContent>
+            <RadzenTextBox @bind-Value="_email" Style="width: 100%;" Placeholder="salarie@email.com" />
+        </ChildContent>
     </RadzenFormField>
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
-        <RadzenButton Text="Annuler" ButtonStyle="ButtonStyle.Light" Click="() => Dialog.Close()" />
-        <RadzenButton Text="Ajouter" ButtonStyle="ButtonStyle.Primary" Icon="person_add" Click="Valider" Disabled="@string.IsNullOrWhiteSpace(_email)" />
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.75rem">
+        <RadzenButton Text="Annuler" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Click="() => Dialog.Close()" />
+        <RadzenButton Text="Ajouter" ButtonStyle="ButtonStyle.Primary" Icon="person_add"
+                      Click="Valider" Disabled="@string.IsNullOrWhiteSpace(_email)" />
     </RadzenStack>
 </RadzenStack>
 
