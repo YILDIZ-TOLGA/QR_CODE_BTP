@@ -1,0 +1,33 @@
+using BTPSecure.Server.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BTPSecure.Server.Controllers;
+
+[ApiController]
+[Route("api/admin")]
+[Authorize(Roles = "Admin")]
+public class C_Admin : ControllerBase
+{
+    private readonly S_Admin _sAdmin;
+
+    public C_Admin(S_Admin p_sAdmin)
+    {
+        _sAdmin = p_sAdmin;
+    }
+
+    [HttpGet("entreprises")]
+    public async Task<IActionResult> ObtenirEntreprises()
+    {
+        var _entreprises = await _sAdmin.ObtenirToutesLesEntreprises();
+        return Ok(_entreprises);
+    }
+
+    [HttpPost("basculer-autorisation/{p_id}")]
+    public async Task<IActionResult> BasculerAutorisation(int p_id)
+    {
+        var (_succes, _message) = await _sAdmin.BasculerAutorisation(p_id);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
+}

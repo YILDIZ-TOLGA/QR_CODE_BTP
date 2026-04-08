@@ -59,11 +59,13 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<DAO_Utilisateur>();
 builder.Services.AddScoped<DAO_Code>();
 builder.Services.AddScoped<DAO_Entreprise>();
+builder.Services.AddScoped<DAO_Admin>();
 
 // Services
 builder.Services.AddScoped<S_Auth>();
 builder.Services.AddScoped<S_Code>();
 builder.Services.AddScoped<S_Entreprise>();
+builder.Services.AddScoped<S_Admin>();
 builder.Services.AddSingleton<S_Pdf>();
 
 var app = builder.Build();
@@ -113,7 +115,7 @@ app.MapGet("/db-status", async (AppDbContext db) =>
     }
 });
 
-// Migration BDD en arrière-plan (ne bloque pas le démarrage)
+// Migration BDD + Seed Admin en arrière-plan (ne bloque pas le démarrage)
 _ = Task.Run(async () =>
 {
     try
@@ -122,10 +124,28 @@ _ = Task.Run(async () =>
         var _db = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await _db.Database.MigrateAsync();
         app.Logger.LogInformation("Migration BDD réussie.");
+
+        // Seed compte Admin s'il n'existe pas
+        if (!await _db.Utilisateurs.AnyAsync(u => u.Role == BTPSecure.Shared.Enums.Enum_Role.Admin))
+        {
+            var _sel = BCrypt.Net.BCrypt.GenerateSalt();
+            _db.Utilisateurs.Add(new BTPSecure.Shared.Entites.E_Utilisateur
+            {
+                Email = "admin@btpsecure.fr",
+                MotDePasseHash = BCrypt.Net.BCrypt.HashPassword("Aqwxcvbn$74123-", _sel),
+                Sel = _sel,
+                Nom = "Admin",
+                Prenom = "BTPSecure",
+                Role = BTPSecure.Shared.Enums.Enum_Role.Admin,
+                EstActif = true
+            });
+            await _db.SaveChangesAsync();
+            app.Logger.LogInformation("Compte Admin créé : admin@btpsecure.fr");
+        }
     }
     catch (Exception ex)
     {
-        app.Logger.LogError(ex, "Erreur migration BDD.");
+        app.Logger.LogError(ex, "Erreur migration/seed BDD.");
     }
 });
 

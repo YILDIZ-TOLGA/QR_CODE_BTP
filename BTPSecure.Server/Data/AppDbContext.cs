@@ -39,6 +39,7 @@ public class AppDbContext : DbContext
             e.Property(ent => ent.Nom).IsRequired().HasMaxLength(200);
             e.Property(ent => ent.Adresse).HasMaxLength(500);
             e.Property(ent => ent.Siret).HasMaxLength(20);
+            e.Property(ent => ent.EstAutorisee).HasDefaultValue(false);
             e.HasOne(ent => ent.Patron)
                 .WithMany()
                 .HasForeignKey(ent => ent.PatronId)

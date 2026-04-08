@@ -78,6 +78,7 @@
 
         var _url = _reponse!.Role switch
         {
+            Enum_Role.Admin => "/admin",
             Enum_Role.Patron => "/patron",
             Enum_Role.Salarie => "/salarie",
             Enum_Role.Fournisseur => "/fournisseur",

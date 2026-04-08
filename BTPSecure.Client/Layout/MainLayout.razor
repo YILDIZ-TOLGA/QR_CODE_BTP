@@ -37,6 +37,9 @@
 
     <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="z-index: 2;">
         <RadzenPanelMenu>
+            <AuthorizeView Roles="Admin">
+                <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings" Path="admin" />
+            </AuthorizeView>
             <AuthorizeView Roles="Patron">
                 <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" />
                 <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" />

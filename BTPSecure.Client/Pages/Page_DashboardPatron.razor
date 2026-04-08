@@ -62,6 +62,14 @@ else if (_chargement)
 else
 {
     <RadzenStack Gap="1.5rem">
+        @if (!_entreprise!.EstAutorisee)
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat"
+                         Title="Entreprise en attente d'autorisation">
+                Votre entreprise n'est pas encore autorisée par l'administrateur. Vous ne pouvez pas créer de codes pour le moment.
+            </RadzenAlert>
+        }
+
         <!-- En-tête entreprise -->
         <RadzenCard Variant="Variant.Outlined">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="1rem">
@@ -79,9 +87,17 @@ else
                         }
                     </RadzenStack>
                 </RadzenStack>
-                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_salaries.Count} salarié(s)")" />
-                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@($"{_codes.Count(c => c.Statut == Enum_StatutCode.Actif)} code(s) actif(s)")" />
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                    @if (_entreprise!.EstAutorisee)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Autorisée" IsPill="true" />
+                    }
+                    else
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="En attente" IsPill="true" />
+                    }
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_salaries.Count} salarié(s)")" IsPill="true" />
+                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_codes.Count(c => c.Statut == Enum_StatutCode.Actif)} code(s) actif(s)")" IsPill="true" />
                 </RadzenStack>
             </RadzenStack>
         </RadzenCard>
@@ -130,9 +146,12 @@ else
                     <RadzenIcon Icon="qr_code_2" Style="font-size: 1.5rem; color: var(--rz-primary);" />
                     <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Codes d'autorisation</RadzenText>
                 </RadzenStack>
-                <RadzenButton Text="Créer un code" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
-                              Variant="Variant.Flat" Size="ButtonSize.Small"
-                              Click='() => Navigation.NavigateTo("/patron/creer-code")' />
+                @if (_entreprise!.EstAutorisee)
+                {
+                    <RadzenButton Text="Créer un code" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
+                                  Variant="Variant.Flat" Size="ButtonSize.Small"
+                                  Click='() => Navigation.NavigateTo("/patron/creer-code")' />
+                }
             </RadzenStack>
 
             @if (_codes.Count == 0)

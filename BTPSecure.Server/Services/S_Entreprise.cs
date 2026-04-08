@@ -132,7 +132,8 @@ public class S_Entreprise
             Nom = p_entreprise.Nom,
             Adresse = p_entreprise.Adresse,
             Siret = p_entreprise.Siret,
-            DateCreation = p_entreprise.DateCreation
+            DateCreation = p_entreprise.DateCreation,
+            EstAutorisee = p_entreprise.EstAutorisee
         };
     }
 }
