@@ -158,22 +158,31 @@ else
 
     private async Task Basculer(DTO_EntrepriseAdmin p_entreprise)
     {
-        var _action = p_entreprise.EstAutorisee ? "bloquer" : "autoriser";
-        var _confirm = await Dialog.Confirm(
-            $"Voulez-vous {_action} l'entreprise « {p_entreprise.Nom} » ?",
-            "Confirmation",
-            new ConfirmOptions { OkButtonText = _action[..1].ToUpper() + _action[1..], CancelButtonText = "Annuler" });
-
-        if (_confirm == true)
+        try
         {
-            var (_succes, _message) = await SAdmin.BasculerAutorisation(p_entreprise.Id);
-            if (_succes)
+            var _estAutorisee = p_entreprise.EstAutorisee;
+            var _texteAction = _estAutorisee ? "Bloquer" : "Autoriser";
+            var _confirm = await Dialog.Confirm(
+                $"Voulez-vous {_texteAction.ToLower()} l'entreprise « {p_entreprise.Nom} » ?",
+                "Confirmation",
+                new ConfirmOptions { OkButtonText = _texteAction, CancelButtonText = "Annuler" });
+
+            if (_confirm == true)
             {
-                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
-                _entreprises = await SAdmin.ObtenirEntreprises();
+                var (_succes, _message) = await SAdmin.BasculerAutorisation(p_entreprise.Id);
+                if (_succes)
+                {
+                    Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                    _entreprises = await SAdmin.ObtenirEntreprises();
+                    StateHasChanged();
+                }
+                else
+                    Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
             }
-            else
-                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+        catch (Exception ex)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", ex.Message);
         }
     }
 }
