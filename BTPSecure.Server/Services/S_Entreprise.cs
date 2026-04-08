@@ -69,6 +69,9 @@ public class S_Entreprise
         if (await _daoEntreprise.SalarieEstDansEntreprise(_salarie.Id, _entreprise.Id))
             return (false, "Ce salarié est déjà dans votre entreprise.", null);
 
+        if (await _daoEntreprise.InvitationExiste(_salarie.Id, _entreprise.Id))
+            return (false, "Une invitation est déjà en attente pour ce salarié.", null);
+
         var _lien = new E_SalarieEntreprise
         {
             SalarieId = _salarie.Id,
@@ -78,14 +81,15 @@ public class S_Entreprise
         await _daoEntreprise.AjouterSalarie(_lien);
         _logger.LogInformation("Salarié {Email} ajouté à l'entreprise {EntrepriseId}", p_email, _entreprise.Id);
 
-        return (true, "Salarié ajouté avec succès.", new DTO_SalarieAffichage
+        return (true, "Invitation envoyée avec succès.", new DTO_SalarieAffichage
         {
             Id = _lien.Id,
             SalarieId = _salarie.Id,
             Nom = _salarie.Nom,
             Prenom = _salarie.Prenom,
             Email = _salarie.Email,
-            DateAjout = _lien.DateAjout
+            DateAjout = _lien.DateAjout,
+            StatutInvitation = _lien.StatutInvitation
         });
     }
 
@@ -102,7 +106,8 @@ public class S_Entreprise
             Nom = l.Salarie.Nom,
             Prenom = l.Salarie.Prenom,
             Email = l.Salarie.Email,
-            DateAjout = l.DateAjout
+            DateAjout = l.DateAjout,
+            StatutInvitation = l.StatutInvitation
         }).ToList();
     }
 

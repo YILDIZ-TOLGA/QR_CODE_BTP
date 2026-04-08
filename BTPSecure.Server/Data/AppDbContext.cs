@@ -52,6 +52,7 @@ public class AppDbContext : DbContext
             e.ToTable("salaries_entreprises");
             e.HasKey(se => se.Id);
             e.Property(se => se.EstActif).HasDefaultValue(true);
+            e.Property(se => se.StatutInvitation).HasConversion<int>().HasDefaultValue(Enum_StatutInvitation.EnAttente);
             e.HasOne(se => se.Salarie)
                 .WithMany()
                 .HasForeignKey(se => se.SalarieId)

@@ -45,7 +45,7 @@ public class S_Code
 
     public async Task<(bool Succes, string Message)> Revoquer(int p_id)
     {
-        var _reponse = await _http.PutAsync($"api/codes/revoquer/{p_id}", null);
+        var _reponse = await _http.PostAsJsonAsync($"api/codes/revoquer/{p_id}", new { });
         if (!_reponse.IsSuccessStatusCode)
         {
             var _erreur = await LireErreur(_reponse);

@@ -57,7 +57,7 @@ public class C_Code : ControllerBase
         return Ok(_resultat);
     }
 
-    [HttpPut("revoquer/{p_id}")]
+    [HttpPost("revoquer/{p_id}")]
     [Authorize(Roles = "Patron")]
     public async Task<IActionResult> Revoquer(int p_id)
     {

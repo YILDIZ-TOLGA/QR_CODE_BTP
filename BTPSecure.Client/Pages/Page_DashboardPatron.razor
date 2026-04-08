@@ -128,7 +128,19 @@ else
                         <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Nom" Title="Nom" MinWidth="120px" />
                         <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Prenom" Title="Prénom" MinWidth="120px" />
                         <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Email" Title="Email" MinWidth="200px" />
-                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Title="Actions" Width="80px" TextAlign="TextAlign.Center" Sortable="false" Filterable="false">
+                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Title="Statut" Width="130px" TextAlign="TextAlign.Center">
+                            <Template Context="s">
+                                @if (s.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Accepté" IsPill="true" />
+                                }
+                                else
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="En attente" IsPill="true" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Title="" Width="60px" TextAlign="TextAlign.Center" Sortable="false" Filterable="false">
                             <Template Context="s">
                                 <RadzenButton Icon="person_remove" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
                                               Size="ButtonSize.Medium" Click="() => RetirerSalarie(s)" />

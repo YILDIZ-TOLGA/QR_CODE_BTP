@@ -1,5 +1,6 @@
 using BTPSecure.Server.Data;
 using BTPSecure.Shared.Entites;
+using BTPSecure.Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace BTPSecure.Server.DAO;
@@ -45,13 +46,24 @@ public class DAO_Entreprise
         return await _context.SalariesEntreprises
             .AnyAsync(se => se.SalarieId == p_salarieId
                 && se.EntrepriseId == p_entrepriseId
-                && se.EstActif);
+                && se.EstActif
+                && se.StatutInvitation == Enum_StatutInvitation.Acceptee);
+    }
+
+    public async Task<bool> InvitationExiste(int p_salarieId, int p_entrepriseId)
+    {
+        return await _context.SalariesEntreprises
+            .AnyAsync(se => se.SalarieId == p_salarieId
+                && se.EntrepriseId == p_entrepriseId
+                && se.EstActif
+                && se.StatutInvitation == Enum_StatutInvitation.EnAttente);
     }
 
     public async Task<E_SalarieEntreprise> AjouterSalarie(E_SalarieEntreprise p_lien)
     {
         p_lien.DateAjout = DateTime.UtcNow;
         p_lien.EstActif = true;
+        p_lien.StatutInvitation = Enum_StatutInvitation.EnAttente;
         _context.SalariesEntreprises.Add(p_lien);
         await _context.SaveChangesAsync();
         return p_lien;
@@ -62,13 +74,38 @@ public class DAO_Entreprise
         return await _context.SalariesEntreprises
             .Include(se => se.Salarie)
             .Where(se => se.EntrepriseId == p_entrepriseId && se.EstActif)
-            .OrderBy(se => se.Salarie.Nom)
+            .OrderBy(se => se.StatutInvitation)
+            .ThenBy(se => se.Salarie.Nom)
             .ToListAsync();
+    }
+
+    public async Task<List<E_SalarieEntreprise>> ObtenirInvitationsParSalarie(int p_salarieId)
+    {
+        return await _context.SalariesEntreprises
+            .Include(se => se.Entreprise)
+                .ThenInclude(e => e.Patron)
+            .Where(se => se.SalarieId == p_salarieId && se.EstActif)
+            .OrderBy(se => se.StatutInvitation)
+            .ThenByDescending(se => se.DateAjout)
+            .ToListAsync();
+    }
+
+    public async Task<E_SalarieEntreprise?> ObtenirLienParId(int p_id)
+    {
+        return await _context.SalariesEntreprises
+            .Include(se => se.Entreprise)
+                .ThenInclude(e => e.Patron)
+            .FirstOrDefaultAsync(se => se.Id == p_id);
     }
 
     public async Task RetirerSalarie(E_SalarieEntreprise p_lien)
     {
         p_lien.EstActif = false;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task Sauvegarder()
+    {
         await _context.SaveChangesAsync();
     }
 }

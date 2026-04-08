@@ -1,5 +1,7 @@
 namespace BTPSecure.Shared.DTOs;
 
+using BTPSecure.Shared.Enums;
+
 public class DTO_SalarieAffichage
 {
     public int Id { get; set; }
@@ -8,4 +10,5 @@ public class DTO_SalarieAffichage
     public string Prenom { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public DateTime DateAjout { get; set; }
+    public Enum_StatutInvitation StatutInvitation { get; set; }
 }

@@ -1,3 +1,5 @@
+using BTPSecure.Shared.Enums;
+
 namespace BTPSecure.Shared.Entites;
 
 public class E_SalarieEntreprise
@@ -9,4 +11,5 @@ public class E_SalarieEntreprise
     public E_Entreprise Entreprise { get; set; } = null!;
     public DateTime DateAjout { get; set; }
     public bool EstActif { get; set; } = true;
+    public Enum_StatutInvitation StatutInvitation { get; set; } = Enum_StatutInvitation.EnAttente;
 }

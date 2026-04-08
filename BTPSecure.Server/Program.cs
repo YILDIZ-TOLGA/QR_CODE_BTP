@@ -66,6 +66,7 @@ builder.Services.AddScoped<S_Auth>();
 builder.Services.AddScoped<S_Code>();
 builder.Services.AddScoped<S_Entreprise>();
 builder.Services.AddScoped<S_Admin>();
+builder.Services.AddScoped<S_Invitation>();
 builder.Services.AddSingleton<S_Pdf>();
 
 var app = builder.Build();
