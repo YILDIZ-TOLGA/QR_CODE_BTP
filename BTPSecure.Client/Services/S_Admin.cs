@@ -20,7 +20,8 @@ public class S_Admin
 
     public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId)
     {
-        var _reponse = await _http.PostAsync($"api/admin/basculer-autorisation/{p_entrepriseId}", null);
+        var _request = new HttpRequestMessage(HttpMethod.Post, $"api/admin/basculer-autorisation/{p_entrepriseId}");
+        var _reponse = await _http.SendAsync(_request);
         if (!_reponse.IsSuccessStatusCode)
         {
             try
