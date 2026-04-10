@@ -1,6 +1,7 @@
 @page "/connexion"
 @page "/"
 @inject S_Auth SAuth
+@inject S_AuthStateProvider AuthState
 @inject NavigationManager Navigation
 @inject NotificationService Notification
 
@@ -63,6 +64,26 @@
 @code {
     private DTO_Connexion _dto = new();
     private bool _enChargement;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var _etat = await AuthState.GetAuthenticationStateAsync();
+        if (_etat.User.Identity?.IsAuthenticated == true)
+        {
+            var _role = _etat.User.FindFirst("role")?.Value
+                        ?? _etat.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var _url = _role switch
+            {
+                "Admin" => "/admin",
+                "Patron" => "/patron",
+                "Salarie" => "/salarie",
+                "Fournisseur" => "/fournisseur",
+                _ => "/"
+            };
+            if (_url != "/")
+                Navigation.NavigateTo(_url, replace: true);
+        }
+    }
 
     private async Task Connecter()
     {

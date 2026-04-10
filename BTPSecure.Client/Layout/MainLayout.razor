@@ -35,22 +35,39 @@
         </RadzenStack>
     </RadzenHeader>
 
-    <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="z-index: 2;">
-        <RadzenPanelMenu>
-            <AuthorizeView Roles="Admin">
-                <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings" Path="admin" />
-            </AuthorizeView>
-            <AuthorizeView Roles="Patron">
-                <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" />
-                <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" />
-            </AuthorizeView>
-            <AuthorizeView Roles="Salarie">
-                <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="salarie" />
-            </AuthorizeView>
-            <AuthorizeView Roles="Fournisseur">
-                <RadzenPanelMenuItem Text="Valider un code" Icon="verified" Path="fournisseur" />
-            </AuthorizeView>
-        </RadzenPanelMenu>
+    <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="z-index: 2; display: flex; flex-direction: column;">
+        <div style="flex: 1; overflow-y: auto;">
+            <RadzenPanelMenu>
+                <AuthorizeView Roles="Admin">
+                    <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings" Path="admin" />
+                </AuthorizeView>
+                <AuthorizeView Roles="Patron">
+                    <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" />
+                    <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" />
+                </AuthorizeView>
+                <AuthorizeView Roles="Salarie">
+                    <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="salarie" />
+                </AuthorizeView>
+                <AuthorizeView Roles="Fournisseur">
+                    <RadzenPanelMenuItem Text="Valider un code" Icon="verified" Path="fournisseur" />
+                </AuthorizeView>
+            </RadzenPanelMenu>
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <RadzenStack Gap="0.5rem" Style="padding: 1rem; border-top: 1px solid var(--rz-border); background: var(--rz-base-50);">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="account_circle" Style="color: var(--rz-text-secondary-color); font-size: 1.3rem;" />
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                        </RadzenText>
+                    </RadzenStack>
+                    <RadzenButton Text="Déconnexion" Icon="logout" ButtonStyle="ButtonStyle.Danger"
+                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;" Click="Deconnecter" />
+                </RadzenStack>
+            </Authorized>
+        </AuthorizeView>
     </RadzenSidebar>
 
     <RadzenBody>
