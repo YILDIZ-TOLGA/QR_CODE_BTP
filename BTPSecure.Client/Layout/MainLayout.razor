@@ -50,8 +50,8 @@
                     <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings" Path="admin" />
                 </AuthorizeView>
                 <AuthorizeView Roles="Patron">
-                    <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" />
-                    <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" />
+                    <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" Match="NavLinkMatch.All" />
+                    <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" Match="NavLinkMatch.All" />
                 </AuthorizeView>
                 <AuthorizeView Roles="Salarie">
                     <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="salarie" />
