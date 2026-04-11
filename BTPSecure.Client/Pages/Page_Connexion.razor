@@ -68,20 +68,47 @@
     protected override async Task OnInitializedAsync()
     {
         var _etat = await AuthState.GetAuthenticationStateAsync();
-        if (_etat.User.Identity?.IsAuthenticated == true)
+
+        if (_etat.User.Identity == null)
         {
-            var _role = _etat.User.FindFirst("role")?.Value
-                        ?? _etat.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-            var _url = _role switch
-            {
-                "Admin" => "/admin",
-                "Patron" => "/patron",
-                "Salarie" => "/salarie",
-                "Fournisseur" => "/fournisseur",
-                _ => "/"
-            };
-            if (_url != "/")
-                Navigation.NavigateTo(_url, replace: true);
+            return;
+        }
+        if (!_etat.User.Identity.IsAuthenticated)
+        {
+            return;
+        }
+
+        var _claimRole = _etat.User.FindFirst("role");
+        if (_claimRole == null)
+        {
+            _claimRole = _etat.User.FindFirst(System.Security.Claims.ClaimTypes.Role);
+        }
+        if (_claimRole == null)
+        {
+            return;
+        }
+
+        string _url = "/";
+        if (_claimRole.Value == "Admin")
+        {
+            _url = "/admin";
+        }
+        else if (_claimRole.Value == "Patron")
+        {
+            _url = "/patron";
+        }
+        else if (_claimRole.Value == "Salarie")
+        {
+            _url = "/salarie";
+        }
+        else if (_claimRole.Value == "Fournisseur")
+        {
+            _url = "/fournisseur";
+        }
+
+        if (_url != "/")
+        {
+            Navigation.NavigateTo(_url, false, true);
         }
     }
 
@@ -97,14 +124,29 @@
             return;
         }
 
-        var _url = _reponse!.Role switch
+        if (_reponse == null)
         {
-            Enum_Role.Admin => "/admin",
-            Enum_Role.Patron => "/patron",
-            Enum_Role.Salarie => "/salarie",
-            Enum_Role.Fournisseur => "/fournisseur",
-            _ => "/"
-        };
+            return;
+        }
+
+        string _url = "/";
+        if (_reponse.Role == Enum_Role.Admin)
+        {
+            _url = "/admin";
+        }
+        else if (_reponse.Role == Enum_Role.Patron)
+        {
+            _url = "/patron";
+        }
+        else if (_reponse.Role == Enum_Role.Salarie)
+        {
+            _url = "/salarie";
+        }
+        else if (_reponse.Role == Enum_Role.Fournisseur)
+        {
+            _url = "/fournisseur";
+        }
+
         Navigation.NavigateTo(_url);
     }
 }

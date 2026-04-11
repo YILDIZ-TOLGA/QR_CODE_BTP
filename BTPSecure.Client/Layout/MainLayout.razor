@@ -20,11 +20,19 @@
 
             <AuthorizeView>
                 <Authorized>
+                    @{
+                        string _emailHeader = "";
+                        var _claimEmailHeader = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email);
+                        if (_claimEmailHeader != null)
+                        {
+                            _emailHeader = _claimEmailHeader.Value;
+                        }
+                    }
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
                         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                             <RadzenIcon Icon="account_circle" Style="color: rgba(255,255,255,0.8); font-size: 1.3rem;" />
                             <RadzenText TextStyle="TextStyle.Body2" Style="color: rgba(255,255,255,0.9);">
-                                @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                                @_emailHeader
                             </RadzenText>
                         </RadzenStack>
                         <RadzenButton Text="Déconnexion" Icon="logout" Variant="Variant.Text"
@@ -56,11 +64,19 @@
 
         <AuthorizeView>
             <Authorized>
+                @{
+                    string _emailSidebar = "";
+                    var _claimEmailSidebar = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email);
+                    if (_claimEmailSidebar != null)
+                    {
+                        _emailSidebar = _claimEmailSidebar.Value;
+                    }
+                }
                 <RadzenStack Gap="0.5rem" Style="padding: 1rem; border-top: 1px solid var(--rz-border); background: var(--rz-base-50);">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                         <RadzenIcon Icon="account_circle" Style="color: var(--rz-text-secondary-color); font-size: 1.3rem;" />
                         <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                            @_emailSidebar
                         </RadzenText>
                     </RadzenStack>
                     <RadzenButton Text="Déconnexion" Icon="logout" ButtonStyle="ButtonStyle.Danger"
