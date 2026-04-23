@@ -1,14 +1,18 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject S_Auth SAuth
+@inject AuthenticationStateProvider AuthStateProvider
 
 <RadzenLayout>
     <RadzenHeader>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween"
                      Style="padding: 0 1.25rem; width: 100%; height: 100%;">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
-                <RadzenButton Icon="menu" Click="@(() => _sidebarExpanded = !_sidebarExpanded)"
-                              Variant="Variant.Text" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" />
+                @if (_estConnecte)
+                {
+                    <RadzenButton Icon="menu" Click="@(() => _sidebarExpanded = !_sidebarExpanded)"
+                                  Variant="Variant.Text" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" />
+                }
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem"
                              Style="cursor: pointer;" @onclick='() => Navigation.NavigateTo("/")'>
                     <RadzenIcon Icon="shield" Style="color: white; font-size: 1.5rem;" />
@@ -18,73 +22,59 @@
                 </RadzenStack>
             </RadzenStack>
 
-            <AuthorizeView>
-                <Authorized>
-                    @{
-                        string _emailHeader = "";
-                        var _claimEmailHeader = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email);
-                        if (_claimEmailHeader != null)
-                        {
-                            _emailHeader = _claimEmailHeader.Value;
-                        }
-                    }
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                            <RadzenIcon Icon="account_circle" Style="color: rgba(255,255,255,0.8); font-size: 1.3rem;" />
-                            <RadzenText TextStyle="TextStyle.Body2" Style="color: rgba(255,255,255,0.9);">
-                                @_emailHeader
-                            </RadzenText>
-                        </RadzenStack>
-                        <RadzenButton Text="Déconnexion" Icon="logout" Variant="Variant.Text"
-                                      ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="Deconnecter" />
+            @if (_estConnecte)
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="account_circle" Style="color: rgba(255,255,255,0.8); font-size: 1.3rem;" />
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: rgba(255,255,255,0.9);">
+                            @_email
+                        </RadzenText>
                     </RadzenStack>
-                </Authorized>
-            </AuthorizeView>
+                    <RadzenButton Text="Déconnexion" Icon="logout" Variant="Variant.Text"
+                                  ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="Deconnecter" />
+                </RadzenStack>
+            }
         </RadzenStack>
     </RadzenHeader>
 
-    <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="z-index: 2; display: flex; flex-direction: column;">
-        <div style="flex: 1; overflow-y: auto;">
-            <RadzenPanelMenu>
-                <AuthorizeView Roles="Admin">
-                    <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings" Path="admin" />
-                </AuthorizeView>
-                <AuthorizeView Roles="Patron">
-                    <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" Match="NavLinkMatch.All" />
-                    <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" Match="NavLinkMatch.All" />
-                </AuthorizeView>
-                <AuthorizeView Roles="Salarie">
-                    <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="salarie" />
-                </AuthorizeView>
-                <AuthorizeView Roles="Fournisseur">
-                    <RadzenPanelMenuItem Text="Valider un code" Icon="verified" Path="fournisseur" />
-                </AuthorizeView>
-            </RadzenPanelMenu>
-        </div>
-
-        <AuthorizeView>
-            <Authorized>
-                @{
-                    string _emailSidebar = "";
-                    var _claimEmailSidebar = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email);
-                    if (_claimEmailSidebar != null)
+    @if (_estConnecte)
+    {
+        <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="z-index: 2; display: flex; flex-direction: column;">
+            <div style="flex: 1; overflow-y: auto;">
+                <RadzenPanelMenu>
+                    @if (_role == "Admin")
                     {
-                        _emailSidebar = _claimEmailSidebar.Value;
+                        <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings" Path="admin" Match="NavLinkMatch.All" />
                     }
-                }
-                <RadzenStack Gap="0.5rem" Style="padding: 1rem; border-top: 1px solid var(--rz-border); background: var(--rz-base-50);">
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <RadzenIcon Icon="account_circle" Style="color: var(--rz-text-secondary-color); font-size: 1.3rem;" />
-                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            @_emailSidebar
-                        </RadzenText>
-                    </RadzenStack>
-                    <RadzenButton Text="Déconnexion" Icon="logout" ButtonStyle="ButtonStyle.Danger"
-                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;" Click="Deconnecter" />
+                    @if (_role == "Patron")
+                    {
+                        <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" Match="NavLinkMatch.All" />
+                    }
+                    @if (_role == "Salarie")
+                    {
+                        <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="salarie" Match="NavLinkMatch.All" />
+                    }
+                    @if (_role == "Fournisseur")
+                    {
+                        <RadzenPanelMenuItem Text="Valider un code" Icon="verified" Path="fournisseur" Match="NavLinkMatch.All" />
+                    }
+                </RadzenPanelMenu>
+            </div>
+
+            <RadzenStack Gap="0.5rem" Style="padding: 1rem; border-top: 1px solid var(--rz-border); background: var(--rz-base-50);">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenIcon Icon="account_circle" Style="color: var(--rz-text-secondary-color); font-size: 1.3rem;" />
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @_email
+                    </RadzenText>
                 </RadzenStack>
-            </Authorized>
-        </AuthorizeView>
-    </RadzenSidebar>
+                <RadzenButton Text="Déconnexion" Icon="logout" ButtonStyle="ButtonStyle.Danger"
+                              Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;" Click="Deconnecter" />
+            </RadzenStack>
+        </RadzenSidebar>
+    }
 
     <RadzenBody>
         <RadzenRow Style="padding: 1.5rem;">
@@ -99,6 +89,37 @@
 
 @code {
     private bool _sidebarExpanded = true;
+    private bool _estConnecte = false;
+    private string _email = "";
+    private string _role = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var _etat = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        if (_etat.User.Identity == null)
+        {
+            return;
+        }
+        if (!_etat.User.Identity.IsAuthenticated)
+        {
+            return;
+        }
+
+        _estConnecte = true;
+
+        var _claimEmail = _etat.User.FindFirst(System.Security.Claims.ClaimTypes.Email);
+        if (_claimEmail != null)
+        {
+            _email = _claimEmail.Value;
+        }
+
+        var _claimRole = _etat.User.FindFirst(System.Security.Claims.ClaimTypes.Role);
+        if (_claimRole != null)
+        {
+            _role = _claimRole.Value;
+        }
+    }
 
     private async Task Deconnecter()
     {
