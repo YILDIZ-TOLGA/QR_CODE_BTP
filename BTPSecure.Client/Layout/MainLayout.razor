@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager Navigation
 @inject S_Auth SAuth
 @inject AuthenticationStateProvider AuthStateProvider
@@ -95,14 +96,25 @@
 
     protected override async Task OnInitializedAsync()
     {
+        AuthStateProvider.AuthenticationStateChanged += OnAuthStateChanged;
+        await MettreAJourEtat();
+    }
+
+    private async void OnAuthStateChanged(Task<AuthenticationState> p_tache)
+    {
+        await MettreAJourEtat();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task MettreAJourEtat()
+    {
         var _etat = await AuthStateProvider.GetAuthenticationStateAsync();
 
-        if (_etat.User.Identity == null)
+        if (_etat.User.Identity == null || !_etat.User.Identity.IsAuthenticated)
         {
-            return;
-        }
-        if (!_etat.User.Identity.IsAuthenticated)
-        {
+            _estConnecte = false;
+            _email = "";
+            _role = "";
             return;
         }
 
@@ -119,6 +131,11 @@
         {
             _role = _claimRole.Value;
         }
+    }
+
+    public void Dispose()
+    {
+        AuthStateProvider.AuthenticationStateChanged -= OnAuthStateChanged;
     }
 
     private async Task Deconnecter()
