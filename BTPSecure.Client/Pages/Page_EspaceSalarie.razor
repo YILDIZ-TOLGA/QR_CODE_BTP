@@ -88,32 +88,38 @@ else
             }
             else
             {
-                <RadzenDataGrid Data="_entreprisesAcceptees" TItem="DTO_InvitationAffichage"
-                                Density="Density.Compact" GridLines="DataGridGridLines.Horizontal">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="DTO_InvitationAffichage" Property="NomEntreprise" Title="Entreprise" MinWidth="150px">
-                            <Template Context="e">
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                    <RadzenIcon Icon="business" Style="font-size: 1.2rem; color: var(--rz-primary);" />
-                                    <RadzenText Style="font-weight: 600;">@e.NomEntreprise</RadzenText>
+                <RadzenRow Gap="1rem">
+                    @foreach (var _ent in _entreprisesAcceptees)
+                    {
+                        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                                <RadzenStack Gap="0.75rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+                                        <RadzenIcon Icon="business" Style="font-size: 2rem; color: var(--rz-primary);" />
+                                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 600;">@_ent.NomEntreprise</RadzenText>
+                                    </RadzenStack>
+
+                                    <RadzenStack Gap="0.4rem">
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            <RadzenText TextStyle="TextStyle.Body2">Patron : @_ent.PrenomPatron @_ent.NomPatron</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenIcon Icon="event" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                                Membre depuis le @_ent.DateAjout.ToLocalTime().ToString("dd/MM/yyyy")
+                                            </RadzenText>
+                                        </RadzenStack>
+                                    </RadzenStack>
+
+                                    <RadzenButton Text="Quitter l'entreprise" Icon="exit_to_app" ButtonStyle="ButtonStyle.Danger"
+                                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                                  Click="() => QuitterEntreprise(_ent)" />
                                 </RadzenStack>
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_InvitationAffichage" Title="Patron" MinWidth="150px">
-                            <Template Context="e">@e.PrenomPatron @e.NomPatron</Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_InvitationAffichage" Title="Membre depuis" Width="150px">
-                            <Template Context="e">@e.DateAjout.ToLocalTime().ToString("dd/MM/yyyy")</Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_InvitationAffichage" Title="" Width="120px" TextAlign="TextAlign.Center" Sortable="false">
-                            <Template Context="e">
-                                <RadzenButton Text="Quitter" Icon="exit_to_app" ButtonStyle="ButtonStyle.Danger"
-                                              Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                              Click="() => QuitterEntreprise(e)" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    }
+                </RadzenRow>
             }
         </RadzenCard>
 
