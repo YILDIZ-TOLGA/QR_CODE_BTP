@@ -76,72 +76,71 @@ else
                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Gestion des entreprises</RadzenText>
             </RadzenStack>
 
-            <RadzenDataGrid Data="_entreprises" TItem="DTO_EntrepriseAdmin" AllowPaging="true" PageSize="15"
-                            AllowSorting="true" AllowFiltering="true" FilterMode="FilterMode.Simple"
-                            Density="Density.Compact" GridLines="DataGridGridLines.Horizontal" AllowColumnResize="true">
-                <Columns>
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Property="Nom" Title="Entreprise" MinWidth="150px">
-                        <Template Context="e">
-                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                <RadzenIcon Icon="business" Style="font-size: 1.2rem; color: var(--rz-text-secondary-color);" />
-                                <RadzenText Style="font-weight: 600;">@e.Nom</RadzenText>
+            <RadzenRow Gap="1rem">
+                @foreach (var _ent in _entreprises)
+                {
+                    <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                        <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                            <RadzenStack Gap="0.75rem">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                                        <RadzenIcon Icon="business" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                                        <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_ent.Nom</RadzenText>
+                                    </RadzenStack>
+                                    @if (_ent.EstAutorisee)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Autorisée" IsPill="true" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="En attente" IsPill="true" />
+                                    }
+                                </RadzenStack>
+
+                                <RadzenStack Gap="0.4rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                        <RadzenText TextStyle="TextStyle.Body2">@_ent.PrenomPatron @_ent.NomPatron</RadzenText>
+                                    </RadzenStack>
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis;">@_ent.EmailPatron</RadzenText>
+                                    </RadzenStack>
+                                    @if (!string.IsNullOrEmpty(_ent.Siret))
+                                    {
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenIcon Icon="pin" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">SIRET : @_ent.Siret</RadzenText>
+                                        </RadzenStack>
+                                    }
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="event" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Créée le @_ent.DateCreation.ToLocalTime().ToString("dd/MM/yyyy")</RadzenText>
+                                    </RadzenStack>
+                                </RadzenStack>
+
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_ent.NombreSalaries} salarié(s)")" IsPill="true" />
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_ent.NombreCodes} code(s)")" IsPill="true" />
+                                </RadzenStack>
+
+                                @if (_ent.EstAutorisee)
+                                {
+                                    <RadzenButton Text="Bloquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
+                                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                                  Click="() => Basculer(_ent)" />
+                                }
+                                else
+                                {
+                                    <RadzenButton Text="Autoriser" Icon="check_circle" ButtonStyle="ButtonStyle.Success"
+                                                  Variant="Variant.Flat" Size="ButtonSize.Small" Style="width: 100%;"
+                                                  Click="() => Basculer(_ent)" />
+                                }
                             </RadzenStack>
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Title="Patron" MinWidth="180px">
-                        <Template Context="e">
-                            <RadzenStack Gap="0">
-                                <RadzenText TextStyle="TextStyle.Body2">@e.PrenomPatron @e.NomPatron</RadzenText>
-                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@e.EmailPatron</RadzenText>
-                            </RadzenStack>
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Property="Siret" Title="SIRET" Width="140px" />
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Title="Créée le" Width="120px" Property="DateCreation" SortOrder="SortOrder.Descending">
-                        <Template Context="e">
-                            @e.DateCreation.ToLocalTime().ToString("dd/MM/yyyy")
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Title="Salariés" Width="90px" TextAlign="TextAlign.Center" Property="NombreSalaries">
-                        <Template Context="e">
-                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@e.NombreSalaries.ToString()" IsPill="true" />
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Title="Codes" Width="80px" TextAlign="TextAlign.Center" Property="NombreCodes">
-                        <Template Context="e">
-                            <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@e.NombreCodes.ToString()" IsPill="true" />
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Title="Statut" Width="130px" TextAlign="TextAlign.Center" Property="EstAutorisee">
-                        <Template Context="e">
-                            @if (e.EstAutorisee)
-                            {
-                                <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Autorisée" IsPill="true" />
-                            }
-                            else
-                            {
-                                <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="En attente" IsPill="true" />
-                            }
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="DTO_EntrepriseAdmin" Title="Action" Width="160px" TextAlign="TextAlign.Center" Sortable="false" Filterable="false">
-                        <Template Context="e">
-                            @if (e.EstAutorisee)
-                            {
-                                <RadzenButton Text="Bloquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
-                                              Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                              Click="() => Basculer(e)" />
-                            }
-                            else
-                            {
-                                <RadzenButton Text="Autoriser" Icon="check_circle" ButtonStyle="ButtonStyle.Success"
-                                              Variant="Variant.Flat" Size="ButtonSize.Small"
-                                              Click="() => Basculer(e)" />
-                            }
-                        </Template>
-                    </RadzenDataGridColumn>
-                </Columns>
-            </RadzenDataGrid>
+                        </RadzenCard>
+                    </RadzenColumn>
+                }
+            </RadzenRow>
         </RadzenCard>
     </RadzenStack>
 }
@@ -161,7 +160,15 @@ else
         try
         {
             var _estAutorisee = p_entreprise.EstAutorisee;
-            var _texteAction = _estAutorisee ? "Bloquer" : "Autoriser";
+            string _texteAction;
+            if (_estAutorisee)
+            {
+                _texteAction = "Bloquer";
+            }
+            else
+            {
+                _texteAction = "Autoriser";
+            }
             var _confirm = await Dialog.Confirm(
                 $"Voulez-vous {_texteAction.ToLower()} l'entreprise « {p_entreprise.Nom} » ?",
                 "Confirmation",

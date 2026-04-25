@@ -122,32 +122,40 @@ else
             }
             else
             {
-                <RadzenDataGrid Data="_salaries" TItem="DTO_SalarieAffichage" AllowPaging="true" PageSize="10"
-                                Density="Density.Compact" AllowColumnResize="true" GridLines="DataGridGridLines.Horizontal">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Nom" Title="Nom" MinWidth="120px" />
-                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Prenom" Title="Prénom" MinWidth="120px" />
-                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Property="Email" Title="Email" MinWidth="200px" />
-                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Title="Statut" Width="130px" TextAlign="TextAlign.Center">
-                            <Template Context="s">
-                                @if (s.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
-                                {
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Accepté" IsPill="true" />
-                                }
-                                else
-                                {
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="En attente" IsPill="true" />
-                                }
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_SalarieAffichage" Title="" Width="60px" TextAlign="TextAlign.Center" Sortable="false" Filterable="false">
-                            <Template Context="s">
-                                <RadzenButton Icon="person_remove" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
-                                              Size="ButtonSize.Medium" Click="() => RetirerSalarie(s)" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                <RadzenRow Gap="1rem">
+                    @foreach (var _sal in _salaries)
+                    {
+                        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                                <RadzenStack Gap="0.75rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                                            <RadzenIcon Icon="account_circle" Style="font-size: 1.8rem; color: var(--rz-primary);" />
+                                            <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_sal.Prenom @_sal.Nom</RadzenText>
+                                        </RadzenStack>
+                                        @if (_sal.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Accepté" IsPill="true" />
+                                        }
+                                        else
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="En attente" IsPill="true" />
+                                        }
+                                    </RadzenStack>
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_sal.Email</RadzenText>
+                                    </RadzenStack>
+
+                                    <RadzenButton Text="Retirer" Icon="person_remove" ButtonStyle="ButtonStyle.Danger"
+                                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                                  Click="() => RetirerSalarie(_sal)" />
+                                </RadzenStack>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    }
+                </RadzenRow>
             }
         </RadzenCard>
 
@@ -175,45 +183,62 @@ else
             }
             else
             {
-                <RadzenDataGrid Data="_codes" TItem="DTO_CodeAffichage" AllowPaging="true" PageSize="10" AllowSorting="true"
-                                Density="Density.Compact" AllowColumnResize="true" GridLines="DataGridGridLines.Horizontal">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Property="Valeur" Title="Code" Width="140px">
-                            <Template Context="c">
-                                <RadzenText Style="font-family: monospace; font-weight: 700; font-size: 1rem; letter-spacing: 1px;">@c.Valeur</RadzenText>
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Salarié" MinWidth="150px">
-                            <Template Context="c">@c.PrenomSalarie @c.NomSalarie</Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Type" Width="110px" TextAlign="TextAlign.Center">
-                            <Template Context="c">
-                                <RadzenBadge BadgeStyle="@(c.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
-                                             Text="@c.TypeCode.ToString()" IsPill="true" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Statut" Width="110px" TextAlign="TextAlign.Center">
-                            <Template Context="c">
-                                <RadzenBadge BadgeStyle="@ObtenirStyleStatut(c.Statut)" Text="@c.Statut.ToString()" IsPill="true" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Property="NumeroCommande" Title="N° Commande" MinWidth="130px" />
-                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="Expiration" Width="160px">
-                            <Template Context="c">
-                                @(c.DateExpiration?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DTO_CodeAffichage" Title="" Width="60px" TextAlign="TextAlign.Center" Sortable="false" Filterable="false">
-                            <Template Context="c">
-                                @if (c.Statut == Enum_StatutCode.Actif)
-                                {
-                                    <RadzenButton Icon="block" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
-                                                  Size="ButtonSize.Medium" Click="() => RevoquerCode(c)" />
-                                }
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                <RadzenRow Gap="1rem">
+                    @foreach (var _c in _codes)
+                    {
+                        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                                <RadzenStack Gap="0.75rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                        @if (_c.TypeCode == Enum_TypeCode.Confiance)
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_c.TypeCode.ToString()" IsPill="true" />
+                                        }
+                                        else
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@_c.TypeCode.ToString()" IsPill="true" />
+                                        }
+                                        <RadzenBadge BadgeStyle="@ObtenirStyleStatut(_c.Statut)" Text="@_c.Statut.ToString()" IsPill="true" />
+                                    </RadzenStack>
+
+                                    <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-primary); padding: 0.75rem;">
+                                        <RadzenText TextStyle="TextStyle.H4" TextAlign="TextAlign.Center"
+                                                    Style="font-family: monospace; letter-spacing: 3px; color: white; margin: 0;">
+                                            @_c.Valeur
+                                        </RadzenText>
+                                    </RadzenCard>
+
+                                    <RadzenStack Gap="0.4rem">
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            <RadzenText TextStyle="TextStyle.Body2">@_c.PrenomSalarie @_c.NomSalarie</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            <RadzenText TextStyle="TextStyle.Body2">@_c.NumeroCommande</RadzenText>
+                                        </RadzenStack>
+                                        @if (_c.DateExpiration.HasValue)
+                                        {
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                                <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                                    Expire le @_c.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                </RadzenText>
+                                            </RadzenStack>
+                                        }
+                                    </RadzenStack>
+
+                                    @if (_c.Statut == Enum_StatutCode.Actif)
+                                    {
+                                        <RadzenButton Text="Révoquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
+                                                      Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                                      Click="() => RevoquerCode(_c)" />
+                                    }
+                                </RadzenStack>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    }
+                </RadzenRow>
             }
         </RadzenCard>
     </RadzenStack>
@@ -309,12 +334,24 @@ else
         }
     }
 
-    private static BadgeStyle ObtenirStyleStatut(Enum_StatutCode p_statut) => p_statut switch
+    private static BadgeStyle ObtenirStyleStatut(Enum_StatutCode p_statut)
     {
-        Enum_StatutCode.Actif => BadgeStyle.Success,
-        Enum_StatutCode.Utilise => BadgeStyle.Info,
-        Enum_StatutCode.Expire => BadgeStyle.Light,
-        Enum_StatutCode.Revoque => BadgeStyle.Danger,
-        _ => BadgeStyle.Light
-    };
+        if (p_statut == Enum_StatutCode.Actif)
+        {
+            return BadgeStyle.Success;
+        }
+        if (p_statut == Enum_StatutCode.Utilise)
+        {
+            return BadgeStyle.Info;
+        }
+        if (p_statut == Enum_StatutCode.Expire)
+        {
+            return BadgeStyle.Light;
+        }
+        if (p_statut == Enum_StatutCode.Revoque)
+        {
+            return BadgeStyle.Danger;
+        }
+        return BadgeStyle.Light;
+    }
 }
