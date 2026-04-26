@@ -130,6 +130,7 @@ public class S_Code
             NumeroCommande = _code.NumeroCommande,
             NomEntreprise = _code.NomEntreprise,
             ListeMateriaux = _code.ListeMateriaux,
+            Info = _code.Info,
             PdfBase64 = Convert.ToBase64String(_pdf)
         };
 

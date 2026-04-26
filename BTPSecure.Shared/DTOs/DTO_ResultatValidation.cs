@@ -9,5 +9,6 @@ public class DTO_ResultatValidation
     public string? NumeroCommande { get; set; }
     public string? NomEntreprise { get; set; }
     public string? ListeMateriaux { get; set; }
+    public string? Info { get; set; }
     public string? PdfBase64 { get; set; }
 }

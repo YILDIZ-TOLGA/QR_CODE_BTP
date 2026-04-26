@@ -61,6 +61,12 @@ public class S_Pdf
                         col.Item().PaddingTop(15).Text("Liste des matériaux :").Bold();
                         col.Item().PaddingTop(5).Background(Colors.Grey.Lighten4).Padding(10).Text(p_code.ListeMateriaux);
                     }
+
+                    if (!string.IsNullOrWhiteSpace(p_code.Info))
+                    {
+                        col.Item().PaddingTop(15).Text("Informations complémentaires :").Bold();
+                        col.Item().PaddingTop(5).Background(Colors.Grey.Lighten4).Padding(10).Text(p_code.Info);
+                    }
                 });
 
                 page.Footer().Column(col =>
