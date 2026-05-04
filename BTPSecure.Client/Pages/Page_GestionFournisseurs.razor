@@ -1,0 +1,156 @@
+@page "/patron/fournisseurs"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@inject Services.S_FournisseurContact SFournisseur
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1.5rem;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenIcon Icon="contacts" Style="font-size: 2rem; color: var(--rz-primary);" />
+        <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Mes fournisseurs</RadzenText>
+    </RadzenStack>
+    <RadzenButton Text="Ajouter" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="OuvrirAjout" />
+</RadzenStack>
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else if (_fournisseurs.Count == 0)
+{
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 3rem 0;">
+            <RadzenIcon Icon="domain_disabled" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-text-secondary-color);">
+                Aucun fournisseur enregistré
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); text-align: center;">
+                Ajoutez vos fournisseurs pour les réutiliser lors de la création de codes.
+            </RadzenText>
+            <RadzenButton Text="Ajouter mon premier fournisseur" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                          Click="OuvrirAjout" />
+        </RadzenStack>
+    </RadzenCard>
+}
+else
+{
+    <RadzenRow Gap="1rem">
+        @foreach (var _f in _fournisseurs)
+        {
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                    <RadzenStack Gap="0.75rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenIcon Icon="business" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                            <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_f.NomEntreprise</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0.4rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis;">@_f.Email</RadzenText>
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="pin" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); font-family: monospace;">SIRET : @_f.Siret</RadzenText>
+                            </RadzenStack>
+                            @if (!string.IsNullOrEmpty(_f.Siren))
+                            {
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                    <RadzenIcon Icon="pin" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); font-family: monospace;">SIREN : @_f.Siren</RadzenText>
+                                </RadzenStack>
+                            }
+                        </RadzenStack>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                            <RadzenButton Text="Modifier" Icon="edit" ButtonStyle="ButtonStyle.Primary"
+                                          Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
+                                          Click="() => OuvrirModification(_f)" />
+                            <RadzenButton Text="Supprimer" Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                                          Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
+                                          Click="() => Supprimer(_f)" />
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        }
+    </RadzenRow>
+}
+
+@code {
+    private List<DTO_FournisseurContact> _fournisseurs = new();
+    private bool _chargement = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Recharger();
+    }
+
+    private async Task Recharger()
+    {
+        _chargement = true;
+        _fournisseurs = await SFournisseur.Lister();
+        _chargement = false;
+    }
+
+    private async Task OuvrirAjout()
+    {
+        var _result = await Dialog.OpenAsync<Comp_DialogFournisseur>("Ajouter un fournisseur",
+            new Dictionary<string, object?>(),
+            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = false });
+
+        if (_result is DTO_CreerFournisseurContact _dto)
+        {
+            var (_succes, _message) = await SFournisseur.Creer(_dto);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                await Recharger();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private async Task OuvrirModification(DTO_FournisseurContact p_f)
+    {
+        var _result = await Dialog.OpenAsync<Comp_DialogFournisseur>("Modifier le fournisseur",
+            new Dictionary<string, object?> { ["Initial"] = p_f },
+            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = false });
+
+        if (_result is DTO_CreerFournisseurContact _dto)
+        {
+            var (_succes, _message) = await SFournisseur.Modifier(p_f.Id, _dto);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                await Recharger();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private async Task Supprimer(DTO_FournisseurContact p_f)
+    {
+        var _confirm = await Dialog.Confirm(
+            $"Supprimer le fournisseur « {p_f.NomEntreprise} » du carnet ?",
+            "Confirmation",
+            new ConfirmOptions { OkButtonText = "Supprimer", CancelButtonText = "Annuler" });
+
+        if (_confirm == true)
+        {
+            var (_succes, _message) = await SFournisseur.Supprimer(p_f.Id);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                await Recharger();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+}

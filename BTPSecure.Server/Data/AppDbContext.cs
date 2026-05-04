@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<E_Entreprise> Entreprises => Set<E_Entreprise>();
     public DbSet<E_SalarieEntreprise> SalariesEntreprises => Set<E_SalarieEntreprise>();
     public DbSet<E_Code> Codes => Set<E_Code>();
+    public DbSet<E_FournisseurContact> FournisseursContacts => Set<E_FournisseurContact>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -90,6 +91,27 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(c => c.EntrepriseId)
                 .OnDelete(DeleteBehavior.Restrict);
+            e.Property(c => c.Reference).HasMaxLength(300);
+            e.HasOne(c => c.FournisseurContact)
+                .WithMany()
+                .HasForeignKey(c => c.FournisseurContactId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // E_FournisseurContact
+        p_modelBuilder.Entity<E_FournisseurContact>(e =>
+        {
+            e.ToTable("fournisseurs_contacts");
+            e.HasKey(f => f.Id);
+            e.Property(f => f.NomEntreprise).IsRequired().HasMaxLength(200);
+            e.Property(f => f.Email).IsRequired().HasMaxLength(256);
+            e.Property(f => f.Siret).IsRequired().HasMaxLength(14);
+            e.Property(f => f.Siren).HasMaxLength(9);
+            e.HasOne(f => f.Patron)
+                .WithMany()
+                .HasForeignKey(f => f.PatronId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(f => new { f.PatronId, f.Siret });
         });
     }
 }

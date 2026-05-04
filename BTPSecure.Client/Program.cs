@@ -22,6 +22,7 @@ builder.Services.AddScoped<S_Entreprise>();
 builder.Services.AddScoped<S_Admin>();
 builder.Services.AddScoped<S_Invitation>();
 builder.Services.AddScoped<S_Profil>();
+builder.Services.AddScoped<S_FournisseurContact>();
 
 builder.Services.AddRadzenComponents();
 

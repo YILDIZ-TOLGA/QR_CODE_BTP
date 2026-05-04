@@ -11,17 +11,19 @@ public class S_Code
     private readonly DAO_Code _daoCode;
     private readonly DAO_Entreprise _daoEntreprise;
     private readonly DAO_Utilisateur _daoUtilisateur;
+    private readonly DAO_FournisseurContact _daoFournisseurContact;
     private readonly S_Pdf _sPdf;
     private readonly ILogger<S_Code> _logger;
 
     private const string CARACTERES_AUTORISES = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
     public S_Code(DAO_Code p_daoCode, DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
-        S_Pdf p_sPdf, ILogger<S_Code> p_logger)
+        DAO_FournisseurContact p_daoFournisseurContact, S_Pdf p_sPdf, ILogger<S_Code> p_logger)
     {
         _daoCode = p_daoCode;
         _daoEntreprise = p_daoEntreprise;
         _daoUtilisateur = p_daoUtilisateur;
+        _daoFournisseurContact = p_daoFournisseurContact;
         _sPdf = p_sPdf;
         _logger = p_logger;
     }
@@ -51,6 +53,57 @@ public class S_Code
         if (p_dto.TypeCode == Enum_TypeCode.Liste && string.IsNullOrWhiteSpace(p_dto.ListeMateriaux))
             return (false, "La liste des matériaux est obligatoire pour un code Liste.", null);
 
+        int? _fournisseurContactId = null;
+        string? _reference = null;
+        if (p_dto.UtiliserFournisseur)
+        {
+            E_FournisseurContact? _contact = null;
+
+            if (p_dto.FournisseurContactId.HasValue)
+            {
+                _contact = await _daoFournisseurContact.ObtenirParId(p_dto.FournisseurContactId.Value);
+                if (_contact == null || _contact.PatronId != p_patronId)
+                    return (false, "Fournisseur sélectionné introuvable.", null);
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(p_dto.NouveauFournisseurNomEntreprise)
+                    || string.IsNullOrWhiteSpace(p_dto.NouveauFournisseurEmail)
+                    || string.IsNullOrWhiteSpace(p_dto.NouveauFournisseurSiret))
+                    return (false, "Nom, email et SIRET du nouveau fournisseur sont obligatoires.", null);
+
+                var _siret = new string(p_dto.NouveauFournisseurSiret.Where(char.IsDigit).ToArray());
+                if (_siret.Length != 14)
+                    return (false, "Le SIRET du nouveau fournisseur doit contenir 14 chiffres.", null);
+
+                string? _siren = null;
+                if (!string.IsNullOrWhiteSpace(p_dto.NouveauFournisseurSiren))
+                {
+                    _siren = new string(p_dto.NouveauFournisseurSiren.Where(char.IsDigit).ToArray());
+                    if (_siren.Length != 9)
+                        return (false, "Le SIREN du nouveau fournisseur doit contenir 9 chiffres.", null);
+                }
+
+                _contact = await _daoFournisseurContact.ObtenirParPatronEtSiret(p_patronId, _siret);
+                if (_contact == null)
+                {
+                    _contact = new E_FournisseurContact
+                    {
+                        PatronId = p_patronId,
+                        NomEntreprise = p_dto.NouveauFournisseurNomEntreprise.Trim(),
+                        Email = p_dto.NouveauFournisseurEmail.Trim().ToLower(),
+                        Siret = _siret,
+                        Siren = _siren
+                    };
+                    await _daoFournisseurContact.Creer(_contact);
+                }
+            }
+
+            _fournisseurContactId = _contact.Id;
+            var _nomNettoye = _entreprise.Nom.Replace(" ", "-");
+            _reference = $"{_nomNettoye}-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
+        }
+
         var _valeur = await GenererValeurUnique();
 
         var _code = new E_Code
@@ -64,7 +117,9 @@ public class S_Code
             DureeValidite = p_dto.DureeValiditeHeures,
             PatronId = p_patronId,
             SalarieId = p_dto.SalarieId,
-            EntrepriseId = p_dto.EntrepriseId
+            EntrepriseId = p_dto.EntrepriseId,
+            FournisseurContactId = _fournisseurContactId,
+            Reference = _reference
         };
 
         if (p_dto.TypeCode == Enum_TypeCode.Confiance)
@@ -186,6 +241,28 @@ public class S_Code
         return $"{new string(_chars, 0, 4)}-{new string(_chars, 4, 4)}";
     }
 
+    public async Task<List<DTO_CommandeAVenir>> ObtenirCommandesAVenir(int p_fournisseurId)
+    {
+        var _utilisateur = await _daoUtilisateur.ObtenirParId(p_fournisseurId);
+        if (_utilisateur == null || string.IsNullOrEmpty(_utilisateur.Siret))
+            return new List<DTO_CommandeAVenir>();
+
+        var _codes = await _daoCode.ObtenirCommandesPourFournisseur(_utilisateur.Siret, _utilisateur.Siren);
+
+        return _codes.Select(c => new DTO_CommandeAVenir
+        {
+            CodeId = c.Id,
+            Reference = c.Reference ?? "",
+            NomEntreprisePatron = c.NomEntreprise,
+            NumeroCommande = c.NumeroCommande,
+            DateCreation = c.DateCreation,
+            DateExpiration = c.DateExpiration,
+            ListeMateriaux = c.ListeMateriaux,
+            Info = c.Info,
+            TypeCode = c.TypeCode
+        }).ToList();
+    }
+
     private static DTO_CodeAffichage VersDTO(E_Code p_code)
     {
         return new DTO_CodeAffichage
@@ -201,7 +278,9 @@ public class S_Code
             DateCreation = p_code.DateCreation,
             DateExpiration = p_code.DateExpiration,
             NomSalarie = p_code.Salarie?.Nom ?? "",
-            PrenomSalarie = p_code.Salarie?.Prenom ?? ""
+            PrenomSalarie = p_code.Salarie?.Prenom ?? "",
+            Reference = p_code.Reference,
+            NomFournisseurContact = p_code.FournisseurContact?.NomEntreprise
         };
     }
 }

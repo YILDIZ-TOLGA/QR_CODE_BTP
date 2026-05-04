@@ -24,4 +24,7 @@ public class E_Code
     public E_Utilisateur? Fournisseur { get; set; }
     public int EntrepriseId { get; set; }
     public E_Entreprise Entreprise { get; set; } = null!;
+    public string? Reference { get; set; }
+    public int? FournisseurContactId { get; set; }
+    public E_FournisseurContact? FournisseurContact { get; set; }
 }

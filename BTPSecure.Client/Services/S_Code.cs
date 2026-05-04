@@ -36,6 +36,21 @@ public class S_Code
         return _result ?? new List<DTO_CodeAffichage>();
     }
 
+    public async Task<List<DTO_CommandeAVenir>> ObtenirCommandesAVenir()
+    {
+        try
+        {
+            var _result = await _http.GetFromJsonAsync<List<DTO_CommandeAVenir>>("api/codes/commandes-a-venir");
+            if (_result == null)
+                return new List<DTO_CommandeAVenir>();
+            return _result;
+        }
+        catch
+        {
+            return new List<DTO_CommandeAVenir>();
+        }
+    }
+
     public async Task<(bool Succes, DTO_ResultatValidation? Resultat)> Valider(string p_valeur)
     {
         var _reponse = await _http.PostAsJsonAsync("api/codes/valider", new DTO_ValiderCode { Valeur = p_valeur });

@@ -11,6 +11,86 @@
 
 <RadzenRow JustifyContent="JustifyContent.Center">
     <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+
+        @if (_commandes.Count > 0)
+        {
+            <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1.5rem;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1rem;">
+                    <RadzenIcon Icon="local_shipping" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Commandes à venir</RadzenText>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_commandes.Count.ToString()" IsPill="true" />
+                </RadzenStack>
+
+                <RadzenStack Gap="1rem">
+                    @foreach (var _cmd in _commandes)
+                    {
+                        <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-base-100); padding: 1rem;">
+                            <RadzenStack Gap="0.6rem">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                                        <RadzenIcon Icon="business" Style="color: var(--rz-primary);" />
+                                        <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_cmd.NomEntreprisePatron</RadzenText>
+                                    </RadzenStack>
+                                    <RadzenBadge BadgeStyle="@(_cmd.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                                 Text="@_cmd.TypeCode.ToString()" IsPill="true" />
+                                </RadzenStack>
+
+                                <RadzenStack Gap="0.25rem">
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Référence</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace; font-weight: 600;">@_cmd.Reference</RadzenText>
+                                </RadzenStack>
+
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                    <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Commande : @_cmd.NumeroCommande</RadzenText>
+                                </RadzenStack>
+
+                                @if (_cmd.DateExpiration.HasValue)
+                                {
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                            Expire le @_cmd.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </RadzenText>
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrEmpty(_cmd.ListeMateriaux))
+                                {
+                                    <RadzenStack Gap="0.25rem">
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Matériaux</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_cmd.ListeMateriaux</RadzenText>
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrEmpty(_cmd.Info))
+                                {
+                                    <RadzenStack Gap="0.25rem">
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Info</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_cmd.Info</RadzenText>
+                                    </RadzenStack>
+                                }
+
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.End">
+                                    <RadzenFormField Text="Code à saisir" Variant="Variant.Outlined" Style="flex: 1;">
+                                        <Start><RadzenIcon Icon="key" /></Start>
+                                        <ChildContent>
+                                            <RadzenTextBox @bind-Value="_codesSaisis[_cmd.CodeId]"
+                                                           Style="width: 100%; font-family: monospace; text-transform: uppercase; letter-spacing: 2px;"
+                                                           Placeholder="XXXX-XXXX" MaxLength="9" />
+                                        </ChildContent>
+                                    </RadzenFormField>
+                                    <RadzenButton Text="Valider" Icon="check" ButtonStyle="ButtonStyle.Success"
+                                                  Click="() => ValiderCommande(_cmd.CodeId)"
+                                                  Disabled="@(string.IsNullOrWhiteSpace(ObtenirCodeSaisi(_cmd.CodeId)))" />
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    }
+                </RadzenStack>
+            </RadzenCard>
+        }
+
         <RadzenCard Variant="Variant.Outlined">
             <RadzenStack Gap="1.25rem">
                 <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">
@@ -107,6 +187,51 @@
     private string _valeurCode = string.Empty;
     private DTO_ResultatValidation? _resultat;
     private bool _enChargement;
+    private List<DTO_CommandeAVenir> _commandes = new();
+    private Dictionary<int, string> _codesSaisis = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ChargerCommandes();
+    }
+
+    private async Task ChargerCommandes()
+    {
+        _commandes = await SCode.ObtenirCommandesAVenir();
+        foreach (var _c in _commandes)
+        {
+            if (!_codesSaisis.ContainsKey(_c.CodeId))
+                _codesSaisis[_c.CodeId] = string.Empty;
+        }
+    }
+
+    private string ObtenirCodeSaisi(int p_codeId)
+    {
+        if (_codesSaisis.TryGetValue(p_codeId, out var _val))
+            return _val;
+        return string.Empty;
+    }
+
+    private async Task ValiderCommande(int p_codeId)
+    {
+        var _val = ObtenirCodeSaisi(p_codeId);
+        if (string.IsNullOrWhiteSpace(_val))
+            return;
+
+        var (_succes, _res) = await SCode.Valider(_val.Trim().ToUpper());
+        _resultat = _res;
+
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", "Code validé.");
+            _codesSaisis.Remove(p_codeId);
+            await ChargerCommandes();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _resultat?.Message ?? "Code invalide.");
+        }
+    }
 
     private async Task Valider()
     {
@@ -117,8 +242,14 @@
         _resultat = _res;
         _enChargement = false;
 
-        if (!_succes)
+        if (_succes)
+        {
+            await ChargerCommandes();
+        }
+        else
+        {
             Notification.Notify(NotificationSeverity.Error, "Erreur", _resultat?.Message ?? "Code invalide.");
+        }
     }
 
     private async Task TelechargerPdf()

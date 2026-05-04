@@ -49,6 +49,7 @@ public class DAO_Code
         var _codes = await _context.Codes
             .Include(c => c.Salarie)
             .Include(c => c.Entreprise)
+            .Include(c => c.FournisseurContact)
             .Where(c => c.PatronId == p_patronId)
             .OrderByDescending(c => c.DateCreation)
             .ToListAsync();
@@ -56,6 +57,25 @@ public class DAO_Code
         MettreAJourExpirations(_codes);
         await _context.SaveChangesAsync();
         return _codes;
+    }
+
+    public async Task<List<E_Code>> ObtenirCommandesPourFournisseur(string p_siret, string? p_siren)
+    {
+        var _maintenant = DateTime.UtcNow;
+        var _codes = await _context.Codes
+            .Include(c => c.FournisseurContact)
+            .Where(c => c.FournisseurContact != null
+                && c.Statut == Enum_StatutCode.Actif
+                && c.FournisseurContact!.Siret == p_siret
+                && (c.FournisseurContact.Siren == null || p_siren == null || c.FournisseurContact.Siren == p_siren)
+                && (c.DateExpiration == null || c.DateExpiration > _maintenant))
+            .OrderBy(c => c.DateExpiration)
+            .ThenByDescending(c => c.DateCreation)
+            .ToListAsync();
+
+        MettreAJourExpirations(_codes);
+        await _context.SaveChangesAsync();
+        return _codes.Where(c => c.Statut == Enum_StatutCode.Actif).ToList();
     }
 
     public async Task<List<E_Code>> ObtenirParSalarie(int p_salarieId)

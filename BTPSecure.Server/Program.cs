@@ -60,6 +60,7 @@ builder.Services.AddScoped<DAO_Utilisateur>();
 builder.Services.AddScoped<DAO_Code>();
 builder.Services.AddScoped<DAO_Entreprise>();
 builder.Services.AddScoped<DAO_Admin>();
+builder.Services.AddScoped<DAO_FournisseurContact>();
 
 // Services
 builder.Services.AddScoped<S_Auth>();
@@ -67,6 +68,7 @@ builder.Services.AddScoped<S_Code>();
 builder.Services.AddScoped<S_Entreprise>();
 builder.Services.AddScoped<S_Admin>();
 builder.Services.AddScoped<S_Invitation>();
+builder.Services.AddScoped<S_FournisseurContact>();
 builder.Services.AddSingleton<S_Pdf>();
 
 var app = builder.Build();

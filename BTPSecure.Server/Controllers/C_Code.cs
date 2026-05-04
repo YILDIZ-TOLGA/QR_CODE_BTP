@@ -57,6 +57,14 @@ public class C_Code : ControllerBase
         return Ok(_resultat);
     }
 
+    [HttpGet("commandes-a-venir")]
+    [Authorize(Roles = "Fournisseur")]
+    public async Task<IActionResult> ObtenirCommandesAVenir()
+    {
+        var _liste = await _sCode.ObtenirCommandesAVenir(ObtenirUtilisateurId());
+        return Ok(_liste);
+    }
+
     [HttpPost("revoquer/{p_id}")]
     [Authorize(Roles = "Patron")]
     public async Task<IActionResult> Revoquer(int p_id)

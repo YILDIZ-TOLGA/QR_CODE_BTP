@@ -1,0 +1,78 @@
+@inject DialogService Dialog
+
+<RadzenTemplateForm TItem="DTO_CreerFournisseurContact" Data="_dto" Submit="Valider">
+    <RadzenStack Gap="1rem">
+        <RadzenFormField Text="Nom de l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
+            <Start><RadzenIcon Icon="business" /></Start>
+            <ChildContent>
+                <RadzenTextBox @bind-Value="_dto.NomEntreprise" Name="Nom" Style="width: 100%;" />
+            </ChildContent>
+            <Helper>
+                <RadzenRequiredValidator Component="Nom" Text="Obligatoire." />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
+            <Start><RadzenIcon Icon="mail" /></Start>
+            <ChildContent>
+                <RadzenTextBox @bind-Value="_dto.Email" Name="Email" Style="width: 100%;" />
+            </ChildContent>
+            <Helper>
+                <RadzenRequiredValidator Component="Email" Text="Obligatoire." />
+                <RadzenEmailValidator Component="Email" Text="Email invalide." />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="SIRET (14 chiffres)" Variant="Variant.Outlined" Style="width: 100%;">
+            <Start><RadzenIcon Icon="pin" /></Start>
+            <ChildContent>
+                <RadzenTextBox @bind-Value="_dto.Siret" Name="Siret" Style="width: 100%;" Placeholder="12345678901234" />
+            </ChildContent>
+            <Helper>
+                <RadzenRequiredValidator Component="Siret" Text="Obligatoire." />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="SIREN (9 chiffres, optionnel)" Variant="Variant.Outlined" Style="width: 100%;">
+            <Start><RadzenIcon Icon="pin" /></Start>
+            <ChildContent>
+                <RadzenTextBox @bind-Value="_dto.Siren" Style="width: 100%;" Placeholder="Optionnel" />
+            </ChildContent>
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Annuler" Variant="Variant.Outlined" Click="Annuler" />
+            <RadzenButton Text="Enregistrer" Icon="save" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public DTO_FournisseurContact? Initial { get; set; }
+
+    private DTO_CreerFournisseurContact _dto = new();
+
+    protected override void OnInitialized()
+    {
+        if (Initial != null)
+        {
+            _dto = new DTO_CreerFournisseurContact
+            {
+                NomEntreprise = Initial.NomEntreprise,
+                Email = Initial.Email,
+                Siret = Initial.Siret,
+                Siren = Initial.Siren
+            };
+        }
+    }
+
+    private void Valider()
+    {
+        Dialog.Close(_dto);
+    }
+
+    private void Annuler()
+    {
+        Dialog.Close(null);
+    }
+}

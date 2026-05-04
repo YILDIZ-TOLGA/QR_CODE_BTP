@@ -2,6 +2,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
 @inject Services.S_Code SCode
 @inject Services.S_Entreprise SEntreprise
+@inject Services.S_FournisseurContact SFournisseur
 @inject NavigationManager Navigation
 @inject NotificationService Notification
 
@@ -48,6 +49,20 @@
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                                 <RadzenText Style="color: var(--rz-text-secondary-color);">Expiration</RadzenText>
                                 <RadzenText Style="font-weight: 600;">@_codeGenere.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</RadzenText>
+                            </RadzenStack>
+                        }
+                        @if (!string.IsNullOrEmpty(_codeGenere.NomFournisseurContact))
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">Fournisseur</RadzenText>
+                                <RadzenText Style="font-weight: 600;">@_codeGenere.NomFournisseurContact</RadzenText>
+                            </RadzenStack>
+                        }
+                        @if (!string.IsNullOrEmpty(_codeGenere.Reference))
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">Référence</RadzenText>
+                                <RadzenText Style="font-weight: 600; font-family: monospace; font-size: 0.85rem;">@_codeGenere.Reference</RadzenText>
                             </RadzenStack>
                         }
                     </RadzenStack>
@@ -141,6 +156,82 @@
                             </ChildContent>
                         </RadzenFormField>
 
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenCheckBox @bind-Value="_dto.UtiliserFournisseur" Name="UseFour" />
+                                <RadzenLabel Text="Choisir un fournisseur" Component="UseFour" />
+                            </RadzenStack>
+
+                            @if (_dto.UtiliserFournisseur)
+                            {
+                                <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-base-100); padding: 1rem;">
+                                    <RadzenStack Gap="1rem">
+                                        <RadzenSelectBar @bind-Value="_modeFournisseur" TValue="string" Size="ButtonSize.Small" Style="width: 100%;">
+                                            <Items>
+                                                <RadzenSelectBarItem Text="Existant" Value="@("existant")" Icon="contacts" />
+                                                <RadzenSelectBarItem Text="Nouveau" Value="@("nouveau")" Icon="person_add" />
+                                            </Items>
+                                        </RadzenSelectBar>
+
+                                        @if (_modeFournisseur == "existant")
+                                        {
+                                            @if (_fournisseurs.Count == 0)
+                                            {
+                                                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                                                    Aucun fournisseur dans votre carnet. Ajoutez-en un via « Mes fournisseurs » ou choisissez « Nouveau ».
+                                                </RadzenText>
+                                            }
+                                            else
+                                            {
+                                                <RadzenFormField Text="Fournisseur" Variant="Variant.Outlined" Style="width: 100%;">
+                                                    <Start><RadzenIcon Icon="business" /></Start>
+                                                    <ChildContent>
+                                                        <RadzenDropDown @bind-Value="_dto.FournisseurContactId" Data="_fournisseurs"
+                                                                        TextProperty="NomEntreprise" ValueProperty="Id" Style="width: 100%;"
+                                                                        Placeholder="Sélectionner un fournisseur..." />
+                                                    </ChildContent>
+                                                </RadzenFormField>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <RadzenFormField Text="Nom de l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
+                                                <Start><RadzenIcon Icon="business" /></Start>
+                                                <ChildContent>
+                                                    <RadzenTextBox @bind-Value="_dto.NouveauFournisseurNomEntreprise" Style="width: 100%;" />
+                                                </ChildContent>
+                                            </RadzenFormField>
+
+                                            <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
+                                                <Start><RadzenIcon Icon="mail" /></Start>
+                                                <ChildContent>
+                                                    <RadzenTextBox @bind-Value="_dto.NouveauFournisseurEmail" Style="width: 100%;" />
+                                                </ChildContent>
+                                            </RadzenFormField>
+
+                                            <RadzenFormField Text="SIRET (14 chiffres)" Variant="Variant.Outlined" Style="width: 100%;">
+                                                <Start><RadzenIcon Icon="pin" /></Start>
+                                                <ChildContent>
+                                                    <RadzenTextBox @bind-Value="_dto.NouveauFournisseurSiret" Style="width: 100%;" Placeholder="12345678901234" />
+                                                </ChildContent>
+                                            </RadzenFormField>
+
+                                            <RadzenFormField Text="SIREN (9 chiffres, optionnel)" Variant="Variant.Outlined" Style="width: 100%;">
+                                                <Start><RadzenIcon Icon="pin" /></Start>
+                                                <ChildContent>
+                                                    <RadzenTextBox @bind-Value="_dto.NouveauFournisseurSiren" Style="width: 100%;" Placeholder="Optionnel" />
+                                                </ChildContent>
+                                            </RadzenFormField>
+
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                                Ce fournisseur sera ajouté à votre carnet pour réutilisation future.
+                                            </RadzenText>
+                                        }
+                                    </RadzenStack>
+                                </RadzenCard>
+                            }
+                        </RadzenStack>
+
                         <RadzenButton Text="Générer le code" ButtonType="ButtonType.Submit" Icon="qr_code_2"
                                       ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large"
                                       Style="width: 100%;" IsBusy="_enChargement" />
@@ -159,6 +250,8 @@
     private string _unite = "heures";
     private List<SalarieItem> _salaries = new();
     private DTO_EntrepriseAffichage? _entreprise;
+    private List<DTO_FournisseurContact> _fournisseurs = new();
+    private string _modeFournisseur = "existant";
 
     private List<object> _unites = new()
     {
@@ -180,6 +273,7 @@
                 Label = $"{s.Prenom} {s.Nom} ({s.Email})"
             }).ToList();
         }
+        _fournisseurs = await SFournisseur.Lister();
     }
 
     private async Task Creer()
@@ -188,12 +282,35 @@
 
         if (_dto.TypeCode == Enum_TypeCode.Confiance)
         {
-            _dto.DureeValiditeHeures = _unite switch
+            if (_unite == "jours")
+                _dto.DureeValiditeHeures = _dureeNumerique * 24;
+            else if (_unite == "semaines")
+                _dto.DureeValiditeHeures = _dureeNumerique * 24 * 7;
+            else
+                _dto.DureeValiditeHeures = _dureeNumerique;
+        }
+
+        if (_dto.UtiliserFournisseur)
+        {
+            if (_modeFournisseur == "existant")
             {
-                "jours" => _dureeNumerique * 24,
-                "semaines" => _dureeNumerique * 24 * 7,
-                _ => _dureeNumerique
-            };
+                _dto.NouveauFournisseurNomEntreprise = null;
+                _dto.NouveauFournisseurEmail = null;
+                _dto.NouveauFournisseurSiret = null;
+                _dto.NouveauFournisseurSiren = null;
+            }
+            else
+            {
+                _dto.FournisseurContactId = null;
+            }
+        }
+        else
+        {
+            _dto.FournisseurContactId = null;
+            _dto.NouveauFournisseurNomEntreprise = null;
+            _dto.NouveauFournisseurEmail = null;
+            _dto.NouveauFournisseurSiret = null;
+            _dto.NouveauFournisseurSiren = null;
         }
 
         var (_succes, _message, _code) = await SCode.Creer(_dto);
@@ -214,6 +331,7 @@
         _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Confiance, EntrepriseId = _entreprise?.Id ?? 0 };
         _dureeNumerique = 24;
         _unite = "heures";
+        _modeFournisseur = "existant";
     }
 
     private class SalarieItem
