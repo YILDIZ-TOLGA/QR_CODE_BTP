@@ -1,13 +1,11 @@
 using BTPSecure.Shared.Enums;
 
-namespace BTPSecure.Shared.Entites;
+namespace BTPSecure.Shared.DTOs;
 
-public class E_Utilisateur
+public class DTO_Profil
 {
     public int Id { get; set; }
     public string Email { get; set; } = string.Empty;
-    public string MotDePasseHash { get; set; } = string.Empty;
-    public string Sel { get; set; } = string.Empty;
     public string Nom { get; set; } = string.Empty;
     public string Prenom { get; set; } = string.Empty;
     public string? Telephone { get; set; }
@@ -15,5 +13,5 @@ public class E_Utilisateur
     public string? Siren { get; set; }
     public Enum_Role Role { get; set; }
     public DateTime DateCreation { get; set; }
-    public bool EstActif { get; set; } = true;
+    public List<string> Entreprises { get; set; } = new();
 }

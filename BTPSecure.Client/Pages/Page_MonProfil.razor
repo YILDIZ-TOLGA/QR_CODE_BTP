@@ -1,0 +1,166 @@
+@page "/profil"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject Services.S_Profil SProfil
+@using BTPSecure.Shared.Enums
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenIcon Icon="account_circle" Style="font-size: 2rem; color: var(--rz-primary);" />
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Mon profil</RadzenText>
+</RadzenStack>
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else if (_profil == null)
+{
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 2rem 0;">
+            <RadzenIcon Icon="error" Style="font-size: 3rem; color: var(--rz-danger);" />
+            <RadzenText TextStyle="TextStyle.H6">Impossible de charger le profil.</RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+}
+else
+{
+    <RadzenStack Gap="1.25rem">
+
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="margin-bottom: 1rem;">
+                <RadzenIcon Icon="badge" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Informations personnelles</RadzenText>
+            </RadzenStack>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Nom</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600;">@_profil.Nom</RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Prénom</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600;">@_profil.Prenom</RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Email</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">@_profil.Email</RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Téléphone</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">
+                            @if (string.IsNullOrEmpty(_profil.Telephone))
+                            {
+                                <span style="color: var(--rz-text-disabled-color);">Non renseigné</span>
+                            }
+                            else
+                            {
+                                @_profil.Telephone
+                            }
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
+
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="margin-bottom: 1rem;">
+                <RadzenIcon Icon="work" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Compte</RadzenText>
+            </RadzenStack>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Rôle</RadzenText>
+                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_profil.Role.ToString()" IsPill="true" />
+                    </RadzenStack>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Membre depuis</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">@_profil.DateCreation.ToLocalTime().ToString("dd/MM/yyyy")</RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
+
+        @if (_profil.Role == Enum_Role.Fournisseur)
+        {
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="margin-bottom: 1rem;">
+                    <RadzenIcon Icon="domain" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Identité entreprise</RadzenText>
+                </RadzenStack>
+
+                <RadzenRow Gap="1rem">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.25rem">
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">SIRET</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1" Style="font-family: monospace;">
+                                @if (string.IsNullOrEmpty(_profil.Siret))
+                                {
+                                    <span style="color: var(--rz-text-disabled-color);">Non renseigné</span>
+                                }
+                                else
+                                {
+                                    @_profil.Siret
+                                }
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.25rem">
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">SIREN</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1" Style="font-family: monospace;">
+                                @if (string.IsNullOrEmpty(_profil.Siren))
+                                {
+                                    <span style="color: var(--rz-text-disabled-color);">Non renseigné</span>
+                                }
+                                else
+                                {
+                                    @_profil.Siren
+                                }
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenCard>
+        }
+
+        @if ((_profil.Role == Enum_Role.Patron || _profil.Role == Enum_Role.Salarie) && _profil.Entreprises.Count > 0)
+        {
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="margin-bottom: 1rem;">
+                    <RadzenIcon Icon="business" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Mes entreprises</RadzenText>
+                </RadzenStack>
+
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                    @foreach (var _nom in _profil.Entreprises)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@_nom" IsPill="true" />
+                    }
+                </RadzenStack>
+            </RadzenCard>
+        }
+    </RadzenStack>
+}
+
+@code {
+    private DTO_Profil? _profil;
+    private bool _chargement = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profil = await SProfil.ObtenirMoi();
+        _chargement = false;
+    }
+}

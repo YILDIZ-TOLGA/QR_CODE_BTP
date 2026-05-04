@@ -71,6 +71,10 @@ public class S_Code
         {
             _code.DateExpiration = DateTime.UtcNow.AddHours(p_dto.DureeValiditeHeures!.Value);
         }
+        else if (p_dto.TypeCode == Enum_TypeCode.Liste)
+        {
+            _code.DateExpiration = DateTime.UtcNow.AddDays(7);
+        }
 
         await _daoCode.Creer(_code);
         _code.Salarie = _salarie;
@@ -115,6 +119,10 @@ public class S_Code
         {
             _code.Statut = Enum_StatutCode.Utilise;
             _code.DateExpiration = DateTime.UtcNow.AddMinutes(10);
+        }
+        else if (_code.TypeCode == Enum_TypeCode.Confiance)
+        {
+            _code.Valeur = await GenererValeurUnique();
         }
 
         await _daoCode.Sauvegarder();

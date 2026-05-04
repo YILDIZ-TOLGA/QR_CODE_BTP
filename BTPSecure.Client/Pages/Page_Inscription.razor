@@ -108,6 +108,30 @@
                             </Helper>
                         </RadzenFormField>
 
+                        @if (_dto.Role == Enum_Role.Fournisseur)
+                        {
+                            <RadzenFormField Text="Numéro SIRET (14 chiffres)" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start>
+                                    <RadzenIcon Icon="pin" />
+                                </Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="_dto.Siret" Name="Siret" Style="width: 100%;" Placeholder="12345678901234" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="Siret" Text="Le SIRET est obligatoire." />
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Numéro SIREN (9 chiffres, optionnel)" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start>
+                                    <RadzenIcon Icon="pin" />
+                                </Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="_dto.Siren" Style="width: 100%;" Placeholder="Optionnel" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        }
+
                         <RadzenButton Text="S'inscrire" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary"
                                       Size="ButtonSize.Large" Style="width: 100%;" IsBusy="_enChargement" Icon="how_to_reg" />
                     </RadzenStack>

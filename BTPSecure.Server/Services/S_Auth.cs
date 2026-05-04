@@ -35,6 +35,25 @@ public class S_Auth
         if (await _daoUtilisateur.EmailExiste(p_dto.Email))
             return (false, "Un compte avec cet email existe déjà.", null);
 
+        string? _siret = null;
+        string? _siren = null;
+        if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+        {
+            if (string.IsNullOrWhiteSpace(p_dto.Siret))
+                return (false, "Le numéro SIRET est obligatoire pour un fournisseur.", null);
+
+            _siret = new string(p_dto.Siret.Where(char.IsDigit).ToArray());
+            if (_siret.Length != 14)
+                return (false, "Le numéro SIRET doit contenir 14 chiffres.", null);
+
+            if (!string.IsNullOrWhiteSpace(p_dto.Siren))
+            {
+                _siren = new string(p_dto.Siren.Where(char.IsDigit).ToArray());
+                if (_siren.Length != 9)
+                    return (false, "Le numéro SIREN doit contenir 9 chiffres.", null);
+            }
+        }
+
         var _sel = BCrypt.Net.BCrypt.GenerateSalt();
         var _hash = BCrypt.Net.BCrypt.HashPassword(p_dto.MotDePasse, _sel);
 
@@ -46,6 +65,8 @@ public class S_Auth
             Nom = p_dto.Nom.Trim(),
             Prenom = p_dto.Prenom.Trim(),
             Telephone = p_dto.Telephone?.Trim(),
+            Siret = _siret,
+            Siren = _siren,
             Role = p_dto.Role,
             EstActif = true
         };
