@@ -67,7 +67,8 @@ public class DAO_Code
             .Where(c => c.FournisseurContact != null
                 && c.Statut == Enum_StatutCode.Actif
                 && c.FournisseurContact!.Siret == p_siret
-                && (c.FournisseurContact.Siren == null || p_siren == null || c.FournisseurContact.Siren == p_siren)
+                && ((c.FournisseurContact.Siren == null && p_siren == null)
+                    || (c.FournisseurContact.Siren != null && p_siren != null && c.FournisseurContact.Siren == p_siren))
                 && (c.DateExpiration == null || c.DateExpiration > _maintenant))
             .OrderBy(c => c.DateExpiration)
             .ThenByDescending(c => c.DateCreation)
