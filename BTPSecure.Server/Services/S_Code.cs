@@ -241,6 +241,23 @@ public class S_Code
         return $"{new string(_chars, 0, 4)}-{new string(_chars, 4, 4)}";
     }
 
+    public async Task<(bool Succes, string Message, DTO_ResultatValidation? Resultat)> ValiderPourCommande(int p_codeId, string p_valeur, int p_fournisseurId)
+    {
+        var _code = await _daoCode.ObtenirParId(p_codeId);
+        if (_code == null)
+            return (false, "Commande introuvable.", new DTO_ResultatValidation { EstValide = false, Message = "Commande introuvable." });
+
+        if (_code.Statut != Enum_StatutCode.Actif)
+            return (false, "Cette commande n'est plus active.", new DTO_ResultatValidation { EstValide = false, Message = $"Cette commande est {_code.Statut.ToString().ToLower()}." });
+
+        var _valeurSaisie = p_valeur.Trim().ToUpper();
+        if (_code.Valeur != _valeurSaisie)
+            return (false, "Le code ne correspond pas à la référence associée.",
+                new DTO_ResultatValidation { EstValide = false, Message = "Le code ne correspond pas à la référence associée." });
+
+        return await Valider(_valeurSaisie, p_fournisseurId);
+    }
+
     public async Task<List<DTO_CommandeAVenir>> ObtenirCommandesAVenir(int p_fournisseurId)
     {
         var _utilisateur = await _daoUtilisateur.ObtenirParId(p_fournisseurId);

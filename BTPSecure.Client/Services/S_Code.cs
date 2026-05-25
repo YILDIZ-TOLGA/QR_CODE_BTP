@@ -36,6 +36,19 @@ public class S_Code
         return _result ?? new List<DTO_CodeAffichage>();
     }
 
+    public async Task<(bool Succes, DTO_ResultatValidation? Resultat)> ValiderPourCommande(int p_codeId, string p_valeur)
+    {
+        var _reponse = await _http.PostAsJsonAsync("api/codes/valider-pour-commande",
+            new DTO_ValiderPourCommande { CodeId = p_codeId, Valeur = p_valeur });
+        DTO_ResultatValidation? _resultat = null;
+        try
+        {
+            _resultat = await _reponse.Content.ReadFromJsonAsync<DTO_ResultatValidation>();
+        }
+        catch { }
+        return (_reponse.IsSuccessStatusCode, _resultat);
+    }
+
     public async Task<List<DTO_CommandeAVenir>> ObtenirCommandesAVenir()
     {
         try

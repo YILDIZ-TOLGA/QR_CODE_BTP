@@ -218,7 +218,7 @@
         if (string.IsNullOrWhiteSpace(_val))
             return;
 
-        var (_succes, _res) = await SCode.Valider(_val.Trim().ToUpper());
+        var (_succes, _res) = await SCode.ValiderPourCommande(p_codeId, _val.Trim().ToUpper());
         _resultat = _res;
 
         if (_succes)

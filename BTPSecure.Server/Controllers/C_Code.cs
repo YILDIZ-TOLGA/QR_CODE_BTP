@@ -65,6 +65,15 @@ public class C_Code : ControllerBase
         return Ok(_liste);
     }
 
+    [HttpPost("valider-pour-commande")]
+    [Authorize(Roles = "Fournisseur")]
+    public async Task<IActionResult> ValiderPourCommande([FromBody] DTO_ValiderPourCommande p_dto)
+    {
+        var (_succes, _message, _resultat) = await _sCode.ValiderPourCommande(p_dto.CodeId, p_dto.Valeur, ObtenirUtilisateurId());
+        if (!_succes) return BadRequest(_resultat);
+        return Ok(_resultat);
+    }
+
     [HttpPost("revoquer/{p_id}")]
     [Authorize(Roles = "Patron")]
     public async Task<IActionResult> Revoquer(int p_id)
