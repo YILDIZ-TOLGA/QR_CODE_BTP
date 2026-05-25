@@ -50,6 +50,16 @@
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center">
                             <RadzenLink Path="/mot-de-passe-oublie" Text="Mot de passe oublié ?" Style="font-size: 0.9rem;" />
                         </RadzenStack>
+
+                        @if (_emailNonVerifie)
+                        {
+                            <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat" Style="margin-top: 0.5rem;">
+                                Votre email n'est pas vérifié. Vérifiez votre boîte mail (+ spam) ou cliquez ci-dessous pour recevoir un nouveau lien.
+                            </RadzenAlert>
+                            <RadzenButton Text="Renvoyer l'email de vérification" Icon="forward_to_inbox"
+                                          ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined"
+                                          Style="width: 100%;" IsBusy="_envoiEnCours" Click="RenvoyerVerification" />
+                        }
                     </RadzenStack>
                 </RadzenTemplateForm>
 
@@ -68,6 +78,8 @@
 @code {
     private DTO_Connexion _dto = new();
     private bool _enChargement;
+    private bool _emailNonVerifie;
+    private bool _envoiEnCours;
 
     protected override async Task OnInitializedAsync()
     {
@@ -119,11 +131,16 @@
     private async Task Connecter()
     {
         _enChargement = true;
+        _emailNonVerifie = false;
         var (_succes, _message, _reponse) = await SAuth.Connecter(_dto);
         _enChargement = false;
 
         if (!_succes)
         {
+            if (_message.Contains("vérifié", StringComparison.OrdinalIgnoreCase))
+            {
+                _emailNonVerifie = true;
+            }
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
             return;
         }
@@ -152,5 +169,18 @@
         }
 
         Navigation.NavigateTo(_url);
+    }
+
+    private async Task RenvoyerVerification()
+    {
+        if (string.IsNullOrWhiteSpace(_dto.Email))
+        {
+            Notification.Notify(NotificationSeverity.Warning, "Email manquant", "Saisissez votre email d'abord.");
+            return;
+        }
+        _envoiEnCours = true;
+        var (_ok, _msg) = await SAuth.RenvoyerVerification(_dto.Email);
+        _envoiEnCours = false;
+        Notification.Notify(NotificationSeverity.Info, "Demande envoyée", _msg);
     }
 }

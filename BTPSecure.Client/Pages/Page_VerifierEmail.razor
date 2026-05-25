@@ -1,0 +1,84 @@
+@page "/verifier-email"
+@inject Services.S_Auth SAuth
+@inject NavigationManager Navigation
+
+<RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 85vh;">
+    <RadzenColumn Size="12" SizeSM="10" SizeMD="6" SizeLG="5" SizeXL="4">
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
+
+                @if (_chargement)
+                {
+                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+                    <RadzenText TextStyle="TextStyle.H6">Vérification en cours...</RadzenText>
+                }
+                else if (_succes)
+                {
+                    <RadzenIcon Icon="check_circle" Style="font-size: 4rem; color: var(--rz-success);" />
+                    <RadzenText TextStyle="TextStyle.H4" TextAlign="TextAlign.Center" Style="color: var(--rz-success);">
+                        Email vérifié
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center">
+                        @_message
+                    </RadzenText>
+                    <RadzenButton Text="Se connecter" Icon="login" ButtonStyle="ButtonStyle.Primary"
+                                  Size="ButtonSize.Large" Style="width: 100%;"
+                                  Click='() => Navigation.NavigateTo("/connexion")' />
+                }
+                else
+                {
+                    <RadzenIcon Icon="error" Style="font-size: 4rem; color: var(--rz-danger);" />
+                    <RadzenText TextStyle="TextStyle.H4" TextAlign="TextAlign.Center" Style="color: var(--rz-danger);">
+                        Vérification échouée
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center">
+                        @_message
+                    </RadzenText>
+                    <RadzenButton Text="Retour à la connexion" Icon="arrow_back" ButtonStyle="ButtonStyle.Primary"
+                                  Variant="Variant.Outlined" Style="width: 100%;"
+                                  Click='() => Navigation.NavigateTo("/connexion")' />
+                }
+
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private bool _chargement = true;
+    private bool _succes;
+    private string _message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var _uri = new Uri(Navigation.Uri);
+        var _query = _uri.Query;
+        string _token = string.Empty;
+        if (!string.IsNullOrEmpty(_query))
+        {
+            if (_query.StartsWith("?")) _query = _query.Substring(1);
+            foreach (var _pair in _query.Split('&'))
+            {
+                var _kv = _pair.Split('=');
+                if (_kv.Length == 2 && _kv[0] == "token")
+                {
+                    _token = Uri.UnescapeDataString(_kv[1]);
+                    break;
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(_token))
+        {
+            _succes = false;
+            _message = "Lien invalide (aucun token).";
+            _chargement = false;
+            return;
+        }
+
+        var (_ok, _msg) = await SAuth.VerifierEmail(_token);
+        _succes = _ok;
+        _message = _msg;
+        _chargement = false;
+    }
+}

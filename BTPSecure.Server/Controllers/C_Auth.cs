@@ -45,4 +45,19 @@ public class C_Auth : ControllerBase
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(new { message = _message });
     }
+
+    [HttpPost("verifier-email")]
+    public async Task<IActionResult> VerifierEmail([FromBody] DTO_VerifierEmail p_dto)
+    {
+        var (_succes, _message) = await _sAuth.VerifierEmail(p_dto.Token);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
+
+    [HttpPost("renvoyer-verification")]
+    public async Task<IActionResult> RenvoyerVerification([FromBody] DTO_DemandeReset p_dto)
+    {
+        var (_succes, _message) = await _sAuth.RenvoyerEmailVerification(p_dto.Email);
+        return Ok(new { message = _message });
+    }
 }

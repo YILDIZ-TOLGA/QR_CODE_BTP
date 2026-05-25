@@ -16,4 +16,7 @@ public class E_Utilisateur
     public Enum_Role Role { get; set; }
     public DateTime DateCreation { get; set; }
     public bool EstActif { get; set; } = true;
+    public bool EmailVerifie { get; set; }
+    public string? TokenVerification { get; set; }
+    public DateTime? TokenVerificationExpiration { get; set; }
 }

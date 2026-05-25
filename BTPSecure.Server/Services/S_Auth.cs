@@ -158,10 +158,74 @@ public class S_Auth
             EstActif = true
         };
 
+        _utilisateur.EmailVerifie = false;
+        _utilisateur.TokenVerification = GenererToken();
+        _utilisateur.TokenVerificationExpiration = DateTime.UtcNow.AddHours(24);
+
         await _daoUtilisateur.Creer(_utilisateur);
         _logger.LogInformation("Nouvel utilisateur inscrit : {Email} avec le rôle {Role}", _utilisateur.Email, _utilisateur.Role);
 
-        return (true, "Inscription réussie.", null);
+        var _tokenCopie = _utilisateur.TokenVerification;
+        var _emailCopie = _utilisateur.Email;
+        var _prenomCopie = _utilisateur.Prenom;
+        _ = Task.Run(async () =>
+        {
+            await _sEmail.EnvoyerVerificationEmail(_emailCopie, _prenomCopie, _tokenCopie);
+        });
+
+        return (true, "Inscription réussie. Vérifiez votre email pour activer votre compte.", null);
+    }
+
+    public async Task<(bool Succes, string Message)> VerifierEmail(string p_token)
+    {
+        if (string.IsNullOrWhiteSpace(p_token))
+            return (false, "Lien invalide.");
+
+        var _utilisateur = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            _context.Utilisateurs, u => u.TokenVerification == p_token);
+
+        if (_utilisateur == null)
+            return (false, "Lien invalide ou expiré.");
+
+        if (_utilisateur.EmailVerifie)
+            return (true, "Votre email est déjà vérifié. Vous pouvez vous connecter.");
+
+        if (!_utilisateur.TokenVerificationExpiration.HasValue || _utilisateur.TokenVerificationExpiration.Value < DateTime.UtcNow)
+            return (false, "Ce lien a expiré. Demandez un nouveau lien depuis la page de connexion.");
+
+        _utilisateur.EmailVerifie = true;
+        _utilisateur.TokenVerification = null;
+        _utilisateur.TokenVerificationExpiration = null;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Email vérifié pour {Email}", _utilisateur.Email);
+        return (true, "Email vérifié avec succès. Vous pouvez maintenant vous connecter.");
+    }
+
+    public async Task<(bool Succes, string Message)> RenvoyerEmailVerification(string p_email)
+    {
+        if (string.IsNullOrWhiteSpace(p_email))
+            return (true, "Si un compte non vérifié existe avec cet email, un nouveau lien a été envoyé.");
+
+        var _utilisateur = await _daoUtilisateur.ObtenirParEmail(p_email);
+        if (_utilisateur == null || !_utilisateur.EstActif || _utilisateur.EmailVerifie)
+        {
+            return (true, "Si un compte non vérifié existe avec cet email, un nouveau lien a été envoyé.");
+        }
+
+        _utilisateur.TokenVerification = GenererToken();
+        _utilisateur.TokenVerificationExpiration = DateTime.UtcNow.AddHours(24);
+        await _context.SaveChangesAsync();
+
+        var _tokenCopie = _utilisateur.TokenVerification;
+        var _emailCopie = _utilisateur.Email;
+        var _prenomCopie = _utilisateur.Prenom;
+        _ = Task.Run(async () =>
+        {
+            await _sEmail.EnvoyerVerificationEmail(_emailCopie, _prenomCopie, _tokenCopie);
+        });
+
+        return (true, "Si un compte non vérifié existe avec cet email, un nouveau lien a été envoyé.");
     }
 
     public async Task<(bool Succes, string Message, DTO_ReponseAuth? Reponse)> Connecter(DTO_Connexion p_dto)
@@ -175,6 +239,9 @@ public class S_Auth
 
         if (!BCrypt.Net.BCrypt.Verify(p_dto.MotDePasse, _utilisateur.MotDePasseHash))
             return (false, "Email ou mot de passe incorrect.", null);
+
+        if (!_utilisateur.EmailVerifie)
+            return (false, "Votre email n'est pas vérifié. Consultez votre boîte mail ou demandez un nouveau lien.", null);
 
         var _token = GenererToken(_utilisateur);
 

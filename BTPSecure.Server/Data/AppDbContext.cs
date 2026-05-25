@@ -31,6 +31,9 @@ public class AppDbContext : DbContext
             e.Property(u => u.Telephone).HasMaxLength(20);
             e.Property(u => u.Role).HasConversion<int>();
             e.Property(u => u.EstActif).HasDefaultValue(true);
+            e.Property(u => u.EmailVerifie).HasDefaultValue(false);
+            e.Property(u => u.TokenVerification).HasMaxLength(128);
+            e.HasIndex(u => u.TokenVerification);
         });
 
         // E_Entreprise

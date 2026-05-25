@@ -78,6 +78,22 @@ public class S_Auth
         return (false, _erreur ?? "Erreur lors de la réinitialisation.");
     }
 
+    public async Task<(bool Succes, string Message)> VerifierEmail(string p_token)
+    {
+        var _reponse = await _http.PostAsJsonAsync("api/auth/verifier-email", new DTO_VerifierEmail { Token = p_token });
+        var _msg = await LireMessageErreur(_reponse);
+        if (_reponse.IsSuccessStatusCode)
+            return (true, _msg ?? "Email vérifié avec succès.");
+        return (false, _msg ?? "Lien invalide ou expiré.");
+    }
+
+    public async Task<(bool Succes, string Message)> RenvoyerVerification(string p_email)
+    {
+        var _reponse = await _http.PostAsJsonAsync("api/auth/renvoyer-verification", new DTO_DemandeReset { Email = p_email });
+        var _msg = await LireMessageErreur(_reponse);
+        return (_reponse.IsSuccessStatusCode, _msg ?? "Demande envoyée.");
+    }
+
     private class MessageReponse
     {
         public string Message { get; set; } = string.Empty;
