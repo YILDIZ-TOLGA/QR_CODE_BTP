@@ -27,4 +27,6 @@ public class E_Code
     public string? Reference { get; set; }
     public int? FournisseurContactId { get; set; }
     public E_FournisseurContact? FournisseurContact { get; set; }
+    public bool EstPrete { get; set; }
+    public DateTime? DatePrete { get; set; }
 }

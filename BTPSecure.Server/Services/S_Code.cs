@@ -276,7 +276,70 @@ public class S_Code
             DateExpiration = c.DateExpiration,
             ListeMateriaux = c.ListeMateriaux,
             Info = c.Info,
-            TypeCode = c.TypeCode
+            TypeCode = c.TypeCode,
+            EstPrete = c.EstPrete,
+            DatePrete = c.DatePrete
+        }).ToList();
+    }
+
+    public async Task<(bool Succes, string Message)> MarquerPrete(int p_codeId, int p_fournisseurId)
+    {
+        var _code = await _daoCode.ObtenirParId(p_codeId);
+        if (_code == null)
+            return (false, "Commande introuvable.");
+
+        if (_code.Statut != Enum_StatutCode.Actif)
+            return (false, "Cette commande n'est plus active.");
+
+        var _utilisateur = await _daoUtilisateur.ObtenirParId(p_fournisseurId);
+        if (_utilisateur == null || string.IsNullOrEmpty(_utilisateur.Siret))
+            return (false, "Fournisseur introuvable.");
+
+        if (_code.FournisseurContactId == null)
+            return (false, "Cette commande n'a pas de fournisseur associé.");
+
+        var _contact = await _daoFournisseurContact.ObtenirParId(_code.FournisseurContactId.Value);
+        if (_contact == null)
+            return (false, "Fournisseur associé introuvable.");
+
+        if (_contact.Siret != _utilisateur.Siret)
+            return (false, "Vous n'êtes pas le fournisseur de cette commande.");
+
+        bool _sirenContactPresent = !string.IsNullOrEmpty(_contact.Siren);
+        bool _sirenUserPresent = !string.IsNullOrEmpty(_utilisateur.Siren);
+        if (_sirenContactPresent != _sirenUserPresent)
+            return (false, "Vous n'êtes pas le fournisseur de cette commande.");
+        if (_sirenContactPresent && _sirenUserPresent && _contact.Siren != _utilisateur.Siren)
+            return (false, "Vous n'êtes pas le fournisseur de cette commande.");
+
+        if (_code.EstPrete)
+            return (false, "Cette commande est déjà marquée comme prête.");
+
+        _code.EstPrete = true;
+        _code.DatePrete = DateTime.UtcNow;
+        await _daoCode.Sauvegarder();
+
+        _logger.LogInformation("Commande {CodeId} marquée prête par fournisseur {FournisseurId}", p_codeId, p_fournisseurId);
+        return (true, "Commande marquée comme prête.");
+    }
+
+    public async Task<List<DTO_NotificationPatron>> ObtenirNotificationsPatron(int p_patronId)
+    {
+        var _codes = await _daoCode.ObtenirNotificationsPourPatron(p_patronId);
+
+        return _codes.Select(c => new DTO_NotificationPatron
+        {
+            CodeId = c.Id,
+            Reference = c.Reference ?? "",
+            NumeroCommande = c.NumeroCommande,
+            NomFournisseur = c.FournisseurContact?.NomEntreprise ?? "",
+            EmailFournisseur = c.FournisseurContact?.Email ?? "",
+            NomSalarie = c.Salarie?.Nom ?? "",
+            PrenomSalarie = c.Salarie?.Prenom ?? "",
+            DatePrete = c.DatePrete ?? DateTime.UtcNow,
+            DateExpiration = c.DateExpiration,
+            ListeMateriaux = c.ListeMateriaux,
+            Info = c.Info
         }).ToList();
     }
 

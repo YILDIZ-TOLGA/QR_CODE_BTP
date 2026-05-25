@@ -64,6 +64,30 @@ public class S_Code
         }
     }
 
+    public async Task<(bool Succes, string Message)> MarquerPrete(int p_codeId)
+    {
+        var _reponse = await _http.PostAsJsonAsync($"api/codes/marquer-prete/{p_codeId}", new { });
+        if (_reponse.IsSuccessStatusCode)
+            return (true, "Commande marquée comme prête.");
+        var _msg = await LireErreur(_reponse);
+        return (false, _msg);
+    }
+
+    public async Task<List<DTO_NotificationPatron>> ObtenirNotificationsPatron()
+    {
+        try
+        {
+            var _result = await _http.GetFromJsonAsync<List<DTO_NotificationPatron>>("api/codes/notifications-patron");
+            if (_result == null)
+                return new List<DTO_NotificationPatron>();
+            return _result;
+        }
+        catch
+        {
+            return new List<DTO_NotificationPatron>();
+        }
+    }
+
     public async Task<(bool Succes, DTO_ResultatValidation? Resultat)> Valider(string p_valeur)
     {
         var _reponse = await _http.PostAsJsonAsync("api/codes/valider", new DTO_ValiderCode { Valeur = p_valeur });

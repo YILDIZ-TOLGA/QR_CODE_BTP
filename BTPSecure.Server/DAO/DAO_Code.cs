@@ -59,6 +59,24 @@ public class DAO_Code
         return _codes;
     }
 
+    public async Task<List<E_Code>> ObtenirNotificationsPourPatron(int p_patronId)
+    {
+        var _maintenant = DateTime.UtcNow;
+        var _codes = await _context.Codes
+            .Include(c => c.Salarie)
+            .Include(c => c.FournisseurContact)
+            .Where(c => c.PatronId == p_patronId
+                && c.EstPrete
+                && c.Statut == Enum_StatutCode.Actif
+                && (c.DateExpiration == null || c.DateExpiration > _maintenant))
+            .OrderByDescending(c => c.DatePrete)
+            .ToListAsync();
+
+        MettreAJourExpirations(_codes);
+        await _context.SaveChangesAsync();
+        return _codes.Where(c => c.Statut == Enum_StatutCode.Actif).ToList();
+    }
+
     public async Task<List<E_Code>> ObtenirCommandesPourFournisseur(string p_siret, string? p_siren)
     {
         var _maintenant = DateTime.UtcNow;

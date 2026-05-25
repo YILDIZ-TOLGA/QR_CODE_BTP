@@ -1,0 +1,120 @@
+@page "/patron/notifications"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@inject Services.S_Code SCode
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenIcon Icon="notifications_active" Style="font-size: 2rem; color: var(--rz-primary);" />
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Notifications</RadzenText>
+    @if (_notifications.Count > 0)
+    {
+        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@_notifications.Count.ToString()" IsPill="true" />
+    }
+</RadzenStack>
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else if (_notifications.Count == 0)
+{
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 3rem 0;">
+            <RadzenIcon Icon="notifications_off" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-text-secondary-color);">
+                Aucune notification
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); text-align: center;">
+                Quand un fournisseur marquera une commande comme prête, elle apparaîtra ici.
+            </RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+}
+else
+{
+    <RadzenStack Gap="1rem">
+        @foreach (var _n in _notifications)
+        {
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack Gap="0.75rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenIcon Icon="task_alt" Style="font-size: 1.5rem; color: var(--rz-success);" />
+                            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Commande prête</RadzenText>
+                        </RadzenStack>
+                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@_n.DatePrete.ToLocalTime().ToString("dd/MM HH:mm")" IsPill="true" />
+                    </RadzenStack>
+
+                    <RadzenStack Gap="0.4rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="qr_code_2" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace; font-weight: 600;">@_n.Reference</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="business" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Body2">Fournisseur : @_n.NomFournisseur</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@_n.EmailFournisseur</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Body2">Salarié assigné : @_n.PrenomSalarie @_n.NomSalarie</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Body2">N° commande : @_n.NumeroCommande</RadzenText>
+                        </RadzenStack>
+
+                        @if (_n.DateExpiration.HasValue)
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                    Expire le @_n.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </RadzenText>
+                            </RadzenStack>
+                        }
+
+                        @if (!string.IsNullOrEmpty(_n.ListeMateriaux))
+                        {
+                            <RadzenStack Gap="0.25rem" Style="margin-top: 0.5rem;">
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Matériaux</RadzenText>
+                                <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.75rem;">
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_n.ListeMateriaux</RadzenText>
+                                </RadzenCard>
+                            </RadzenStack>
+                        }
+
+                        @if (!string.IsNullOrEmpty(_n.Info))
+                        {
+                            <RadzenStack Gap="0.25rem" Style="margin-top: 0.5rem;">
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Info</RadzenText>
+                                <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.75rem;">
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_n.Info</RadzenText>
+                                </RadzenCard>
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        }
+    </RadzenStack>
+}
+
+@code {
+    private List<DTO_NotificationPatron> _notifications = new();
+    private bool _chargement = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _notifications = await SCode.ObtenirNotificationsPatron();
+        _chargement = false;
+    }
+}

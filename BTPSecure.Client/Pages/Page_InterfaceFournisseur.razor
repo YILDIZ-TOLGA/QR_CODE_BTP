@@ -71,6 +71,22 @@
                                     </RadzenStack>
                                 }
 
+                                @if (_cmd.EstPrete)
+                                {
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="task_alt" Style="color: var(--rz-success);" />
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-success); font-weight: 600;">
+                                            Commande marquée prête le @_cmd.DatePrete?.ToLocalTime().ToString("dd/MM HH:mm")
+                                        </RadzenText>
+                                    </RadzenStack>
+                                }
+                                else
+                                {
+                                    <RadzenButton Text="Commande prête" Icon="task_alt" ButtonStyle="ButtonStyle.Info"
+                                                  Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                                  Click="() => MarquerPrete(_cmd.CodeId)" />
+                                }
+
                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.End">
                                     <RadzenFormField Text="Code à saisir" Variant="Variant.Outlined" Style="flex: 1;">
                                         <Start><RadzenIcon Icon="key" /></Start>
@@ -210,6 +226,20 @@
         if (_codesSaisis.TryGetValue(p_codeId, out var _val))
             return _val;
         return string.Empty;
+    }
+
+    private async Task MarquerPrete(int p_codeId)
+    {
+        var (_succes, _message) = await SCode.MarquerPrete(p_codeId);
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", "Le patron a été notifié.");
+            await ChargerCommandes();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
     }
 
     private async Task ValiderCommande(int p_codeId)

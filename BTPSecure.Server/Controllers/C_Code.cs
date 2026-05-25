@@ -74,6 +74,23 @@ public class C_Code : ControllerBase
         return Ok(_resultat);
     }
 
+    [HttpPost("marquer-prete/{p_codeId}")]
+    [Authorize(Roles = "Fournisseur")]
+    public async Task<IActionResult> MarquerPrete(int p_codeId)
+    {
+        var (_succes, _message) = await _sCode.MarquerPrete(p_codeId, ObtenirUtilisateurId());
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
+
+    [HttpGet("notifications-patron")]
+    [Authorize(Roles = "Patron")]
+    public async Task<IActionResult> ObtenirNotificationsPatron()
+    {
+        var _liste = await _sCode.ObtenirNotificationsPatron(ObtenirUtilisateurId());
+        return Ok(_liste);
+    }
+
     [HttpPost("revoquer/{p_id}")]
     [Authorize(Roles = "Patron")]
     public async Task<IActionResult> Revoquer(int p_id)
