@@ -1,6 +1,5 @@
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace BTPSecure.Server.Services;
 
@@ -8,39 +7,34 @@ public class S_Email
 {
     private readonly IConfiguration _config;
     private readonly ILogger<S_Email> _logger;
+    private readonly HttpClient _http;
 
     public S_Email(IConfiguration p_config, ILogger<S_Email> p_logger)
     {
         _config = p_config;
         _logger = p_logger;
+        _http = new HttpClient { BaseAddress = new Uri("https://api.brevo.com/") };
     }
 
     public async Task<bool> EnvoyerInvitationFournisseur(string p_emailDestinataire, string p_nomEntreprisePatron,
         string p_nomEntrepriseFournisseur, string p_siret, string? p_siren, string p_emailFournisseurAssocie)
     {
-        var _host = Environment.GetEnvironmentVariable("SMTP_HOST") ?? _config["Smtp:Host"];
-        var _portStr = Environment.GetEnvironmentVariable("SMTP_PORT") ?? _config["Smtp:Port"];
-        var _user = Environment.GetEnvironmentVariable("SMTP_USER") ?? _config["Smtp:User"];
-        var _key = Environment.GetEnvironmentVariable("SMTP_KEY") ?? _config["Smtp:Key"];
-        var _from = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Smtp:From"];
+        var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
+        var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "BTPSecure";
         var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
 
-        if (string.IsNullOrEmpty(_host) || string.IsNullOrEmpty(_user) || string.IsNullOrEmpty(_key) || string.IsNullOrEmpty(_from))
+        if (string.IsNullOrEmpty(_apiKey))
         {
-            _logger.LogWarning("Configuration SMTP manquante, email non envoyé à {Email}", p_emailDestinataire);
+            _logger.LogWarning("BREVO_API_KEY manquante, email non envoyé à {Email}", p_emailDestinataire);
             return false;
         }
-
-        if (!int.TryParse(_portStr, out var _port))
-            _port = 587;
 
         var _sirenLigne = "";
         if (!string.IsNullOrEmpty(p_siren))
         {
             _sirenLigne = $"<p style=\"margin: 0.25rem 0;\"><strong>SIREN :</strong> {p_siren}</p>";
         }
-
-        var _sujet = $"Nouvelle commande pour votre entreprise sur BTPSecure";
 
         var _corpsHtml = $@"
 <!DOCTYPE html>
@@ -87,28 +81,40 @@ public class S_Email
 </body>
 </html>";
 
+        var _payload = new
+        {
+            sender = new { name = _fromName, email = _fromEmail },
+            to = new[] { new { email = p_emailDestinataire } },
+            subject = "Nouvelle commande pour votre entreprise sur BTPSecure",
+            htmlContent = _corpsHtml
+        };
+
         try
         {
-            var _message = new MimeMessage();
-            _message.From.Add(MailboxAddress.Parse(_from));
-            _message.To.Add(MailboxAddress.Parse(p_emailDestinataire));
-            _message.Subject = _sujet;
+            var _request = new HttpRequestMessage(HttpMethod.Post, "v3/smtp/email")
+            {
+                Content = JsonContent.Create(_payload)
+            };
+            _request.Headers.Add("api-key", _apiKey);
+            _request.Headers.Add("accept", "application/json");
 
-            var _builder = new BodyBuilder { HtmlBody = _corpsHtml };
-            _message.Body = _builder.ToMessageBody();
+            var _reponse = await _http.SendAsync(_request);
 
-            using var _client = new SmtpClient();
-            await _client.ConnectAsync(_host, _port, SecureSocketOptions.StartTls);
-            await _client.AuthenticateAsync(_user, _key);
-            await _client.SendAsync(_message);
-            await _client.DisconnectAsync(true);
-
-            _logger.LogInformation("Email d'invitation envoyé à {Email}", p_emailDestinataire);
-            return true;
+            if (_reponse.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Email Brevo envoyé à {Email}", p_emailDestinataire);
+                return true;
+            }
+            else
+            {
+                var _body = await _reponse.Content.ReadAsStringAsync();
+                _logger.LogError("Erreur Brevo {Status} pour {Email} : {Body}", _reponse.StatusCode, p_emailDestinataire, _body);
+                return false;
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur envoi email à {Email}", p_emailDestinataire);
+            _logger.LogError(ex, "Exception envoi email à {Email}", p_emailDestinataire);
             return false;
         }
     }
