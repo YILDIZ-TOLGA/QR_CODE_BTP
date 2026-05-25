@@ -1,0 +1,123 @@
+@page "/reinitialiser-mot-de-passe"
+@inject Services.S_Auth SAuth
+@inject NavigationManager Navigation
+@inject NotificationService Notification
+
+<RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 85vh;">
+    <RadzenColumn Size="12" SizeSM="10" SizeMD="6" SizeLG="5" SizeXL="4">
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
+
+                <RadzenIcon Icon="lock_open" Style="font-size: 3rem; color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" TextAlign="TextAlign.Center">
+                    Nouveau mot de passe
+                </RadzenText>
+
+                @if (string.IsNullOrEmpty(_token))
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" Variant="Variant.Flat"
+                                 Title="Lien invalide" Style="width: 100%;">
+                        Le lien ne contient pas de token. Refaites une demande de réinitialisation.
+                    </RadzenAlert>
+                    <RadzenButton Text="Mot de passe oublié" Icon="lock_reset" ButtonStyle="ButtonStyle.Primary"
+                                  Style="width: 100%;"
+                                  Click='() => Navigation.NavigateTo("/mot-de-passe-oublie")' />
+                }
+                else if (_succes)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Success" ShowIcon="true" Variant="Variant.Flat"
+                                 Title="Mot de passe modifié" Style="width: 100%;">
+                        Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.
+                    </RadzenAlert>
+                    <RadzenButton Text="Se connecter" Icon="login" ButtonStyle="ButtonStyle.Primary"
+                                  Style="width: 100%;"
+                                  Click='() => Navigation.NavigateTo("/connexion")' />
+                }
+                else
+                {
+                    <RadzenText TextStyle="TextStyle.Subtitle1" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color); margin-top: -1rem;">
+                        Saisissez votre nouveau mot de passe
+                    </RadzenText>
+
+                    <RadzenTemplateForm TItem="FormData" Data="_form" Submit="Reinitialiser" Style="width: 100%;">
+                        <RadzenStack Gap="1.25rem">
+
+                            <RadzenFormField Text="Nouveau mot de passe" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="lock" /></Start>
+                                <ChildContent>
+                                    <RadzenPassword @bind-Value="_form.MotDePasse" Name="Mdp" Style="width: 100%;" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="Mdp" Text="Obligatoire." />
+                                    <RadzenLengthValidator Component="Mdp" Min="8" Text="Minimum 8 caractères." />
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Confirmer le mot de passe" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="lock_reset" /></Start>
+                                <ChildContent>
+                                    <RadzenPassword @bind-Value="_form.Confirmation" Name="ConfMdp" Style="width: 100%;" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenCompareValidator Component="ConfMdp" Value="_form.MotDePasse" Text="Les mots de passe ne correspondent pas." />
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenButton Text="Modifier mon mot de passe" ButtonType="ButtonType.Submit" Icon="save"
+                                          ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large"
+                                          Style="width: 100%;" IsBusy="_enChargement" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+                }
+
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private string _token = string.Empty;
+    private FormData _form = new();
+    private bool _enChargement;
+    private bool _succes;
+
+    protected override void OnInitialized()
+    {
+        var _uri = new Uri(Navigation.Uri);
+        var _query = _uri.Query;
+        if (string.IsNullOrEmpty(_query)) return;
+        if (_query.StartsWith("?")) _query = _query.Substring(1);
+        foreach (var _pair in _query.Split('&'))
+        {
+            var _kv = _pair.Split('=');
+            if (_kv.Length == 2 && _kv[0] == "token")
+            {
+                _token = Uri.UnescapeDataString(_kv[1]);
+                break;
+            }
+        }
+    }
+
+    private async Task Reinitialiser()
+    {
+        _enChargement = true;
+        var (_ok, _message) = await SAuth.ReinitialiserMotDePasse(_token, _form.MotDePasse);
+        _enChargement = false;
+
+        if (_ok)
+        {
+            _succes = true;
+            Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private class FormData
+    {
+        public string MotDePasse { get; set; } = string.Empty;
+        public string Confirmation { get; set; } = string.Empty;
+    }
+}

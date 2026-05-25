@@ -56,6 +56,28 @@ public class S_Auth
         await _authProvider.Deconnecter();
     }
 
+    public async Task<(bool Succes, string Message)> DemanderReset(string p_email)
+    {
+        var _reponse = await _http.PostAsJsonAsync("api/auth/demander-reset", new DTO_DemandeReset { Email = p_email });
+        if (_reponse.IsSuccessStatusCode)
+        {
+            var _msg = await LireMessageErreur(_reponse);
+            return (true, _msg ?? "Si un compte existe avec cet email, un lien vous a été envoyé.");
+        }
+        var _erreur = await LireMessageErreur(_reponse);
+        return (false, _erreur ?? "Erreur lors de la demande.");
+    }
+
+    public async Task<(bool Succes, string Message)> ReinitialiserMotDePasse(string p_token, string p_nouveauMotDePasse)
+    {
+        var _reponse = await _http.PostAsJsonAsync("api/auth/reinitialiser",
+            new DTO_ReinitialiserMotDePasse { Token = p_token, NouveauMotDePasse = p_nouveauMotDePasse });
+        if (_reponse.IsSuccessStatusCode)
+            return (true, "Mot de passe modifié avec succès.");
+        var _erreur = await LireMessageErreur(_reponse);
+        return (false, _erreur ?? "Erreur lors de la réinitialisation.");
+    }
+
     private class MessageReponse
     {
         public string Message { get; set; } = string.Empty;

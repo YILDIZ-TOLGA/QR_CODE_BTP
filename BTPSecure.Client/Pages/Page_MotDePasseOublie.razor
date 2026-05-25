@@ -1,0 +1,73 @@
+@page "/mot-de-passe-oublie"
+@inject Services.S_Auth SAuth
+@inject NavigationManager Navigation
+@inject NotificationService Notification
+
+<RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 85vh;">
+    <RadzenColumn Size="12" SizeSM="10" SizeMD="6" SizeLG="5" SizeXL="4">
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
+
+                <RadzenIcon Icon="lock_reset" Style="font-size: 3rem; color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" TextAlign="TextAlign.Center">
+                    Mot de passe oublié
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Subtitle1" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color); margin-top: -1rem;">
+                    Saisissez votre email pour recevoir un lien de réinitialisation
+                </RadzenText>
+
+                @if (_envoye)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Success" ShowIcon="true" Variant="Variant.Flat"
+                                 Title="Demande envoyée" Style="width: 100%;">
+                        Si un compte existe avec cet email, un lien de réinitialisation vous a été envoyé. Vérifiez votre boîte mail (et les spams).
+                    </RadzenAlert>
+                    <RadzenButton Text="Retour à la connexion" Icon="arrow_back" ButtonStyle="ButtonStyle.Primary"
+                                  Variant="Variant.Outlined" Style="width: 100%;"
+                                  Click='() => Navigation.NavigateTo("/connexion")' />
+                }
+                else
+                {
+                    <RadzenTemplateForm TItem="DTO_DemandeReset" Data="_dto" Submit="Demander" Style="width: 100%;">
+                        <RadzenStack Gap="1.25rem">
+
+                            <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="mail" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="_dto.Email" Name="Email" Style="width: 100%;" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="Email" Text="L'email est obligatoire." />
+                                    <RadzenEmailValidator Component="Email" Text="Email invalide." />
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenButton Text="Envoyer le lien" ButtonType="ButtonType.Submit" Icon="send"
+                                          ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large"
+                                          Style="width: 100%;" IsBusy="_enChargement" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="0.25rem">
+                        <RadzenLink Path="/connexion" Text="Retour à la connexion" Style="font-weight: 600;" />
+                    </RadzenStack>
+                }
+
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private DTO_DemandeReset _dto = new();
+    private bool _enChargement;
+    private bool _envoye;
+
+    private async Task Demander()
+    {
+        _enChargement = true;
+        var (_succes, _message) = await SAuth.DemanderReset(_dto.Email);
+        _enChargement = false;
+        _envoye = true;
+    }
+}

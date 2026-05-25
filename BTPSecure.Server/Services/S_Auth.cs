@@ -13,12 +13,99 @@ public class S_Auth
     private readonly DAO_Utilisateur _daoUtilisateur;
     private readonly IConfiguration _config;
     private readonly ILogger<S_Auth> _logger;
+    private readonly BTPSecure.Server.Data.AppDbContext _context;
+    private readonly S_Email _sEmail;
 
-    public S_Auth(DAO_Utilisateur p_daoUtilisateur, IConfiguration p_config, ILogger<S_Auth> p_logger)
+    public S_Auth(DAO_Utilisateur p_daoUtilisateur, IConfiguration p_config, ILogger<S_Auth> p_logger,
+        BTPSecure.Server.Data.AppDbContext p_context, S_Email p_sEmail)
     {
         _daoUtilisateur = p_daoUtilisateur;
         _config = p_config;
         _logger = p_logger;
+        _context = p_context;
+        _sEmail = p_sEmail;
+    }
+
+    public async Task<(bool Succes, string Message)> DemanderResetMotDePasse(string p_email)
+    {
+        if (string.IsNullOrWhiteSpace(p_email))
+            return (true, "Si un compte existe avec cet email, un lien de réinitialisation vous a été envoyé.");
+
+        var _utilisateur = await _daoUtilisateur.ObtenirParEmail(p_email);
+        if (_utilisateur == null || !_utilisateur.EstActif)
+        {
+            return (true, "Si un compte existe avec cet email, un lien de réinitialisation vous a été envoyé.");
+        }
+
+        // Invalider les anciens tokens non utilisés
+        var _anciens = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            _context.ResetsMotDePasse.Where(r => r.UtilisateurId == _utilisateur.Id && !r.EstUtilise));
+        foreach (var _ancien in _anciens)
+        {
+            _ancien.EstUtilise = true;
+        }
+
+        var _token = GenererToken();
+        var _reset = new E_ResetMotDePasse
+        {
+            UtilisateurId = _utilisateur.Id,
+            Token = _token,
+            DateCreation = DateTime.UtcNow,
+            DateExpiration = DateTime.UtcNow.AddHours(1),
+            EstUtilise = false
+        };
+        _context.ResetsMotDePasse.Add(_reset);
+        await _context.SaveChangesAsync();
+
+        _ = Task.Run(async () =>
+        {
+            await _sEmail.EnvoyerResetMotDePasse(_utilisateur.Email, _utilisateur.Prenom, _token);
+        });
+
+        _logger.LogInformation("Demande de reset mot de passe pour {Email}", _utilisateur.Email);
+        return (true, "Si un compte existe avec cet email, un lien de réinitialisation vous a été envoyé.");
+    }
+
+    public async Task<(bool Succes, string Message)> ReinitialiserMotDePasse(string p_token, string p_nouveauMotDePasse)
+    {
+        if (string.IsNullOrWhiteSpace(p_token))
+            return (false, "Lien invalide.");
+
+        if (string.IsNullOrWhiteSpace(p_nouveauMotDePasse) || p_nouveauMotDePasse.Length < 8)
+            return (false, "Le mot de passe doit faire minimum 8 caractères.");
+
+        var _reset = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            _context.ResetsMotDePasse, r => r.Token == p_token);
+
+        if (_reset == null)
+            return (false, "Lien invalide ou expiré.");
+
+        if (_reset.EstUtilise)
+            return (false, "Ce lien a déjà été utilisé.");
+
+        if (_reset.DateExpiration < DateTime.UtcNow)
+            return (false, "Ce lien a expiré. Refaites une demande.");
+
+        var _utilisateur = await _daoUtilisateur.ObtenirParId(_reset.UtilisateurId);
+        if (_utilisateur == null || !_utilisateur.EstActif)
+            return (false, "Compte introuvable.");
+
+        var _sel = BCrypt.Net.BCrypt.GenerateSalt();
+        _utilisateur.MotDePasseHash = BCrypt.Net.BCrypt.HashPassword(p_nouveauMotDePasse, _sel);
+        _utilisateur.Sel = _sel;
+
+        _reset.EstUtilise = true;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Mot de passe réinitialisé pour {Email}", _utilisateur.Email);
+        return (true, "Mot de passe modifié avec succès. Vous pouvez vous connecter.");
+    }
+
+    private static string GenererToken()
+    {
+        var _bytes = new byte[48];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(_bytes);
+        return Convert.ToBase64String(_bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
     }
 
     public async Task<(bool Succes, string Message, DTO_ReponseAuth? Reponse)> Inscrire(DTO_Inscription p_dto)

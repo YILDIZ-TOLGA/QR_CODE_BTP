@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<E_SalarieEntreprise> SalariesEntreprises => Set<E_SalarieEntreprise>();
     public DbSet<E_Code> Codes => Set<E_Code>();
     public DbSet<E_FournisseurContact> FournisseursContacts => Set<E_FournisseurContact>();
+    public DbSet<E_ResetMotDePasse> ResetsMotDePasse => Set<E_ResetMotDePasse>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -112,6 +113,19 @@ public class AppDbContext : DbContext
                 .HasForeignKey(f => f.PatronId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(f => new { f.PatronId, f.Siret });
+        });
+
+        // E_ResetMotDePasse
+        p_modelBuilder.Entity<E_ResetMotDePasse>(e =>
+        {
+            e.ToTable("resets_motdepasse");
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Token).IsRequired().HasMaxLength(128);
+            e.HasIndex(r => r.Token).IsUnique();
+            e.HasOne(r => r.Utilisateur)
+                .WithMany()
+                .HasForeignKey(r => r.UtilisateurId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

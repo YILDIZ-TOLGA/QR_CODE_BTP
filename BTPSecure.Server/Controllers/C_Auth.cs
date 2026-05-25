@@ -30,4 +30,19 @@ public class C_Auth : ControllerBase
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(_reponse);
     }
+
+    [HttpPost("demander-reset")]
+    public async Task<IActionResult> DemanderReset([FromBody] DTO_DemandeReset p_dto)
+    {
+        var (_succes, _message) = await _sAuth.DemanderResetMotDePasse(p_dto.Email);
+        return Ok(new { message = _message });
+    }
+
+    [HttpPost("reinitialiser")]
+    public async Task<IActionResult> Reinitialiser([FromBody] DTO_ReinitialiserMotDePasse p_dto)
+    {
+        var (_succes, _message) = await _sAuth.ReinitialiserMotDePasse(p_dto.Token, p_dto.NouveauMotDePasse);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
 }
