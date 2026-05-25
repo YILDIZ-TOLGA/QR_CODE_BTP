@@ -26,7 +26,21 @@ public class S_Entreprise
 
     public async Task<DTO_EntrepriseAffichage?> ObtenirMonEntreprise()
     {
-        return await _http.GetFromJsonAsync<DTO_EntrepriseAffichage?>("api/entreprises/ma-entreprise");
+        try
+        {
+            var _reponse = await _http.GetAsync("api/entreprises/ma-entreprise");
+            if (!_reponse.IsSuccessStatusCode)
+                return null;
+            var _body = await _reponse.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(_body) || _body == "null")
+                return null;
+            return System.Text.Json.JsonSerializer.Deserialize<DTO_EntrepriseAffichage>(_body,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public async Task<(bool Succes, string Message, DTO_SalarieAffichage? Salarie)> AjouterSalarie(string p_email)

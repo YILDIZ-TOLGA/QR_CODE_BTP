@@ -253,8 +253,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await ChargerDonnees();
-        _chargement = false;
+        try
+        {
+            await ChargerDonnees();
+        }
+        catch (Exception ex)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", ex.Message);
+        }
+        finally
+        {
+            _chargement = false;
+        }
     }
 
     private async Task ChargerDonnees()
