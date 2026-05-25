@@ -30,6 +30,14 @@ public class DAO_Utilisateur
             .AnyAsync(u => u.Email == p_email.ToLower());
     }
 
+    public async Task<bool> FournisseurExisteAvecSiret(string p_siret)
+    {
+        return await _context.Utilisateurs
+            .AnyAsync(u => u.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur
+                && u.Siret == p_siret
+                && u.EstActif);
+    }
+
     public async Task<E_Utilisateur> Creer(E_Utilisateur p_utilisateur)
     {
         p_utilisateur.Email = p_utilisateur.Email.ToLower();

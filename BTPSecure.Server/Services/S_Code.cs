@@ -13,18 +13,20 @@ public class S_Code
     private readonly DAO_Utilisateur _daoUtilisateur;
     private readonly DAO_FournisseurContact _daoFournisseurContact;
     private readonly S_Pdf _sPdf;
+    private readonly S_Email _sEmail;
     private readonly ILogger<S_Code> _logger;
 
     private const string CARACTERES_AUTORISES = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
     public S_Code(DAO_Code p_daoCode, DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
-        DAO_FournisseurContact p_daoFournisseurContact, S_Pdf p_sPdf, ILogger<S_Code> p_logger)
+        DAO_FournisseurContact p_daoFournisseurContact, S_Pdf p_sPdf, S_Email p_sEmail, ILogger<S_Code> p_logger)
     {
         _daoCode = p_daoCode;
         _daoEntreprise = p_daoEntreprise;
         _daoUtilisateur = p_daoUtilisateur;
         _daoFournisseurContact = p_daoFournisseurContact;
         _sPdf = p_sPdf;
+        _sEmail = p_sEmail;
         _logger = p_logger;
     }
 
@@ -135,6 +137,29 @@ public class S_Code
         _code.Salarie = _salarie;
 
         _logger.LogInformation("Code {Valeur} créé par patron {PatronId} pour salarié {SalarieId}", _valeur, p_patronId, p_dto.SalarieId);
+
+        // Envoi d'invitation au fournisseur s'il n'a pas encore de compte avec ce SIRET
+        if (p_dto.UtiliserFournisseur && _fournisseurContactId.HasValue)
+        {
+            var _contactFinal = await _daoFournisseurContact.ObtenirParId(_fournisseurContactId.Value);
+            if (_contactFinal != null)
+            {
+                bool _compteExiste = await _daoUtilisateur.FournisseurExisteAvecSiret(_contactFinal.Siret);
+                if (!_compteExiste)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        await _sEmail.EnvoyerInvitationFournisseur(
+                            _contactFinal.Email,
+                            _entreprise.Nom,
+                            _contactFinal.NomEntreprise,
+                            _contactFinal.Siret,
+                            _contactFinal.Siren,
+                            _contactFinal.Email);
+                    });
+                }
+            }
+        }
 
         return (true, "Code créé avec succès.", VersDTO(_code));
     }

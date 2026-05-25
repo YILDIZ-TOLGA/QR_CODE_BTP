@@ -70,6 +70,7 @@ builder.Services.AddScoped<S_Admin>();
 builder.Services.AddScoped<S_Invitation>();
 builder.Services.AddScoped<S_FournisseurContact>();
 builder.Services.AddSingleton<S_Pdf>();
+builder.Services.AddSingleton<S_Email>();
 
 var app = builder.Build();
 
