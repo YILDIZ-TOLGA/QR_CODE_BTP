@@ -16,6 +16,8 @@ public class DTO_CodeAffichage
     public DateTime? DateExpiration { get; set; }
     public string NomSalarie { get; set; } = string.Empty;
     public string PrenomSalarie { get; set; } = string.Empty;
+    public int SalarieId { get; set; }
     public string? Reference { get; set; }
     public string? NomFournisseurContact { get; set; }
+    public int? FournisseurContactId { get; set; }
 }

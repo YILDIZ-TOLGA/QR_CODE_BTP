@@ -384,8 +384,10 @@ public class S_Code
             DateExpiration = p_code.DateExpiration,
             NomSalarie = p_code.Salarie?.Nom ?? "",
             PrenomSalarie = p_code.Salarie?.Prenom ?? "",
+            SalarieId = p_code.SalarieId,
             Reference = p_code.Reference,
-            NomFournisseurContact = p_code.FournisseurContact?.NomEntreprise
+            NomFournisseurContact = p_code.FournisseurContact?.NomEntreprise,
+            FournisseurContactId = p_code.FournisseurContactId
         };
     }
 }

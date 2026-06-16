@@ -2,6 +2,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
 @inject Services.S_Entreprise SEntreprise
 @inject Services.S_Code SCode
+@inject Services.S_FournisseurContact SFournisseur
 @inject NavigationManager Navigation
 @inject NotificationService Notification
 @inject DialogService Dialog
@@ -204,8 +205,87 @@ else
             }
             else
             {
+                <!-- Filtres -->
+                <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-base-100); margin-bottom: 1rem;">
+                    <RadzenStack Gap="0.75rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenIcon Icon="filter_alt" Style="color: var(--rz-primary);" />
+                                <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin: 0; font-weight: 600;">Filtres</RadzenText>
+                                <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_codesFiltres.Count} / {_codes.Count}")" IsPill="true" />
+                            </RadzenStack>
+                            <RadzenButton Text="Réinitialiser" Icon="restart_alt" ButtonStyle="ButtonStyle.Base"
+                                          Variant="Variant.Text" Size="ButtonSize.Small" Click="ReinitialiserFiltres" />
+                        </RadzenStack>
+
+                        <RadzenRow Gap="0.75rem">
+                            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                                <RadzenFormField Text="Type" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="category" /></Start>
+                                    <ChildContent>
+                                        <RadzenDropDown @bind-Value="_filtreType" Data="_optionsType" TextProperty="Text" ValueProperty="Value"
+                                                        Style="width: 100%;" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                                <RadzenFormField Text="Statut" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="flag" /></Start>
+                                    <ChildContent>
+                                        <RadzenDropDown @bind-Value="_filtreStatut" Data="_optionsStatut" TextProperty="Text" ValueProperty="Value"
+                                                        Style="width: 100%;" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                                <RadzenFormField Text="Salarié" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="person" /></Start>
+                                    <ChildContent>
+                                        <RadzenDropDown @bind-Value="_filtreSalarieId" Data="_optionsSalarie" TextProperty="Label" ValueProperty="Id"
+                                                        Style="width: 100%;" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                                <RadzenFormField Text="Fournisseur" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="business" /></Start>
+                                    <ChildContent>
+                                        <RadzenDropDown @bind-Value="_filtreFournisseurId" Data="_optionsFournisseur" TextProperty="Label" ValueProperty="Id"
+                                                        Style="width: 100%;" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                                <RadzenFormField Text="Créé après" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="event" /></Start>
+                                    <ChildContent>
+                                        <RadzenDatePicker @bind-Value="_filtreDateDebut" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                                <RadzenFormField Text="Créé avant" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="event" /></Start>
+                                    <ChildContent>
+                                        <RadzenDatePicker @bind-Value="_filtreDateFin" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenStack>
+                </RadzenCard>
+
+                @if (_codesFiltres.Count == 0)
+                {
+                    <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+                        <RadzenIcon Icon="search_off" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
+                        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun code ne correspond aux filtres</RadzenText>
+                    </RadzenStack>
+                }
+                else
+                {
                 <RadzenRow Gap="1rem">
-                    @foreach (var _c in _codes)
+                    @foreach (var _c in _codesFiltres)
                     {
                         <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
                             <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
@@ -260,6 +340,7 @@ else
                         </RadzenColumn>
                     }
                 </RadzenRow>
+                }
             }
         </RadzenCard>
     </RadzenStack>
@@ -270,8 +351,96 @@ else
     private DTO_CreerEntreprise _dtoEntreprise = new();
     private List<DTO_SalarieAffichage> _salaries = new();
     private List<DTO_CodeAffichage> _codes = new();
+    private List<DTO_FournisseurContact> _fournisseurs = new();
     private int _nbNotifications = 0;
     private bool _chargement = true;
+
+    // Filtres
+    private string _filtreType = "tous";
+    private string _filtreStatut = "tous";
+    private int _filtreSalarieId = 0;
+    private int _filtreFournisseurId = 0;
+    private DateTime? _filtreDateDebut;
+    private DateTime? _filtreDateFin;
+
+    private List<object> _optionsType = new()
+    {
+        new { Text = "Tous", Value = "tous" },
+        new { Text = "Confiance", Value = "confiance" },
+        new { Text = "Liste", Value = "liste" }
+    };
+
+    private List<object> _optionsStatut = new()
+    {
+        new { Text = "Tous", Value = "tous" },
+        new { Text = "Actif", Value = "actif" },
+        new { Text = "Utilisé", Value = "utilise" },
+        new { Text = "Révoqué", Value = "revoque" },
+        new { Text = "Expiré", Value = "expire" }
+    };
+
+    private List<OptionItem> _optionsSalarie => new List<OptionItem> { new() { Id = 0, Label = "Tous" } }
+        .Concat(_salaries.Select(s => new OptionItem { Id = s.SalarieId, Label = $"{s.Prenom} {s.Nom}" })).ToList();
+
+    private List<OptionItem> _optionsFournisseur => new List<OptionItem> { new() { Id = 0, Label = "Tous" } }
+        .Concat(_fournisseurs.Select(f => new OptionItem { Id = f.Id, Label = f.NomEntreprise })).ToList();
+
+    private List<DTO_CodeAffichage> _codesFiltres
+    {
+        get
+        {
+            IEnumerable<DTO_CodeAffichage> _q = _codes;
+
+            if (_filtreType == "confiance")
+                _q = _q.Where(c => c.TypeCode == Enum_TypeCode.Confiance);
+            else if (_filtreType == "liste")
+                _q = _q.Where(c => c.TypeCode == Enum_TypeCode.Liste);
+
+            if (_filtreStatut == "actif")
+                _q = _q.Where(c => c.Statut == Enum_StatutCode.Actif);
+            else if (_filtreStatut == "utilise")
+                _q = _q.Where(c => c.Statut == Enum_StatutCode.Utilise);
+            else if (_filtreStatut == "revoque")
+                _q = _q.Where(c => c.Statut == Enum_StatutCode.Revoque);
+            else if (_filtreStatut == "expire")
+                _q = _q.Where(c => c.Statut == Enum_StatutCode.Expire);
+
+            if (_filtreSalarieId > 0)
+                _q = _q.Where(c => c.SalarieId == _filtreSalarieId);
+
+            if (_filtreFournisseurId > 0)
+                _q = _q.Where(c => c.FournisseurContactId == _filtreFournisseurId);
+
+            if (_filtreDateDebut.HasValue)
+            {
+                var _debut = _filtreDateDebut.Value.Date.ToUniversalTime();
+                _q = _q.Where(c => c.DateCreation >= _debut);
+            }
+            if (_filtreDateFin.HasValue)
+            {
+                var _fin = _filtreDateFin.Value.Date.AddDays(1).ToUniversalTime();
+                _q = _q.Where(c => c.DateCreation < _fin);
+            }
+
+            return _q.ToList();
+        }
+    }
+
+    private class OptionItem
+    {
+        public int Id { get; set; }
+        public string Label { get; set; } = string.Empty;
+    }
+
+    private void ReinitialiserFiltres()
+    {
+        _filtreType = "tous";
+        _filtreStatut = "tous";
+        _filtreSalarieId = 0;
+        _filtreFournisseurId = 0;
+        _filtreDateDebut = null;
+        _filtreDateFin = null;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -296,6 +465,7 @@ else
         {
             _salaries = await SEntreprise.ObtenirSalaries();
             _codes = await SCode.ObtenirParPatron();
+            _fournisseurs = await SFournisseur.Lister();
             var _notifs = await SCode.ObtenirNotificationsPatron();
             _nbNotifications = _notifs.Count;
         }
