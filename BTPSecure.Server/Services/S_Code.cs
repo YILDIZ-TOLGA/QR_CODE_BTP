@@ -52,6 +52,9 @@ public class S_Code
         if (p_dto.TypeCode == Enum_TypeCode.Confiance && (!p_dto.DureeValiditeHeures.HasValue || p_dto.DureeValiditeHeures.Value <= 0))
             return (false, "La durée de validité est obligatoire pour un code Confiance.", null);
 
+        if (p_dto.TypeCode == Enum_TypeCode.Confiance && p_dto.DureeValiditeHeures.HasValue && p_dto.DureeValiditeHeures.Value > 48)
+            return (false, "La durée maximum d'un code Confiance est de 48 heures.", null);
+
         if (p_dto.TypeCode == Enum_TypeCode.Liste && string.IsNullOrWhiteSpace(p_dto.ListeMateriaux))
             return (false, "La liste des matériaux est obligatoire pour un code Liste.", null);
 
