@@ -115,27 +115,14 @@
 
                         @if (_dto.TypeCode == Enum_TypeCode.Confiance)
                         {
-                            <RadzenRow Gap="1rem" AlignItems="AlignItems.End">
-                                <RadzenColumn Size="6">
-                                    <RadzenFormField Text="Durée" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <Start><RadzenIcon Icon="timer" /></Start>
-                                        <ChildContent>
-                                            <RadzenNumeric @bind-Value="_dureeNumerique" Min="1" Max="@(_unite == "heures" ? 48 : 2)" Style="width: 100%;" />
-                                        </ChildContent>
-                                    </RadzenFormField>
-                                </RadzenColumn>
-                                <RadzenColumn Size="6">
-                                    <RadzenFormField Text="Unité" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <ChildContent>
-                                            <RadzenDropDown @bind-Value="_unite" Data="_unites" TextProperty="Text" ValueProperty="Value"
-                                                            Change="@(_ => AjusterDuree())" Style="width: 100%;" />
-                                        </ChildContent>
-                                    </RadzenFormField>
-                                </RadzenColumn>
-                            </RadzenRow>
-                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); margin-top: -0.5rem;">
-                                ⓘ Durée maximum : 48 heures (2 jours)
-                            </RadzenText>
+                            <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-info-light); padding: 0.75rem;">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                    <RadzenIcon Icon="timer" Style="color: var(--rz-info);" />
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0;">
+                                        <strong>Validité : 48 heures</strong> à partir de la création
+                                    </RadzenText>
+                                </RadzenStack>
+                            </RadzenCard>
                         }
 
                         @if (_dto.TypeCode == Enum_TypeCode.Liste)
@@ -249,28 +236,12 @@
     private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.Confiance };
     private DTO_CodeAffichage? _codeGenere;
     private bool _enChargement;
-    private int _dureeNumerique = 24;
-    private string _unite = "heures";
     private List<SalarieItem> _salaries = new();
     private DTO_EntrepriseAffichage? _entreprise;
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private string _modeFournisseur = "existant";
 
-    private List<object> _unites = new()
-    {
-        new { Text = "Heures", Value = "heures" },
-        new { Text = "Jours", Value = "jours" }
-    };
-
-    private void AjusterDuree()
-    {
-        if (_unite == "heures" && _dureeNumerique > 48)
-            _dureeNumerique = 48;
-        else if (_unite == "jours" && _dureeNumerique > 2)
-            _dureeNumerique = 2;
-        else if (_unite == "jours" && _dureeNumerique < 1)
-            _dureeNumerique = 1;
-    }
+    private const int DUREE_CONFIANCE_HEURES = 48;
 
     protected override async Task OnInitializedAsync()
     {
@@ -294,13 +265,7 @@
 
         if (_dto.TypeCode == Enum_TypeCode.Confiance)
         {
-            if (_unite == "jours")
-                _dto.DureeValiditeHeures = _dureeNumerique * 24;
-            else
-                _dto.DureeValiditeHeures = _dureeNumerique;
-
-            if (_dto.DureeValiditeHeures > 48)
-                _dto.DureeValiditeHeures = 48;
+            _dto.DureeValiditeHeures = DUREE_CONFIANCE_HEURES;
         }
 
         if (_dto.UtiliserFournisseur)
@@ -342,8 +307,6 @@
     {
         _codeGenere = null;
         _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Confiance, EntrepriseId = _entreprise?.Id ?? 0 };
-        _dureeNumerique = 24;
-        _unite = "heures";
         _modeFournisseur = "existant";
     }
 
