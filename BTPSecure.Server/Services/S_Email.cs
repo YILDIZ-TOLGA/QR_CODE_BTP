@@ -31,7 +31,7 @@ public class S_Email
         }
 
         var _lienConnexion = $"{_siteUrl}/connexion";
-        var _lienResetMdp = $"{_siteUrl}/mot-de-passe-oublie";
+        var _lienProfil = $"{_siteUrl}/profil";
 
         var _corpsHtml = $@"
 <!DOCTYPE html>
@@ -63,7 +63,7 @@ public class S_Email
 
         <div style=""background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px 16px; border-radius: 4px; margin: 16px 0;"">
             <p style=""margin: 0; color: #856404;"">
-                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion via <a href=""{_lienResetMdp}"" style=""color: #1565C0;"">Mot de passe oublié</a>.
+                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion en allant dans <a href=""{_lienProfil}"" style=""color: #1565C0;"">Mon profil</a>, section « Changer mon mot de passe ».
             </p>
         </div>
 

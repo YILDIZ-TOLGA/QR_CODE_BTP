@@ -101,6 +101,33 @@ public class S_Auth
         return (true, "Mot de passe modifié avec succès. Vous pouvez vous connecter.");
     }
 
+    public async Task<(bool Succes, string Message)> ChangerMotDePasse(int p_utilisateurId, string p_ancien, string p_nouveau)
+    {
+        if (string.IsNullOrWhiteSpace(p_ancien) || string.IsNullOrWhiteSpace(p_nouveau))
+            return (false, "L'ancien et le nouveau mot de passe sont obligatoires.");
+
+        if (p_nouveau.Length < 8)
+            return (false, "Le nouveau mot de passe doit faire minimum 8 caractères.");
+
+        var _utilisateur = await _daoUtilisateur.ObtenirParId(p_utilisateurId);
+        if (_utilisateur == null || !_utilisateur.EstActif)
+            return (false, "Compte introuvable.");
+
+        if (!BCrypt.Net.BCrypt.Verify(p_ancien, _utilisateur.MotDePasseHash))
+            return (false, "L'ancien mot de passe est incorrect.");
+
+        if (p_ancien == p_nouveau)
+            return (false, "Le nouveau mot de passe doit être différent de l'ancien.");
+
+        var _sel = BCrypt.Net.BCrypt.GenerateSalt();
+        _utilisateur.MotDePasseHash = BCrypt.Net.BCrypt.HashPassword(p_nouveau, _sel);
+        _utilisateur.Sel = _sel;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Mot de passe changé pour {Email}", _utilisateur.Email);
+        return (true, "Mot de passe modifié avec succès.");
+    }
+
     private static string GenererToken()
     {
         var _bytes = new byte[48];

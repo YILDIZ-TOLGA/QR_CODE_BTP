@@ -65,4 +65,18 @@ public class C_Profil : ControllerBase
 
         return Ok(_profil);
     }
+
+    [HttpPost("changer-mot-de-passe")]
+    public async Task<IActionResult> ChangerMotDePasse([FromBody] DTO_ChangerMotDePasse p_dto,
+        [FromServices] BTPSecure.Server.Services.S_Auth p_sAuth)
+    {
+        var _claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(_claimId))
+            return Unauthorized();
+        var _id = int.Parse(_claimId);
+
+        var (_succes, _message) = await p_sAuth.ChangerMotDePasse(_id, p_dto.AncienMotDePasse, p_dto.NouveauMotDePasse);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
 }
