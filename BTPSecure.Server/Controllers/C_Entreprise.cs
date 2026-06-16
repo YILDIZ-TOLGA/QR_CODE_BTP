@@ -46,6 +46,14 @@ public class C_Entreprise : ControllerBase
         return Ok(_salarie);
     }
 
+    [HttpPost("creer-salarie")]
+    public async Task<IActionResult> CreerSalarie([FromBody] DTO_CreerSalarie p_dto)
+    {
+        var (_succes, _message) = await _sEntreprise.CreerSalarie(p_dto, ObtenirUtilisateurId());
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
+
     [HttpGet("salaries")]
     public async Task<IActionResult> ObtenirSalaries()
     {
