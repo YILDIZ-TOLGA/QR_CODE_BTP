@@ -37,8 +37,20 @@
                                 <RadzenIcon Icon="lock" />
                             </Start>
                             <ChildContent>
-                                <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width: 100%;" />
+                                @if (_voirMotDePasse)
+                                {
+                                    <RadzenTextBox @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width: 100%;" />
+                                }
+                                else
+                                {
+                                    <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width: 100%;" />
+                                }
                             </ChildContent>
+                            <End>
+                                <RadzenButton Icon="@(_voirMotDePasse ? "visibility_off" : "visibility")"
+                                              Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Small"
+                                              Click="@(() => _voirMotDePasse = !_voirMotDePasse)" type="button" />
+                            </End>
                             <Helper>
                                 <RadzenRequiredValidator Component="MotDePasse" Text="Le mot de passe est obligatoire." />
                             </Helper>
@@ -80,6 +92,7 @@
     private bool _enChargement;
     private bool _emailNonVerifie;
     private bool _envoiEnCours;
+    private bool _voirMotDePasse;
 
     protected override async Task OnInitializedAsync()
     {

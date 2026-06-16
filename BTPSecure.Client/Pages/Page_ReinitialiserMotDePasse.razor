@@ -45,8 +45,20 @@
                             <RadzenFormField Text="Nouveau mot de passe" Variant="Variant.Outlined" Style="width: 100%;">
                                 <Start><RadzenIcon Icon="lock" /></Start>
                                 <ChildContent>
-                                    <RadzenPassword @bind-Value="_form.MotDePasse" Name="Mdp" Style="width: 100%;" />
+                                    @if (_voirMotDePasse)
+                                    {
+                                        <RadzenTextBox @bind-Value="_form.MotDePasse" Name="Mdp" Style="width: 100%;" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenPassword @bind-Value="_form.MotDePasse" Name="Mdp" Style="width: 100%;" />
+                                    }
                                 </ChildContent>
+                                <End>
+                                    <RadzenButton Icon="@(_voirMotDePasse ? "visibility_off" : "visibility")"
+                                                  Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Small"
+                                                  Click="@(() => _voirMotDePasse = !_voirMotDePasse)" type="button" />
+                                </End>
                                 <Helper>
                                     <RadzenRequiredValidator Component="Mdp" Text="Obligatoire." />
                                     <RadzenLengthValidator Component="Mdp" Min="8" Text="Minimum 8 caractères." />
@@ -56,8 +68,20 @@
                             <RadzenFormField Text="Confirmer le mot de passe" Variant="Variant.Outlined" Style="width: 100%;">
                                 <Start><RadzenIcon Icon="lock_reset" /></Start>
                                 <ChildContent>
-                                    <RadzenPassword @bind-Value="_form.Confirmation" Name="ConfMdp" Style="width: 100%;" />
+                                    @if (_voirConfirmation)
+                                    {
+                                        <RadzenTextBox @bind-Value="_form.Confirmation" Name="ConfMdp" Style="width: 100%;" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenPassword @bind-Value="_form.Confirmation" Name="ConfMdp" Style="width: 100%;" />
+                                    }
                                 </ChildContent>
+                                <End>
+                                    <RadzenButton Icon="@(_voirConfirmation ? "visibility_off" : "visibility")"
+                                                  Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Small"
+                                                  Click="@(() => _voirConfirmation = !_voirConfirmation)" type="button" />
+                                </End>
                                 <Helper>
                                     <RadzenCompareValidator Component="ConfMdp" Value="_form.MotDePasse" Text="Les mots de passe ne correspondent pas." />
                                 </Helper>
@@ -80,6 +104,8 @@
     private FormData _form = new();
     private bool _enChargement;
     private bool _succes;
+    private bool _voirMotDePasse;
+    private bool _voirConfirmation;
 
     protected override void OnInitialized()
     {

@@ -19,6 +19,19 @@
                 <RadzenTemplateForm TItem="DTO_Inscription" Data="_dto" Submit="Inscrire" Style="width: 100%;">
                     <RadzenStack Gap="1.25rem">
 
+                        <RadzenFormField Text="Type de compte" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start>
+                                <RadzenIcon Icon="work" />
+                            </Start>
+                            <ChildContent>
+                                <RadzenDropDown @bind-Value="_dto.Role" Data="_roles" TextProperty="Text" ValueProperty="Value"
+                                                Name="Role" Style="width: 100%;" Placeholder="Choisir un type de compte..." />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="Role" Text="Le type de compte est obligatoire." DefaultValue="default(Enum_Role)" />
+                            </Helper>
+                        </RadzenFormField>
+
                         <RadzenRow Gap="1rem">
                             <RadzenColumn Size="12" SizeMD="6">
                                 <RadzenFormField Text="Nom" Variant="Variant.Outlined" Style="width: 100%;">
@@ -75,8 +88,20 @@
                                 <RadzenIcon Icon="lock" />
                             </Start>
                             <ChildContent>
-                                <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width: 100%;" />
+                                @if (_voirMotDePasse)
+                                {
+                                    <RadzenTextBox @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width: 100%;" />
+                                }
+                                else
+                                {
+                                    <RadzenPassword @bind-Value="_dto.MotDePasse" Name="MotDePasse" Style="width: 100%;" />
+                                }
                             </ChildContent>
+                            <End>
+                                <RadzenButton Icon="@(_voirMotDePasse ? "visibility_off" : "visibility")"
+                                              Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Small"
+                                              Click="@(() => _voirMotDePasse = !_voirMotDePasse)" type="button" />
+                            </End>
                             <Helper>
                                 <RadzenRequiredValidator Component="MotDePasse" Text="Le mot de passe est obligatoire." />
                                 <RadzenLengthValidator Component="MotDePasse" Min="8" Text="Minimum 8 caractères." />
@@ -88,23 +113,22 @@
                                 <RadzenIcon Icon="lock_reset" />
                             </Start>
                             <ChildContent>
-                                <RadzenPassword @bind-Value="_confirmMotDePasse" Name="ConfirmMdp" Style="width: 100%;" />
+                                @if (_voirConfirmation)
+                                {
+                                    <RadzenTextBox @bind-Value="_confirmMotDePasse" Name="ConfirmMdp" Style="width: 100%;" />
+                                }
+                                else
+                                {
+                                    <RadzenPassword @bind-Value="_confirmMotDePasse" Name="ConfirmMdp" Style="width: 100%;" />
+                                }
                             </ChildContent>
+                            <End>
+                                <RadzenButton Icon="@(_voirConfirmation ? "visibility_off" : "visibility")"
+                                              Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Small"
+                                              Click="@(() => _voirConfirmation = !_voirConfirmation)" type="button" />
+                            </End>
                             <Helper>
                                 <RadzenCompareValidator Component="ConfirmMdp" Value="_dto.MotDePasse" Text="Les mots de passe ne correspondent pas." />
-                            </Helper>
-                        </RadzenFormField>
-
-                        <RadzenFormField Text="Rôle" Variant="Variant.Outlined" Style="width: 100%;">
-                            <Start>
-                                <RadzenIcon Icon="work" />
-                            </Start>
-                            <ChildContent>
-                                <RadzenDropDown @bind-Value="_dto.Role" Data="_roles" TextProperty="Text" ValueProperty="Value"
-                                                Name="Role" Style="width: 100%;" Placeholder="Choisir un rôle..." />
-                            </ChildContent>
-                            <Helper>
-                                <RadzenRequiredValidator Component="Role" Text="Le rôle est obligatoire." DefaultValue="default(Enum_Role)" />
                             </Helper>
                         </RadzenFormField>
 
@@ -153,6 +177,8 @@
     private DTO_Inscription _dto = new();
     private string _confirmMotDePasse = string.Empty;
     private bool _enChargement;
+    private bool _voirMotDePasse;
+    private bool _voirConfirmation;
 
     private List<object> _roles = new()
     {
