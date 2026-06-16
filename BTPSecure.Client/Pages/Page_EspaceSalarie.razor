@@ -1,5 +1,6 @@
 @page "/salarie"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Salarie")]
+@implements IDisposable
 @inject Services.S_Code SCode
 @inject Services.S_Invitation SInvitation
 @inject NotificationService Notification
@@ -208,10 +209,33 @@ else
     private List<DTO_CodeAffichage> _codes = new();
     private bool _chargement = true;
 
+    private System.Timers.Timer? _timer;
+
     protected override async Task OnInitializedAsync()
     {
         await ChargerDonnees();
         _chargement = false;
+
+        _timer = new System.Timers.Timer(15000);
+        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async Task RafraichirSilencieux()
+    {
+        try
+        {
+            await ChargerDonnees();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
     }
 
     private async Task ChargerDonnees()

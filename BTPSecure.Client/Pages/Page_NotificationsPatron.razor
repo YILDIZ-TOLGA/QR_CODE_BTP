@@ -1,5 +1,6 @@
 @page "/patron/notifications"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@implements IDisposable
 @inject Services.S_Code SCode
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
@@ -112,9 +113,32 @@ else
     private List<DTO_NotificationPatron> _notifications = new();
     private bool _chargement = true;
 
+    private System.Timers.Timer? _timer;
+
     protected override async Task OnInitializedAsync()
     {
         _notifications = await SCode.ObtenirNotificationsPatron();
         _chargement = false;
+
+        _timer = new System.Timers.Timer(15000);
+        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async Task RafraichirSilencieux()
+    {
+        try
+        {
+            _notifications = await SCode.ObtenirNotificationsPatron();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
     }
 }

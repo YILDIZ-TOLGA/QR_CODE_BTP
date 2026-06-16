@@ -1,5 +1,6 @@
 @page "/admin"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@implements IDisposable
 @inject Services.S_Admin SAdmin
 @inject NotificationService Notification
 @inject DialogService Dialog
@@ -149,10 +150,33 @@ else
     private List<DTO_EntrepriseAdmin> _entreprises = new();
     private bool _chargement = true;
 
+    private System.Timers.Timer? _timer;
+
     protected override async Task OnInitializedAsync()
     {
         _entreprises = await SAdmin.ObtenirEntreprises();
         _chargement = false;
+
+        _timer = new System.Timers.Timer(15000);
+        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async Task RafraichirSilencieux()
+    {
+        try
+        {
+            _entreprises = await SAdmin.ObtenirEntreprises();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
     }
 
     private async Task Basculer(DTO_EntrepriseAdmin p_entreprise)

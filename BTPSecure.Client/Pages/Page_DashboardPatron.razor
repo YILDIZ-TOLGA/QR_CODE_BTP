@@ -1,5 +1,6 @@
 @page "/patron"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@implements IDisposable
 @inject Services.S_Entreprise SEntreprise
 @inject Services.S_Code SCode
 @inject Services.S_FournisseurContact SFournisseur
@@ -442,6 +443,8 @@ else
         _filtreDateFin = null;
     }
 
+    private System.Timers.Timer? _timer;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -456,6 +459,27 @@ else
         {
             _chargement = false;
         }
+
+        _timer = new System.Timers.Timer(15000);
+        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async Task RafraichirSilencieux()
+    {
+        try
+        {
+            await ChargerDonnees();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
     }
 
     private async Task ChargerDonnees()

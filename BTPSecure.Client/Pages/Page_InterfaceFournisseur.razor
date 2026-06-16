@@ -1,5 +1,6 @@
 @page "/fournisseur"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Fournisseur")]
+@implements IDisposable
 @inject Services.S_Code SCode
 @inject NotificationService Notification
 @inject IJSRuntime JS
@@ -206,9 +207,32 @@
     private List<DTO_CommandeAVenir> _commandes = new();
     private Dictionary<int, string> _codesSaisis = new();
 
+    private System.Timers.Timer? _timer;
+
     protected override async Task OnInitializedAsync()
     {
         await ChargerCommandes();
+
+        _timer = new System.Timers.Timer(15000);
+        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async Task RafraichirSilencieux()
+    {
+        try
+        {
+            await ChargerCommandes();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
     }
 
     private async Task ChargerCommandes()
