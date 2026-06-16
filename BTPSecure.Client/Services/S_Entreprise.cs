@@ -43,6 +43,15 @@ public class S_Entreprise
         }
     }
 
+    public async Task<(bool Succes, string Message)> CreerSalarie(DTO_CreerSalarie p_dto)
+    {
+        var _reponse = await _http.PostAsJsonAsync("api/entreprises/creer-salarie", p_dto);
+        if (_reponse.IsSuccessStatusCode)
+            return (true, "Salarié créé. Il recevra ses identifiants par email.");
+        var _erreur = await LireErreur(_reponse);
+        return (false, _erreur);
+    }
+
     public async Task<(bool Succes, string Message, DTO_SalarieAffichage? Salarie)> AjouterSalarie(string p_email)
     {
         var _reponse = await _http.PostAsJsonAsync("api/entreprises/ajouter-salarie", new DTO_AjouterSalarie { Email = p_email });

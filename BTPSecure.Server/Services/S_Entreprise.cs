@@ -10,15 +10,88 @@ public class S_Entreprise
     private readonly DAO_Entreprise _daoEntreprise;
     private readonly DAO_Utilisateur _daoUtilisateur;
     private readonly DAO_Code _daoCode;
+    private readonly S_Email _sEmail;
     private readonly ILogger<S_Entreprise> _logger;
 
     public S_Entreprise(DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
-        DAO_Code p_daoCode, ILogger<S_Entreprise> p_logger)
+        DAO_Code p_daoCode, S_Email p_sEmail, ILogger<S_Entreprise> p_logger)
     {
         _daoEntreprise = p_daoEntreprise;
         _daoUtilisateur = p_daoUtilisateur;
         _daoCode = p_daoCode;
+        _sEmail = p_sEmail;
         _logger = p_logger;
+    }
+
+    public async Task<(bool Succes, string Message)> CreerSalarie(DTO_CreerSalarie p_dto, int p_patronId)
+    {
+        if (string.IsNullOrWhiteSpace(p_dto.Email))
+            return (false, "L'email est obligatoire.");
+        if (string.IsNullOrWhiteSpace(p_dto.Nom) || string.IsNullOrWhiteSpace(p_dto.Prenom))
+            return (false, "Le nom et le prénom sont obligatoires.");
+
+        var _entreprise = await _daoEntreprise.ObtenirParPatronId(p_patronId);
+        if (_entreprise == null)
+            return (false, "Vous n'avez pas encore d'entreprise.");
+
+        if (await _daoUtilisateur.EmailExiste(p_dto.Email))
+            return (false, "Un compte avec cet email existe déjà.");
+
+        var _motDePasseTemporaire = GenererMotDePasseTemporaire();
+        var _sel = BCrypt.Net.BCrypt.GenerateSalt();
+        var _hash = BCrypt.Net.BCrypt.HashPassword(_motDePasseTemporaire, _sel);
+
+        var _salarie = new E_Utilisateur
+        {
+            Email = p_dto.Email.Trim().ToLower(),
+            MotDePasseHash = _hash,
+            Sel = _sel,
+            Nom = p_dto.Nom.Trim(),
+            Prenom = p_dto.Prenom.Trim(),
+            Telephone = p_dto.Telephone?.Trim(),
+            Role = Enum_Role.Salarie,
+            EstActif = true,
+            EmailVerifie = true
+        };
+
+        await _daoUtilisateur.Creer(_salarie);
+
+        var _lien = new E_SalarieEntreprise
+        {
+            SalarieId = _salarie.Id,
+            EntrepriseId = _entreprise.Id,
+            StatutInvitation = Enum_StatutInvitation.Acceptee
+        };
+        await _daoEntreprise.AjouterSalarie(_lien);
+        _lien.StatutInvitation = Enum_StatutInvitation.Acceptee;
+        await _daoEntreprise.Sauvegarder();
+
+        _logger.LogInformation("Salarié {Email} créé par patron {PatronId} pour entreprise {EntrepriseId}",
+            _salarie.Email, p_patronId, _entreprise.Id);
+
+        var _emailCopie = _salarie.Email;
+        var _prenomCopie = _salarie.Prenom;
+        var _mdpCopie = _motDePasseTemporaire;
+        var _nomEntrepriseCopie = _entreprise.Nom;
+        _ = Task.Run(async () =>
+        {
+            await _sEmail.EnvoyerCompteCreeParPatron(_emailCopie, _prenomCopie, _mdpCopie, _nomEntrepriseCopie);
+        });
+
+        return (true, "Salarié créé. Il recevra ses identifiants par email.");
+    }
+
+    private static string GenererMotDePasseTemporaire()
+    {
+        const string _chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        var _bytes = new byte[12];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(_bytes);
+        var _result = new char[12];
+        for (int i = 0; i < 12; i++)
+        {
+            _result[i] = _chars[_bytes[i] % _chars.Length];
+        }
+        return new string(_result);
     }
 
     public async Task<(bool Succes, string Message, DTO_EntrepriseAffichage? Entreprise)> Creer(DTO_CreerEntreprise p_dto, int p_patronId)

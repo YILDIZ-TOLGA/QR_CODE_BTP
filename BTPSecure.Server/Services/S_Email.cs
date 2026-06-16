@@ -16,6 +16,104 @@ public class S_Email
         _http = new HttpClient { BaseAddress = new Uri("https://api.brevo.com/") };
     }
 
+    public async Task<bool> EnvoyerCompteCreeParPatron(string p_emailDestinataire, string p_prenom,
+        string p_motDePasseTemporaire, string p_nomEntreprisePatron)
+    {
+        var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
+        var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "BTPSecure";
+        var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
+
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            _logger.LogWarning("BREVO_API_KEY manquante, email création compte non envoyé à {Email}", p_emailDestinataire);
+            return false;
+        }
+
+        var _lienConnexion = $"{_siteUrl}/connexion";
+        var _lienResetMdp = $"{_siteUrl}/mot-de-passe-oublie";
+
+        var _corpsHtml = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset=""utf-8""></head>
+<body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
+    <div style=""background: #1565C0; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ BTPSecure</h1>
+        <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Votre compte a été créé</p>
+    </div>
+
+    <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
+        <h2 style=""color: #1565C0; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
+
+        <p>L'entreprise <strong>{p_nomEntreprisePatron}</strong> vient de vous créer un compte salarié sur BTPSecure.</p>
+
+        <p>Vous pouvez dès maintenant vous connecter avec les identifiants suivants :</p>
+
+        <div style=""background: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0;"">
+            <p style=""margin: 0.25rem 0;""><strong>Email :</strong> {p_emailDestinataire}</p>
+            <p style=""margin: 0.25rem 0;""><strong>Mot de passe temporaire :</strong> <code style=""background: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 1.1rem;"">{p_motDePasseTemporaire}</code></p>
+        </div>
+
+        <p style=""text-align: center; margin: 32px 0;"">
+            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #1565C0; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+                Se connecter
+            </a>
+        </p>
+
+        <div style=""background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px 16px; border-radius: 4px; margin: 16px 0;"">
+            <p style=""margin: 0; color: #856404;"">
+                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion via <a href=""{_lienResetMdp}"" style=""color: #1565C0;"">Mot de passe oublié</a>.
+            </p>
+        </div>
+
+        <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
+
+        <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
+            Cet email est envoyé automatiquement par BTPSecure. Ne pas répondre directement.
+        </p>
+    </div>
+</body>
+</html>";
+
+        var _payload = new
+        {
+            sender = new { name = _fromName, email = _fromEmail },
+            to = new[] { new { email = p_emailDestinataire } },
+            subject = $"Votre compte BTPSecure a été créé par {p_nomEntreprisePatron}",
+            htmlContent = _corpsHtml
+        };
+
+        try
+        {
+            var _request = new HttpRequestMessage(HttpMethod.Post, "v3/smtp/email")
+            {
+                Content = JsonContent.Create(_payload)
+            };
+            _request.Headers.Add("api-key", _apiKey);
+            _request.Headers.Add("accept", "application/json");
+
+            var _reponse = await _http.SendAsync(_request);
+
+            if (_reponse.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Email création compte envoyé à {Email}", p_emailDestinataire);
+                return true;
+            }
+            else
+            {
+                var _body = await _reponse.Content.ReadAsStringAsync();
+                _logger.LogError("Erreur Brevo création {Status} pour {Email} : {Body}", _reponse.StatusCode, p_emailDestinataire, _body);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception envoi email création à {Email}", p_emailDestinataire);
+            return false;
+        }
+    }
+
     public async Task<bool> EnvoyerVerificationEmail(string p_emailDestinataire, string p_prenom, string p_token)
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
