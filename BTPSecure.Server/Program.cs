@@ -99,6 +99,9 @@ builder.Services.AddSingleton<S_Email>();
 
 var app = builder.Build();
 
+// Restreint /health, /env-keys et /db-status à localhost uniquement
+app.UseMiddleware<BTPSecure.Server.Middleware.LocalhostOnlyMiddleware>();
+
 // Healthcheck rapide — Railway ping /health AVANT que la DB soit prête
 app.MapGet("/health", () => Results.Ok("ok"));
 
