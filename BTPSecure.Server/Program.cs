@@ -3,8 +3,11 @@ using BTPSecure.Server.DAO;
 using BTPSecure.Server.Data;
 using BTPSecure.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +57,28 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+
+// Compression gzip/brotli — réduit la taille des fichiers WASM de 60-70 %
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+    {
+        "application/octet-stream",   // .wasm
+        "application/wasm",
+        "text/javascript",
+        "application/javascript",
+        "text/css",
+        "font/woff2",
+        "image/svg+xml"
+    });
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(o =>
+    o.Level = System.IO.Compression.CompressionLevel.Optimal);
+builder.Services.Configure<GzipCompressionProviderOptions>(o =>
+    o.Level = System.IO.Compression.CompressionLevel.Optimal);
 
 // DAOs
 builder.Services.AddScoped<DAO_Utilisateur>();
@@ -158,8 +183,55 @@ if (app.Environment.IsDevelopment())
     app.UseWebAssemblyDebugging();
 }
 
+// Compression doit être placée avant les fichiers statiques
+app.UseResponseCompression();
+
+// ── Cache-Control pour les assets statiques ──────────────────────────────────
+// Les fichiers Blazor WASM portent un fingerprint dans leur nom (ex: blazor.wasm.abc123)
+// → on peut les mettre en cache très longtemps (1 an, immutable).
+// Les fichiers HTML ne sont jamais versionnés → cache court (1 h) pour permettre les mises à jour.
+
+var _contentTypeProvider = new FileExtensionContentTypeProvider();
+
 app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = _contentTypeProvider,
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.File.Name;
+        var headers = ctx.Context.Response.GetTypedHeaders();
+
+        // Assets versionnés (WASM, JS, CSS, polices) → cache 1 an, immutable
+        if (path.EndsWith(".wasm", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".js",    StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".css",   StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".woff",  StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".ttf",   StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".svg",   StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".png",   StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".ico",   StringComparison.OrdinalIgnoreCase))
+        {
+            headers.CacheControl = new CacheControlHeaderValue
+            {
+                Public = true,
+                MaxAge = TimeSpan.FromDays(365),
+                Extensions = { new NameValueHeaderValue("immutable") }
+            };
+        }
+        // HTML → cache court pour permettre les déploiements
+        else if (path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+        {
+            headers.CacheControl = new CacheControlHeaderValue
+            {
+                Public = true,
+                MaxAge = TimeSpan.FromHours(1)
+            };
+        }
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
