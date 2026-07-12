@@ -25,7 +25,7 @@ else if (_entreprises.Count == 0)
                 Aucune entreprise enregistrée
             </RadzenText>
             <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
-                Les entreprises apparaîtront ici une fois créées par les patrons.
+                Les entreprises apparaîtront ici une fois créées par les dirigeants.
             </RadzenText>
         </RadzenStack>
     </RadzenCard>
@@ -121,7 +121,7 @@ else
                                 </RadzenStack>
 
                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_ent.NombreSalaries} salarié(s)")" IsPill="true" />
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_ent.NombreSalaries} collaborateur(s)")" IsPill="true" />
                                     <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_ent.NombreCodes} code(s)")" IsPill="true" />
                                 </RadzenStack>
 

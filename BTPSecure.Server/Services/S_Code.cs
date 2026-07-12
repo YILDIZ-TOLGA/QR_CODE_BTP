@@ -37,17 +37,17 @@ public class S_Code
 
         var _entreprise = await _daoEntreprise.ObtenirParId(p_dto.EntrepriseId);
         if (_entreprise == null || _entreprise.PatronId != p_patronId)
-            return (false, "Entreprise non trouvée ou vous n'en êtes pas le patron.", null);
+            return (false, "Entreprise non trouvée ou vous n'en êtes pas le dirigeant.", null);
 
         if (!_entreprise.EstAutorisee)
             return (false, "Votre entreprise n'est pas encore autorisée par l'administrateur à créer des codes.", null);
 
         if (!await _daoEntreprise.SalarieEstDansEntreprise(p_dto.SalarieId, p_dto.EntrepriseId))
-            return (false, "Ce salarié n'appartient pas à votre entreprise.", null);
+            return (false, "Ce collaborateur n'appartient pas à votre entreprise.", null);
 
         var _salarie = await _daoUtilisateur.ObtenirParId(p_dto.SalarieId);
         if (_salarie == null)
-            return (false, "Salarié non trouvé.", null);
+            return (false, "Collaborateur non trouvé.", null);
 
         if (p_dto.TypeCode == Enum_TypeCode.Confiance)
         {

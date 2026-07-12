@@ -1,0 +1,26 @@
+# robots.txt — BTPSecure
+# Autorise l'indexation de la page d'accueil publique,
+# bloque les crawlers sur les endpoints API et d'administration
+# afin de réduire le trafic bot inutile.
+
+User-agent: *
+Allow: /$
+Allow: /index.html
+
+# Bloquer les endpoints API (pas utiles pour les moteurs de recherche)
+Disallow: /api/
+
+# Bloquer la section administration
+Disallow: /admin/
+
+# Bloquer les assets techniques Blazor (inutiles à indexer)
+Disallow: /_framework/
+Disallow: /_content/
+
+# Bloquer les endpoints de diagnostic internes
+Disallow: /health
+Disallow: /db-status
+Disallow: /env-keys
+
+# Limiter la fréquence de crawl pour les bots qui respectent cette directive
+Crawl-delay: 10

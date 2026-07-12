@@ -111,7 +111,7 @@
         <RadzenCard Variant="Variant.Outlined">
             <RadzenStack Gap="1.25rem">
                 <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">
-                    Saisissez le code d'autorisation présenté par le salarié pour vérifier sa validité.
+                    Saisissez le code d'autorisation présenté par le collaborateur pour vérifier sa validité.
                 </RadzenText>
 
                 <RadzenFormField Text="Code d'autorisation" Variant="Variant.Outlined" Style="width: 100%;">
@@ -145,7 +145,7 @@
 
                         <RadzenStack Gap="0.5rem">
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                <RadzenText Style="color: var(--rz-text-secondary-color);">Salarié</RadzenText>
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">Collaborateur</RadzenText>
                                 <RadzenText Style="font-weight: 600;">@_resultat.PrenomSalarie @_resultat.NomSalarie</RadzenText>
                             </RadzenStack>
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
@@ -257,7 +257,7 @@
         var (_succes, _message) = await SCode.MarquerPrete(p_codeId);
         if (_succes)
         {
-            Notification.Notify(NotificationSeverity.Success, "Succès", "Le patron a été notifié.");
+            Notification.Notify(NotificationSeverity.Success, "Succès", "Le dirigeant a été notifié.");
             await ChargerCommandes();
         }
         else

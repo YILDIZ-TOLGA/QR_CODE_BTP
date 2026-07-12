@@ -8,7 +8,7 @@
     <RadzenButton Icon="arrow_back" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Large"
                   Click='() => Navigation.NavigateTo("/patron")' />
     <RadzenIcon Icon="person_add" Style="font-size: 2rem; color: var(--rz-primary);" />
-    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Création d'un salarié</RadzenText>
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Création d'un collaborateur</RadzenText>
 </RadzenStack>
 
 <RadzenRow JustifyContent="JustifyContent.Center">
@@ -19,7 +19,7 @@
                 <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
                     <RadzenIcon Icon="check_circle" Style="font-size: 4rem; color: var(--rz-success);" />
                     <RadzenText TextStyle="TextStyle.H5" TextAlign="TextAlign.Center" Style="color: var(--rz-success);">
-                        Salarié créé avec succès
+                        Collaborateur créé avec succès
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center">
                         Un email contenant ses identifiants (email + mot de passe temporaire) a été envoyé à <strong>@_emailEnvoye</strong>.
@@ -29,7 +29,7 @@
                     </RadzenText>
 
                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.75rem" Style="width: 100%;">
-                        <RadzenButton Text="Créer un autre salarié" Icon="person_add" ButtonStyle="ButtonStyle.Primary"
+                        <RadzenButton Text="Créer un autre collaborateur" Icon="person_add" ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Outlined" Style="flex: 1;" Click="Reinitialiser" />
                         <RadzenButton Text="Tableau de bord" Icon="dashboard" ButtonStyle="ButtonStyle.Primary"
                                       Style="flex: 1;" Click='() => Navigation.NavigateTo("/patron")' />
@@ -42,7 +42,7 @@
             <RadzenCard Variant="Variant.Outlined">
                 <RadzenStack Gap="1rem" Style="margin-bottom: 1.5rem;">
                     <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
-                        Renseignez les informations de votre salarié. Un compte lui sera créé et un email contenant ses identifiants temporaires lui sera envoyé.
+                        Renseignez les informations de votre collaborateur. Un compte lui sera créé et un email contenant ses identifiants temporaires lui sera envoyé.
                     </RadzenText>
                 </RadzenStack>
 
@@ -93,10 +93,10 @@
                         </RadzenFormField>
 
                         <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat">
-                            Un mot de passe temporaire sera généré automatiquement et envoyé par email au salarié. Il pourra le changer via « Mon profil → Changer mon mot de passe » après sa première connexion.
+                            Un mot de passe temporaire sera généré automatiquement et envoyé par email au collaborateur. Il pourra le changer via « Mon profil → Changer mon mot de passe » après sa première connexion.
                         </RadzenAlert>
 
-                        <RadzenButton Text="Créer le compte salarié" ButtonType="ButtonType.Submit" Icon="person_add"
+                        <RadzenButton Text="Créer le compte collaborateur" ButtonType="ButtonType.Submit" Icon="person_add"
                                       ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large"
                                       Style="width: 100%;" IsBusy="_enChargement" />
                     </RadzenStack>

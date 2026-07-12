@@ -81,7 +81,7 @@ else
                 <RadzenColumn Size="12" SizeMD="6">
                     <RadzenStack Gap="0.25rem">
                         <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Rôle</RadzenText>
-                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_profil.Role.ToString()" IsPill="true" />
+                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@ObtenirLibelleRole(_profil.Role)" IsPill="true" />
                     </RadzenStack>
                 </RadzenColumn>
                 <RadzenColumn Size="12" SizeMD="6">
@@ -266,6 +266,27 @@ else
         {
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
+    }
+
+    private static string ObtenirLibelleRole(Enum_Role p_role)
+    {
+        if (p_role == Enum_Role.Admin)
+        {
+            return "Admin";
+        }
+        if (p_role == Enum_Role.Patron)
+        {
+            return "Dirigeant";
+        }
+        if (p_role == Enum_Role.Salarie)
+        {
+            return "Collaborateur";
+        }
+        if (p_role == Enum_Role.Fournisseur)
+        {
+            return "Fournisseur";
+        }
+        return p_role.ToString();
     }
 
     private class ChangeMdpForm

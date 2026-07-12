@@ -46,7 +46,7 @@ public class S_Email
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <h2 style=""color: #1565C0; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
-        <p>L'entreprise <strong>{p_nomEntreprisePatron}</strong> vient de vous créer un compte salarié sur BTPSecure.</p>
+        <p>L'entreprise <strong>{p_nomEntreprisePatron}</strong> vient de vous créer un compte collaborateur sur BTPSecure.</p>
 
         <p>Vous pouvez dès maintenant vous connecter avec les identifiants suivants :</p>
 

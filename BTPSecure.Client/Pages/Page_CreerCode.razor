@@ -32,7 +32,7 @@
 
                     <RadzenStack Gap="0.5rem" Style="width: 100%;">
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                            <RadzenText Style="color: var(--rz-text-secondary-color);">Salarié</RadzenText>
+                            <RadzenText Style="color: var(--rz-text-secondary-color);">Collaborateur</RadzenText>
                             <RadzenText Style="font-weight: 600;">@_codeGenere.PrenomSalarie @_codeGenere.NomSalarie</RadzenText>
                         </RadzenStack>
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
@@ -81,15 +81,15 @@
             <RadzenCard Variant="Variant.Outlined">
                 <RadzenTemplateForm TItem="DTO_CreerCode" Data="_dto" Submit="Creer">
                     <RadzenStack Gap="1.25rem">
-                        <RadzenFormField Text="Salarié" Variant="Variant.Outlined" Style="width: 100%;">
+                        <RadzenFormField Text="Collaborateur" Variant="Variant.Outlined" Style="width: 100%;">
                             <Start><RadzenIcon Icon="person" /></Start>
                             <ChildContent>
                                 <RadzenDropDown @bind-Value="_dto.SalarieId" Data="_salaries" TextProperty="Label"
                                                 ValueProperty="SalarieId" Name="Salarie" Style="width: 100%;"
-                                                Placeholder="Sélectionner un salarié..." />
+                                                Placeholder="Sélectionner un collaborateur..." />
                             </ChildContent>
                             <Helper>
-                                <RadzenRequiredValidator Component="Salarie" Text="Le salarié est obligatoire." DefaultValue="0" />
+                                <RadzenRequiredValidator Component="Salarie" Text="Le collaborateur est obligatoire." DefaultValue="0" />
                             </Helper>
                         </RadzenFormField>
 

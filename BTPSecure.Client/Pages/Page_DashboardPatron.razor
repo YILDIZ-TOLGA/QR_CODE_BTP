@@ -119,18 +119,18 @@ else
                     {
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="En attente" IsPill="true" />
                     }
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_salaries.Count} salarié(s)")" IsPill="true" />
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_salaries.Count} collaborateur(s)")" IsPill="true" />
                     <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_codes.Count(c => c.Statut == Enum_StatutCode.Actif)} code(s) actif(s)")" IsPill="true" />
                 </RadzenStack>
             </RadzenStack>
         </RadzenCard>
 
-        <!-- Salariés -->
+        <!-- Collaborateurs -->
         <RadzenCard Variant="Variant.Outlined">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1rem;">
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                     <RadzenIcon Icon="groups" Style="font-size: 1.5rem; color: var(--rz-primary);" />
-                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Salariés</RadzenText>
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Collaborateurs</RadzenText>
                 </RadzenStack>
                 <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Success"
                               Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutSalarie" />
@@ -140,7 +140,7 @@ else
             {
                 <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
                     <RadzenIcon Icon="group_off" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
-                    <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun salarié pour le moment</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun collaborateur pour le moment</RadzenText>
                 </RadzenStack>
             }
             else
@@ -239,7 +239,7 @@ else
                                 </RadzenFormField>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-                                <RadzenFormField Text="Salarié" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenFormField Text="Collaborateur" Variant="Variant.Outlined" Style="width: 100%;">
                                     <Start><RadzenIcon Icon="person" /></Start>
                                     <ChildContent>
                                         <RadzenDropDown @bind-Value="_filtreSalarieId" Data="_optionsSalarie" TextProperty="Label" ValueProperty="Id"
@@ -509,7 +509,7 @@ else
 
     private async Task OuvrirAjoutSalarie()
     {
-        var _email = await Dialog.OpenAsync<Comp_DialogAjoutSalarie>("Ajouter un salarié",
+        var _email = await Dialog.OpenAsync<Comp_DialogAjoutSalarie>("Ajouter un collaborateur",
             options: new DialogOptions { Width = "480px", CloseDialogOnOverlayClick = true });
         if (_email is string email && !string.IsNullOrWhiteSpace(email))
         {

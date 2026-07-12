@@ -78,7 +78,7 @@ public class S_Entreprise
             await _sEmail.EnvoyerCompteCreeParPatron(_emailCopie, _prenomCopie, _mdpCopie, _nomEntrepriseCopie);
         });
 
-        return (true, "Salarié créé. Il recevra ses identifiants par email.");
+        return (true, "Collaborateur créé. Il recevra ses identifiants par email.");
     }
 
     private static string GenererMotDePasseTemporaire()
@@ -137,13 +137,13 @@ public class S_Entreprise
             return (false, "Aucun utilisateur trouvé avec cet email.", null);
 
         if (_salarie.Role != Enum_Role.Salarie)
-            return (false, "Cet utilisateur n'a pas le rôle Salarié.", null);
+            return (false, "Cet utilisateur n'a pas le rôle Collaborateur.", null);
 
         if (await _daoEntreprise.SalarieEstDansEntreprise(_salarie.Id, _entreprise.Id))
-            return (false, "Ce salarié est déjà dans votre entreprise.", null);
+            return (false, "Ce collaborateur est déjà dans votre entreprise.", null);
 
         if (await _daoEntreprise.InvitationExiste(_salarie.Id, _entreprise.Id))
-            return (false, "Une invitation est déjà en attente pour ce salarié.", null);
+            return (false, "Une invitation est déjà en attente pour ce collaborateur.", null);
 
         var _lien = new E_SalarieEntreprise
         {
@@ -193,13 +193,13 @@ public class S_Entreprise
         var _liens = await _daoEntreprise.ObtenirSalaries(_entreprise.Id);
         var _lien = _liens.FirstOrDefault(l => l.Id == p_lienId);
         if (_lien == null)
-            return (false, "Ce salarié n'est pas dans votre entreprise.");
+            return (false, "Ce collaborateur n'est pas dans votre entreprise.");
 
         await _daoEntreprise.RetirerSalarie(_lien);
         await _daoCode.RevoquerCodesParSalarieEtEntreprise(_lien.SalarieId, _entreprise.Id);
 
         _logger.LogInformation("Salarié {SalarieId} retiré de l'entreprise {EntrepriseId}, codes révoqués", _lien.SalarieId, _entreprise.Id);
-        return (true, "Salarié retiré et ses codes liés révoqués.");
+        return (true, "Collaborateur retiré et ses codes liés révoqués.");
     }
 
     private static DTO_EntrepriseAffichage VersDTO(E_Entreprise p_entreprise)
