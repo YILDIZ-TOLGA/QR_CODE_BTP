@@ -30,6 +30,10 @@ namespace BTPSecure.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CollaborateurId")
+                        .HasColumnType("integer")
+                        .HasColumnName("SalarieId");
+
                     b.Property<DateTime>("DateCreation")
                         .HasColumnType("timestamp with time zone");
 
@@ -41,6 +45,10 @@ namespace BTPSecure.Server.Migrations
 
                     b.Property<DateTime?>("DateValidation")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DirigeantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("PatronId");
 
                     b.Property<int?>("DureeValidite")
                         .HasColumnType("integer");
@@ -73,15 +81,9 @@ namespace BTPSecure.Server.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("PatronId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Reference")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
-
-                    b.Property<int>("SalarieId")
-                        .HasColumnType("integer");
 
                     b.Property<int>("Statut")
                         .HasColumnType("integer");
@@ -96,20 +98,57 @@ namespace BTPSecure.Server.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CollaborateurId");
+
+                    b.HasIndex("DirigeantId");
+
                     b.HasIndex("EntrepriseId");
 
                     b.HasIndex("FournisseurContactId");
 
                     b.HasIndex("FournisseurId");
 
-                    b.HasIndex("PatronId");
-
-                    b.HasIndex("SalarieId");
-
                     b.HasIndex("Valeur")
                         .IsUnique();
 
                     b.ToTable("codes", (string)null);
+                });
+
+            modelBuilder.Entity("BTPSecure.Shared.Entites.E_CollaborateurEntreprise", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CollaborateurId")
+                        .HasColumnType("integer")
+                        .HasColumnName("SalarieId");
+
+                    b.Property<DateTime>("DateAjout")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EntrepriseId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("EstActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("StatutInvitation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollaborateurId");
+
+                    b.HasIndex("EntrepriseId");
+
+                    b.ToTable("salaries_entreprises", (string)null);
                 });
 
             modelBuilder.Entity("BTPSecure.Shared.Entites.E_Entreprise", b =>
@@ -127,6 +166,10 @@ namespace BTPSecure.Server.Migrations
                     b.Property<DateTime>("DateCreation")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DirigeantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("PatronId");
+
                     b.Property<bool>("EstAutorisee")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -137,16 +180,13 @@ namespace BTPSecure.Server.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int>("PatronId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Siret")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PatronId");
+                    b.HasIndex("DirigeantId");
 
                     b.ToTable("entreprises", (string)null);
                 });
@@ -162,6 +202,10 @@ namespace BTPSecure.Server.Migrations
                     b.Property<DateTime>("DateCreation")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DirigeantId")
+                        .HasColumnType("integer")
+                        .HasColumnName("PatronId");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -171,9 +215,6 @@ namespace BTPSecure.Server.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.Property<int>("PatronId")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Siren")
                         .HasMaxLength(9)
@@ -186,7 +227,7 @@ namespace BTPSecure.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PatronId", "Siret");
+                    b.HasIndex("DirigeantId", "Siret");
 
                     b.ToTable("fournisseurs_contacts", (string)null);
                 });
@@ -224,42 +265,6 @@ namespace BTPSecure.Server.Migrations
                     b.HasIndex("UtilisateurId");
 
                     b.ToTable("resets_motdepasse", (string)null);
-                });
-
-            modelBuilder.Entity("BTPSecure.Shared.Entites.E_SalarieEntreprise", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateAjout")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("EntrepriseId")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("EstActif")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<int>("SalarieId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StatutInvitation")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EntrepriseId");
-
-                    b.HasIndex("SalarieId");
-
-                    b.ToTable("salaries_entreprises", (string)null);
                 });
 
             modelBuilder.Entity("BTPSecure.Shared.Entites.E_Utilisateur", b =>
@@ -338,6 +343,18 @@ namespace BTPSecure.Server.Migrations
 
             modelBuilder.Entity("BTPSecure.Shared.Entites.E_Code", b =>
                 {
+                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Collaborateur")
+                        .WithMany()
+                        .HasForeignKey("CollaborateurId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Dirigeant")
+                        .WithMany()
+                        .HasForeignKey("DirigeantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BTPSecure.Shared.Entites.E_Entreprise", "Entreprise")
                         .WithMany()
                         .HasForeignKey("EntrepriseId")
@@ -354,49 +371,56 @@ namespace BTPSecure.Server.Migrations
                         .HasForeignKey("FournisseurId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Patron")
-                        .WithMany()
-                        .HasForeignKey("PatronId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Collaborateur");
 
-                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Salarie")
-                        .WithMany()
-                        .HasForeignKey("SalarieId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Dirigeant");
 
                     b.Navigation("Entreprise");
 
                     b.Navigation("Fournisseur");
 
                     b.Navigation("FournisseurContact");
+                });
 
-                    b.Navigation("Patron");
+            modelBuilder.Entity("BTPSecure.Shared.Entites.E_CollaborateurEntreprise", b =>
+                {
+                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Collaborateur")
+                        .WithMany()
+                        .HasForeignKey("CollaborateurId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Navigation("Salarie");
+                    b.HasOne("BTPSecure.Shared.Entites.E_Entreprise", "Entreprise")
+                        .WithMany()
+                        .HasForeignKey("EntrepriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Collaborateur");
+
+                    b.Navigation("Entreprise");
                 });
 
             modelBuilder.Entity("BTPSecure.Shared.Entites.E_Entreprise", b =>
                 {
-                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Patron")
+                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Dirigeant")
                         .WithMany()
-                        .HasForeignKey("PatronId")
+                        .HasForeignKey("DirigeantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Patron");
+                    b.Navigation("Dirigeant");
                 });
 
             modelBuilder.Entity("BTPSecure.Shared.Entites.E_FournisseurContact", b =>
                 {
-                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Patron")
+                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Dirigeant")
                         .WithMany()
-                        .HasForeignKey("PatronId")
+                        .HasForeignKey("DirigeantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Patron");
+                    b.Navigation("Dirigeant");
                 });
 
             modelBuilder.Entity("BTPSecure.Shared.Entites.E_ResetMotDePasse", b =>
@@ -408,25 +432,6 @@ namespace BTPSecure.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Utilisateur");
-                });
-
-            modelBuilder.Entity("BTPSecure.Shared.Entites.E_SalarieEntreprise", b =>
-                {
-                    b.HasOne("BTPSecure.Shared.Entites.E_Entreprise", "Entreprise")
-                        .WithMany()
-                        .HasForeignKey("EntrepriseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BTPSecure.Shared.Entites.E_Utilisateur", "Salarie")
-                        .WithMany()
-                        .HasForeignKey("SalarieId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Entreprise");
-
-                    b.Navigation("Salarie");
                 });
 #pragma warning restore 612, 618
         }

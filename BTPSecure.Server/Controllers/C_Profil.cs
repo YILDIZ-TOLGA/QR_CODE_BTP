@@ -45,18 +45,18 @@ public class C_Profil : ControllerBase
             DateCreation = _utilisateur.DateCreation
         };
 
-        if (_utilisateur.Role == Enum_Role.Patron)
+        if (_utilisateur.Role == Enum_Role.Dirigeant)
         {
             _profil.Entreprises = await _context.Entreprises
-                .Where(e => e.PatronId == _id)
+                .Where(e => e.DirigeantId == _id)
                 .Select(e => e.Nom)
                 .ToListAsync();
         }
-        else if (_utilisateur.Role == Enum_Role.Salarie)
+        else if (_utilisateur.Role == Enum_Role.Collaborateur)
         {
-            _profil.Entreprises = await _context.SalariesEntreprises
+            _profil.Entreprises = await _context.CollaborateursEntreprises
                 .Include(se => se.Entreprise)
-                .Where(se => se.SalarieId == _id
+                .Where(se => se.CollaborateurId == _id
                     && se.EstActif
                     && se.StatutInvitation == Enum_StatutInvitation.Acceptee)
                 .Select(se => se.Entreprise.Nom)

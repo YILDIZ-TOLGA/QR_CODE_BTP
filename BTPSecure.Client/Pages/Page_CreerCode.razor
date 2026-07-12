@@ -1,5 +1,5 @@
-@page "/patron/creer-code"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@page "/dirigeant/creer-code"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
 @inject Services.S_Code SCode
 @inject Services.S_Entreprise SEntreprise
 @inject Services.S_FournisseurContact SFournisseur
@@ -8,7 +8,7 @@
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
     <RadzenButton Icon="arrow_back" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Large"
-                  Click='() => Navigation.NavigateTo("/patron")' />
+                  Click='() => Navigation.NavigateTo("/dirigeant")' />
     <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Créer un code d'autorisation</RadzenText>
 </RadzenStack>
 
@@ -33,7 +33,7 @@
                     <RadzenStack Gap="0.5rem" Style="width: 100%;">
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                             <RadzenText Style="color: var(--rz-text-secondary-color);">Collaborateur</RadzenText>
-                            <RadzenText Style="font-weight: 600;">@_codeGenere.PrenomSalarie @_codeGenere.NomSalarie</RadzenText>
+                            <RadzenText Style="font-weight: 600;">@_codeGenere.PrenomCollaborateur @_codeGenere.NomCollaborateur</RadzenText>
                         </RadzenStack>
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                             <RadzenText Style="color: var(--rz-text-secondary-color);">Commande</RadzenText>
@@ -41,7 +41,7 @@
                         </RadzenStack>
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                             <RadzenText Style="color: var(--rz-text-secondary-color);">Type</RadzenText>
-                            <RadzenBadge BadgeStyle="@(_codeGenere.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                            <RadzenBadge BadgeStyle="@(_codeGenere.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
                                          Text="@_codeGenere.TypeCode.ToString()" IsPill="true" />
                         </RadzenStack>
                         @if (_codeGenere.DateExpiration.HasValue)
@@ -71,7 +71,7 @@
                         <RadzenButton Text="Créer un autre" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Outlined" Style="flex: 1;" Click="Reinitialiser" />
                         <RadzenButton Text="Tableau de bord" Icon="dashboard" ButtonStyle="ButtonStyle.Primary"
-                                      Style="flex: 1;" Click='() => Navigation.NavigateTo("/patron")' />
+                                      Style="flex: 1;" Click='() => Navigation.NavigateTo("/dirigeant")' />
                     </RadzenStack>
                 </RadzenStack>
             </RadzenCard>
@@ -84,12 +84,12 @@
                         <RadzenFormField Text="Collaborateur" Variant="Variant.Outlined" Style="width: 100%;">
                             <Start><RadzenIcon Icon="person" /></Start>
                             <ChildContent>
-                                <RadzenDropDown @bind-Value="_dto.SalarieId" Data="_salaries" TextProperty="Label"
-                                                ValueProperty="SalarieId" Name="Salarie" Style="width: 100%;"
+                                <RadzenDropDown @bind-Value="_dto.CollaborateurId" Data="_collaborateurs" TextProperty="Label"
+                                                ValueProperty="CollaborateurId" Name="Collaborateur" Style="width: 100%;"
                                                 Placeholder="Sélectionner un collaborateur..." />
                             </ChildContent>
                             <Helper>
-                                <RadzenRequiredValidator Component="Salarie" Text="Le collaborateur est obligatoire." DefaultValue="0" />
+                                <RadzenRequiredValidator Component="Collaborateur" Text="Le collaborateur est obligatoire." DefaultValue="0" />
                             </Helper>
                         </RadzenFormField>
 
@@ -107,13 +107,13 @@
                             <RadzenText TextStyle="TextStyle.Subtitle2">Type de code</RadzenText>
                             <RadzenSelectBar @bind-Value="_dto.TypeCode" TValue="Enum_TypeCode" Size="ButtonSize.Medium" Style="width: 100%;">
                                 <Items>
-                                    <RadzenSelectBarItem Text="Confiance" Value="Enum_TypeCode.Confiance" Icon="schedule" />
+                                    <RadzenSelectBarItem Text="LibreService" Value="Enum_TypeCode.LibreService" Icon="schedule" />
                                     <RadzenSelectBarItem Text="Liste matériaux" Value="Enum_TypeCode.Liste" Icon="list_alt" />
                                 </Items>
                             </RadzenSelectBar>
                         </RadzenStack>
 
-                        @if (_dto.TypeCode == Enum_TypeCode.Confiance)
+                        @if (_dto.TypeCode == Enum_TypeCode.LibreService)
                         {
                             <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-info-light); padding: 0.75rem;">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -233,10 +233,10 @@
 </RadzenRow>
 
 @code {
-    private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.Confiance };
+    private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.LibreService };
     private DTO_CodeAffichage? _codeGenere;
     private bool _enChargement;
-    private List<SalarieItem> _salaries = new();
+    private List<CollaborateurItem> _collaborateurs = new();
     private DTO_EntrepriseAffichage? _entreprise;
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private string _modeFournisseur = "existant";
@@ -249,10 +249,10 @@
         if (_entreprise != null)
         {
             _dto.EntrepriseId = _entreprise.Id;
-            var _listeSalaries = await SEntreprise.ObtenirSalaries();
-            _salaries = _listeSalaries.Select(s => new SalarieItem
+            var _listeCollaborateurs = await SEntreprise.ObtenirCollaborateurs();
+            _collaborateurs = _listeCollaborateurs.Select(s => new CollaborateurItem
             {
-                SalarieId = s.SalarieId,
+                CollaborateurId = s.CollaborateurId,
                 Label = $"{s.Prenom} {s.Nom} ({s.Email})"
             }).ToList();
         }
@@ -263,7 +263,7 @@
     {
         _enChargement = true;
 
-        if (_dto.TypeCode == Enum_TypeCode.Confiance)
+        if (_dto.TypeCode == Enum_TypeCode.LibreService)
         {
             _dto.DureeValiditeHeures = DUREE_CONFIANCE_HEURES;
         }
@@ -306,13 +306,13 @@
     private void Reinitialiser()
     {
         _codeGenere = null;
-        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Confiance, EntrepriseId = _entreprise?.Id ?? 0 };
+        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.LibreService, EntrepriseId = _entreprise?.Id ?? 0 };
         _modeFournisseur = "existant";
     }
 
-    private class SalarieItem
+    private class CollaborateurItem
     {
-        public int SalarieId { get; set; }
+        public int CollaborateurId { get; set; }
         public string Label { get; set; } = string.Empty;
     }
 }

@@ -48,17 +48,17 @@
                     {
                         <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings" Path="admin" Match="NavLinkMatch.All" />
                     }
-                    @if (_role == "Patron")
+                    @if (_role == "Dirigeant")
                     {
-                        <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="patron" Match="NavLinkMatch.All" />
-                        <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="patron/creer-code" Match="NavLinkMatch.All" />
-                        <RadzenPanelMenuItem Text="Création collaborateur" Icon="person_add" Path="patron/creer-salarie" Match="NavLinkMatch.All" />
-                        <RadzenPanelMenuItem Text="Mes fournisseurs" Icon="contacts" Path="patron/fournisseurs" Match="NavLinkMatch.All" />
-                        <RadzenPanelMenuItem Text="Notifications" Icon="notifications" Path="patron/notifications" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="dirigeant" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="dirigeant/creer-code" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Création collaborateur" Icon="person_add" Path="dirigeant/creer-collaborateur" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Mes fournisseurs" Icon="contacts" Path="dirigeant/fournisseurs" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Notifications" Icon="notifications" Path="dirigeant/notifications" Match="NavLinkMatch.All" />
                     }
-                    @if (_role == "Salarie")
+                    @if (_role == "Collaborateur")
                     {
-                        <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="salarie" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="collaborateur" Match="NavLinkMatch.All" />
                     }
                     @if (_role == "Fournisseur")
                     {

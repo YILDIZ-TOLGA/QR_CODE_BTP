@@ -8,6 +8,6 @@ public class E_Entreprise
     public string? Siret { get; set; }
     public DateTime DateCreation { get; set; }
     public bool EstAutorisee { get; set; }
-    public int PatronId { get; set; }
-    public E_Utilisateur Patron { get; set; } = null!;
+    public int DirigeantId { get; set; }
+    public E_Utilisateur Dirigeant { get; set; } = null!;
 }

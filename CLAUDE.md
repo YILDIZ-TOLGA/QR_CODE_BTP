@@ -5,7 +5,7 @@
 - **Path local** : `C:\Users\y1903\Desktop\BTPSecure`
 - **Repo** : `github.com/YILDIZ-TOLGA/QR_CODE_BTP` (branche `main`)
 - **Prod** : https://qrcodebtp-production.up.railway.app
-- **Domaine** : sécurisation d'achats BTP via QR codes (rôles : Admin / Patron / Salarié / Fournisseur)
+- **Domaine** : sécurisation d'achats BTP via QR codes (rôles : Admin / Dirigeant / Collaborateur / Fournisseur)
 
 ## Stack
 - **Server** : ASP.NET Core, EF Core (Npgsql), JWT + BCrypt, QuestPDF
@@ -53,11 +53,11 @@ BTPSecure/
 - ✅ Tout le texte UI en français
 
 ## Rôles & Auth
-- `Enum_Role` : `Admin=0`, `Patron=1`, `Salarie=2`, `Fournisseur=3`
+- `Enum_Role` : `Admin=0`, `Dirigeant=1`, `Collaborateur=2`, `Fournisseur=3`
 - **Admin seed** : `admin@btpsecure.fr` / `Aqwxcvbn$74123-` (créé au démarrage si absent)
 - **Flow** : login → `S_Auth.Connecter` → JWT en localStorage (clé `"token"`) → `S_AuthStateProvider` lit + set `HttpClient.Authorization`
 - **Claims JWT** : `NameIdentifier` (Id), `Email`, `Role`
-- **Redirections post-login par rôle** : `/admin`, `/patron`, `/salarie`, `/fournisseur`
+- **Redirections post-login par rôle** : `/admin`, `/dirigeant`, `/collaborateur`, `/fournisseur`
 - `MainLayout` s'abonne à `AuthenticationStateChanged` pour MAJ live de la sidebar
 
 ## Workflow déploiement (CRITIQUE)
@@ -102,9 +102,10 @@ git push   # Railway redéploie auto via webhook GitHub
 - `Program.cs` réinjecte les env vars dans `IConfiguration` au boot
 
 ## Features récentes implémentées
-- **Admin** : `EstAutorisee` sur `E_Entreprise` ; un Patron ne peut générer de QR que si Admin a activé son entreprise
-- **Multi-entreprises** : table `E_SalarieEntreprise` (N-N) avec `Enum_StatutInvitation` (EnAttente / Acceptee / Refusee)
-- **Invitations** : Patron invite → Salarié accepte/refuse ; Salarié peut quitter (révoque ses codes)
+- **Admin** : `EstAutorisee` sur `E_Entreprise` ; un Dirigeant ne peut générer de QR que si Admin a activé son entreprise
+- **Multi-entreprises** : `E_CollaborateurEntreprise` (N-N, table physique `salaries_entreprises`) avec `Enum_StatutInvitation` (EnAttente / Acceptee / Refusee)
+- **Invitations** : Dirigeant invite → Collaborateur accepte/refuse ; Collaborateur peut quitter (révoque ses codes)
+- ⚠️ **Renommage Lot 0B (2026-07)** : `Patron`→`Dirigeant`, `Salarie`→`Collaborateur`, `Confiance`→`LibreService`, `E_SalarieEntreprise`→`E_CollaborateurEntreprise`. **Colonnes/tables physiques PostgreSQL inchangées** (`PatronId`, `SalarieId`, `salaries_entreprises`) via `HasColumnName`/`ToTable` dans `AppDbContext` — ne jamais toucher ces strings de mapping. Rôles JWT écrits par `.ToString()` → tokens émis avant le renommage exigent un re-login.
 - **Sidebar conditionnelle** : cachée si non connecté ; menu burger caché aussi
 - **Highlight exact** des items menu : `Match="NavLinkMatch.All"`
 - **Loader index.html** stylisé (bouclier glassmorphism, dégradé bleu)

@@ -1,5 +1,5 @@
-@page "/patron"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@page "/dirigeant"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
 @implements IDisposable
 @inject Services.S_Entreprise SEntreprise
 @inject Services.S_Code SCode
@@ -67,7 +67,7 @@ else
         @if (_nbNotifications > 0)
         {
             <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-success); color: white; cursor: pointer;"
-                        @onclick='() => Navigation.NavigateTo("/patron/notifications")'>
+                        @onclick='() => Navigation.NavigateTo("/dirigeant/notifications")'>
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="1rem">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
                         <RadzenIcon Icon="notifications_active" Style="font-size: 2rem; color: white;" />
@@ -119,7 +119,7 @@ else
                     {
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="En attente" IsPill="true" />
                     }
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_salaries.Count} collaborateur(s)")" IsPill="true" />
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_collaborateurs.Count} collaborateur(s)")" IsPill="true" />
                     <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_codes.Count(c => c.Statut == Enum_StatutCode.Actif)} code(s) actif(s)")" IsPill="true" />
                 </RadzenStack>
             </RadzenStack>
@@ -133,10 +133,10 @@ else
                     <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Collaborateurs</RadzenText>
                 </RadzenStack>
                 <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Success"
-                              Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutSalarie" />
+                              Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutCollaborateur" />
             </RadzenStack>
 
-            @if (_salaries.Count == 0)
+            @if (_collaborateurs.Count == 0)
             {
                 <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
                     <RadzenIcon Icon="group_off" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
@@ -146,7 +146,7 @@ else
             else
             {
                 <RadzenRow Gap="1rem">
-                    @foreach (var _sal in _salaries)
+                    @foreach (var _sal in _collaborateurs)
                     {
                         <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
                             <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
@@ -173,7 +173,7 @@ else
 
                                     <RadzenButton Text="Retirer" Icon="person_remove" ButtonStyle="ButtonStyle.Danger"
                                                   Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
-                                                  Click="() => RetirerSalarie(_sal)" />
+                                                  Click="() => RetirerCollaborateur(_sal)" />
                                 </RadzenStack>
                             </RadzenCard>
                         </RadzenColumn>
@@ -193,7 +193,7 @@ else
                 {
                     <RadzenButton Text="Créer un code" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
                                   Variant="Variant.Flat" Size="ButtonSize.Small"
-                                  Click='() => Navigation.NavigateTo("/patron/creer-code")' />
+                                  Click='() => Navigation.NavigateTo("/dirigeant/creer-code")' />
                 }
             </RadzenStack>
 
@@ -242,7 +242,7 @@ else
                                 <RadzenFormField Text="Collaborateur" Variant="Variant.Outlined" Style="width: 100%;">
                                     <Start><RadzenIcon Icon="person" /></Start>
                                     <ChildContent>
-                                        <RadzenDropDown @bind-Value="_filtreSalarieId" Data="_optionsSalarie" TextProperty="Label" ValueProperty="Id"
+                                        <RadzenDropDown @bind-Value="_filtreCollaborateurId" Data="_optionsCollaborateur" TextProperty="Label" ValueProperty="Id"
                                                         Style="width: 100%;" />
                                     </ChildContent>
                                 </RadzenFormField>
@@ -292,7 +292,7 @@ else
                             <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
                                 <RadzenStack Gap="0.75rem">
                                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem" Wrap="FlexWrap.Wrap">
-                                        @if (_c.TypeCode == Enum_TypeCode.Confiance)
+                                        @if (_c.TypeCode == Enum_TypeCode.LibreService)
                                         {
                                             <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_c.TypeCode.ToString()" IsPill="true" />
                                         }
@@ -313,7 +313,7 @@ else
                                     <RadzenStack Gap="0.4rem">
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                             <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2">@_c.PrenomSalarie @_c.NomSalarie</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Body2">@_c.PrenomCollaborateur @_c.NomCollaborateur</RadzenText>
                                         </RadzenStack>
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                             <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
@@ -350,7 +350,7 @@ else
 @code {
     private DTO_EntrepriseAffichage? _entreprise;
     private DTO_CreerEntreprise _dtoEntreprise = new();
-    private List<DTO_SalarieAffichage> _salaries = new();
+    private List<DTO_CollaborateurAffichage> _collaborateurs = new();
     private List<DTO_CodeAffichage> _codes = new();
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private int _nbNotifications = 0;
@@ -359,7 +359,7 @@ else
     // Filtres
     private string _filtreType = "tous";
     private string _filtreStatut = "tous";
-    private int _filtreSalarieId = 0;
+    private int _filtreCollaborateurId = 0;
     private int _filtreFournisseurId = 0;
     private DateTime? _filtreDateDebut;
     private DateTime? _filtreDateFin;
@@ -367,7 +367,7 @@ else
     private List<object> _optionsType = new()
     {
         new { Text = "Tous", Value = "tous" },
-        new { Text = "Confiance", Value = "confiance" },
+        new { Text = "LibreService", Value = "libreservice" },
         new { Text = "Liste", Value = "liste" }
     };
 
@@ -380,8 +380,8 @@ else
         new { Text = "Expiré", Value = "expire" }
     };
 
-    private List<OptionItem> _optionsSalarie => new List<OptionItem> { new() { Id = 0, Label = "Tous" } }
-        .Concat(_salaries.Select(s => new OptionItem { Id = s.SalarieId, Label = $"{s.Prenom} {s.Nom}" })).ToList();
+    private List<OptionItem> _optionsCollaborateur => new List<OptionItem> { new() { Id = 0, Label = "Tous" } }
+        .Concat(_collaborateurs.Select(s => new OptionItem { Id = s.CollaborateurId, Label = $"{s.Prenom} {s.Nom}" })).ToList();
 
     private List<OptionItem> _optionsFournisseur => new List<OptionItem> { new() { Id = 0, Label = "Tous" } }
         .Concat(_fournisseurs.Select(f => new OptionItem { Id = f.Id, Label = f.NomEntreprise })).ToList();
@@ -392,8 +392,8 @@ else
         {
             IEnumerable<DTO_CodeAffichage> _q = _codes;
 
-            if (_filtreType == "confiance")
-                _q = _q.Where(c => c.TypeCode == Enum_TypeCode.Confiance);
+            if (_filtreType == "libreservice")
+                _q = _q.Where(c => c.TypeCode == Enum_TypeCode.LibreService);
             else if (_filtreType == "liste")
                 _q = _q.Where(c => c.TypeCode == Enum_TypeCode.Liste);
 
@@ -406,8 +406,8 @@ else
             else if (_filtreStatut == "expire")
                 _q = _q.Where(c => c.Statut == Enum_StatutCode.Expire);
 
-            if (_filtreSalarieId > 0)
-                _q = _q.Where(c => c.SalarieId == _filtreSalarieId);
+            if (_filtreCollaborateurId > 0)
+                _q = _q.Where(c => c.CollaborateurId == _filtreCollaborateurId);
 
             if (_filtreFournisseurId > 0)
                 _q = _q.Where(c => c.FournisseurContactId == _filtreFournisseurId);
@@ -437,7 +437,7 @@ else
     {
         _filtreType = "tous";
         _filtreStatut = "tous";
-        _filtreSalarieId = 0;
+        _filtreCollaborateurId = 0;
         _filtreFournisseurId = 0;
         _filtreDateDebut = null;
         _filtreDateFin = null;
@@ -487,10 +487,10 @@ else
         _entreprise = await SEntreprise.ObtenirMonEntreprise();
         if (_entreprise != null)
         {
-            _salaries = await SEntreprise.ObtenirSalaries();
-            _codes = await SCode.ObtenirParPatron();
+            _collaborateurs = await SEntreprise.ObtenirCollaborateurs();
+            _codes = await SCode.ObtenirParDirigeant();
             _fournisseurs = await SFournisseur.Lister();
-            var _notifs = await SCode.ObtenirNotificationsPatron();
+            var _notifs = await SCode.ObtenirNotificationsDirigeant();
             _nbNotifications = _notifs.Count;
         }
     }
@@ -507,32 +507,32 @@ else
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
     }
 
-    private async Task OuvrirAjoutSalarie()
+    private async Task OuvrirAjoutCollaborateur()
     {
-        var _email = await Dialog.OpenAsync<Comp_DialogAjoutSalarie>("Ajouter un collaborateur",
+        var _email = await Dialog.OpenAsync<Comp_DialogAjoutCollaborateur>("Ajouter un collaborateur",
             options: new DialogOptions { Width = "480px", CloseDialogOnOverlayClick = true });
         if (_email is string email && !string.IsNullOrWhiteSpace(email))
         {
-            var (_succes, _message, _) = await SEntreprise.AjouterSalarie(email);
+            var (_succes, _message, _) = await SEntreprise.AjouterCollaborateur(email);
             if (_succes)
             {
                 Notification.Notify(NotificationSeverity.Success, "Succès", _message);
-                _salaries = await SEntreprise.ObtenirSalaries();
+                _collaborateurs = await SEntreprise.ObtenirCollaborateurs();
             }
             else
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
     }
 
-    private async Task RetirerSalarie(DTO_SalarieAffichage p_salarie)
+    private async Task RetirerCollaborateur(DTO_CollaborateurAffichage p_collaborateur)
     {
         var _confirm = await Dialog.Confirm(
-            $"Retirer {p_salarie.Prenom} {p_salarie.Nom} de l'entreprise ? Ses codes actifs seront révoqués.",
+            $"Retirer {p_collaborateur.Prenom} {p_collaborateur.Nom} de l'entreprise ? Ses codes actifs seront révoqués.",
             "Confirmer le retrait",
             new ConfirmOptions { OkButtonText = "Retirer", CancelButtonText = "Annuler" });
         if (_confirm == true)
         {
-            var (_succes, _message) = await SEntreprise.RetirerSalarie(p_salarie.Id);
+            var (_succes, _message) = await SEntreprise.RetirerCollaborateur(p_collaborateur.Id);
             if (_succes)
             {
                 Notification.Notify(NotificationSeverity.Success, "Succès", _message);
@@ -555,7 +555,7 @@ else
             if (_succes)
             {
                 Notification.Notify(NotificationSeverity.Success, "Succès", _message);
-                _codes = await SCode.ObtenirParPatron();
+                _codes = await SCode.ObtenirParDirigeant();
             }
             else
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);

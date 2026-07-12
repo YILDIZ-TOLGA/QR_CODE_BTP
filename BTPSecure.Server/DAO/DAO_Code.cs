@@ -31,7 +31,7 @@ public class DAO_Code
     public async Task<E_Code?> ObtenirParId(int p_id)
     {
         return await _context.Codes
-            .Include(c => c.Salarie)
+            .Include(c => c.Collaborateur)
             .Include(c => c.Entreprise)
             .FirstOrDefaultAsync(c => c.Id == p_id);
     }
@@ -39,18 +39,18 @@ public class DAO_Code
     public async Task<E_Code?> ObtenirParValeur(string p_valeur)
     {
         return await _context.Codes
-            .Include(c => c.Salarie)
+            .Include(c => c.Collaborateur)
             .Include(c => c.Entreprise)
             .FirstOrDefaultAsync(c => c.Valeur == p_valeur);
     }
 
-    public async Task<List<E_Code>> ObtenirParPatron(int p_patronId)
+    public async Task<List<E_Code>> ObtenirParDirigeant(int p_dirigeantId)
     {
         var _codes = await _context.Codes
-            .Include(c => c.Salarie)
+            .Include(c => c.Collaborateur)
             .Include(c => c.Entreprise)
             .Include(c => c.FournisseurContact)
-            .Where(c => c.PatronId == p_patronId)
+            .Where(c => c.DirigeantId == p_dirigeantId)
             .OrderByDescending(c => c.DateCreation)
             .ToListAsync();
 
@@ -59,13 +59,13 @@ public class DAO_Code
         return _codes;
     }
 
-    public async Task<List<E_Code>> ObtenirNotificationsPourPatron(int p_patronId)
+    public async Task<List<E_Code>> ObtenirNotificationsPourDirigeant(int p_dirigeantId)
     {
         var _maintenant = DateTime.UtcNow;
         var _codes = await _context.Codes
-            .Include(c => c.Salarie)
+            .Include(c => c.Collaborateur)
             .Include(c => c.FournisseurContact)
-            .Where(c => c.PatronId == p_patronId
+            .Where(c => c.DirigeantId == p_dirigeantId
                 && c.EstPrete
                 && c.Statut == Enum_StatutCode.Actif
                 && (c.DateExpiration == null || c.DateExpiration > _maintenant))
@@ -97,11 +97,11 @@ public class DAO_Code
         return _codes.Where(c => c.Statut == Enum_StatutCode.Actif).ToList();
     }
 
-    public async Task<List<E_Code>> ObtenirParSalarie(int p_salarieId)
+    public async Task<List<E_Code>> ObtenirParCollaborateur(int p_collaborateurId)
     {
         var _codes = await _context.Codes
             .Include(c => c.Entreprise)
-            .Where(c => c.SalarieId == p_salarieId && c.Statut == Enum_StatutCode.Actif)
+            .Where(c => c.CollaborateurId == p_collaborateurId && c.Statut == Enum_StatutCode.Actif)
             .OrderByDescending(c => c.DateCreation)
             .ToListAsync();
 
@@ -115,10 +115,10 @@ public class DAO_Code
         await _context.SaveChangesAsync();
     }
 
-    public async Task RevoquerCodesParSalarieEtEntreprise(int p_salarieId, int p_entrepriseId)
+    public async Task RevoquerCodesParCollaborateurEtEntreprise(int p_collaborateurId, int p_entrepriseId)
     {
         var _codes = await _context.Codes
-            .Where(c => c.SalarieId == p_salarieId
+            .Where(c => c.CollaborateurId == p_collaborateurId
                 && c.EntrepriseId == p_entrepriseId
                 && c.Statut == Enum_StatutCode.Actif)
             .ToListAsync();

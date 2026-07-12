@@ -101,11 +101,11 @@ else
                                 <RadzenStack Gap="0.4rem">
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                         <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                        <RadzenText TextStyle="TextStyle.Body2">@_ent.PrenomPatron @_ent.NomPatron</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body2">@_ent.PrenomDirigeant @_ent.NomDirigeant</RadzenText>
                                     </RadzenStack>
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                         <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis;">@_ent.EmailPatron</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis;">@_ent.EmailDirigeant</RadzenText>
                                     </RadzenStack>
                                     @if (!string.IsNullOrEmpty(_ent.Siret))
                                     {
@@ -121,7 +121,7 @@ else
                                 </RadzenStack>
 
                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_ent.NombreSalaries} collaborateur(s)")" IsPill="true" />
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_ent.NombreCollaborateurs} collaborateur(s)")" IsPill="true" />
                                     <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_ent.NombreCodes} code(s)")" IsPill="true" />
                                 </RadzenStack>
 

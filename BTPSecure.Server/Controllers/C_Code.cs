@@ -24,7 +24,7 @@ public class C_Code : ControllerBase
     }
 
     [HttpPost("creer")]
-    [Authorize(Roles = "Patron")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> Creer([FromBody] DTO_CreerCode p_dto)
     {
         var (_succes, _message, _code) = await _sCode.Creer(p_dto, ObtenirUtilisateurId());
@@ -32,19 +32,19 @@ public class C_Code : ControllerBase
         return Ok(_code);
     }
 
-    [HttpGet("patron")]
-    [Authorize(Roles = "Patron")]
-    public async Task<IActionResult> ObtenirParPatron()
+    [HttpGet("dirigeant")]
+    [Authorize(Roles = "Dirigeant")]
+    public async Task<IActionResult> ObtenirParDirigeant()
     {
-        var _codes = await _sCode.ObtenirParPatron(ObtenirUtilisateurId());
+        var _codes = await _sCode.ObtenirParDirigeant(ObtenirUtilisateurId());
         return Ok(_codes);
     }
 
-    [HttpGet("salarie")]
-    [Authorize(Roles = "Salarie")]
-    public async Task<IActionResult> ObtenirParSalarie()
+    [HttpGet("collaborateur")]
+    [Authorize(Roles = "Collaborateur")]
+    public async Task<IActionResult> ObtenirParCollaborateur()
     {
-        var _codes = await _sCode.ObtenirParSalarie(ObtenirUtilisateurId());
+        var _codes = await _sCode.ObtenirParCollaborateur(ObtenirUtilisateurId());
         return Ok(_codes);
     }
 
@@ -83,16 +83,16 @@ public class C_Code : ControllerBase
         return Ok(new { message = _message });
     }
 
-    [HttpGet("notifications-patron")]
-    [Authorize(Roles = "Patron")]
-    public async Task<IActionResult> ObtenirNotificationsPatron()
+    [HttpGet("notifications-dirigeant")]
+    [Authorize(Roles = "Dirigeant")]
+    public async Task<IActionResult> ObtenirNotificationsDirigeant()
     {
-        var _liste = await _sCode.ObtenirNotificationsPatron(ObtenirUtilisateurId());
+        var _liste = await _sCode.ObtenirNotificationsDirigeant(ObtenirUtilisateurId());
         return Ok(_liste);
     }
 
     [HttpPost("revoquer/{p_id}")]
-    [Authorize(Roles = "Patron")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> Revoquer(int p_id)
     {
         var (_succes, _message) = await _sCode.Revoquer(p_id, ObtenirUtilisateurId());

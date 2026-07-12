@@ -16,7 +16,7 @@ public class DAO_Admin
     public async Task<List<E_Entreprise>> ObtenirToutesLesEntreprises()
     {
         return await _context.Entreprises
-            .Include(e => e.Patron)
+            .Include(e => e.Dirigeant)
             .OrderByDescending(e => e.DateCreation)
             .ToListAsync();
     }
@@ -24,13 +24,13 @@ public class DAO_Admin
     public async Task<E_Entreprise?> ObtenirEntrepriseParId(int p_id)
     {
         return await _context.Entreprises
-            .Include(e => e.Patron)
+            .Include(e => e.Dirigeant)
             .FirstOrDefaultAsync(e => e.Id == p_id);
     }
 
-    public async Task<int> CompterSalaries(int p_entrepriseId)
+    public async Task<int> CompterCollaborateurs(int p_entrepriseId)
     {
-        return await _context.SalariesEntreprises
+        return await _context.CollaborateursEntreprises
             .CountAsync(se => se.EntrepriseId == p_entrepriseId && se.EstActif);
     }
 

@@ -14,25 +14,25 @@ public class S_Invitation
 
     public async Task<List<DTO_InvitationAffichage>> ObtenirInvitations()
     {
-        var _result = await _http.GetFromJsonAsync<List<DTO_InvitationAffichage>>("api/salarie/invitations");
+        var _result = await _http.GetFromJsonAsync<List<DTO_InvitationAffichage>>("api/collaborateur/invitations");
         return _result ?? new List<DTO_InvitationAffichage>();
     }
 
     public async Task<(bool Succes, string Message)> Accepter(int p_id)
     {
-        var _reponse = await _http.PostAsJsonAsync($"api/salarie/accepter/{p_id}", new { });
+        var _reponse = await _http.PostAsJsonAsync($"api/collaborateur/accepter/{p_id}", new { });
         return await LireResultat(_reponse);
     }
 
     public async Task<(bool Succes, string Message)> Refuser(int p_id)
     {
-        var _reponse = await _http.PostAsJsonAsync($"api/salarie/refuser/{p_id}", new { });
+        var _reponse = await _http.PostAsJsonAsync($"api/collaborateur/refuser/{p_id}", new { });
         return await LireResultat(_reponse);
     }
 
     public async Task<(bool Succes, string Message)> Quitter(int p_id)
     {
-        var _reponse = await _http.PostAsJsonAsync($"api/salarie/quitter/{p_id}", new { });
+        var _reponse = await _http.PostAsJsonAsync($"api/collaborateur/quitter/{p_id}", new { });
         return await LireResultat(_reponse);
     }
 

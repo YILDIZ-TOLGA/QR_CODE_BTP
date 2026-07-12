@@ -1,5 +1,5 @@
-@page "/patron/notifications"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@page "/dirigeant/notifications"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
 @implements IDisposable
 @inject Services.S_Code SCode
 
@@ -65,7 +65,7 @@ else
 
                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                             <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                            <RadzenText TextStyle="TextStyle.Body2">Collaborateur assigné : @_n.PrenomSalarie @_n.NomSalarie</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">Collaborateur assigné : @_n.PrenomCollaborateur @_n.NomCollaborateur</RadzenText>
                         </RadzenStack>
 
                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
@@ -110,14 +110,14 @@ else
 }
 
 @code {
-    private List<DTO_NotificationPatron> _notifications = new();
+    private List<DTO_NotificationDirigeant> _notifications = new();
     private bool _chargement = true;
 
     private System.Timers.Timer? _timer;
 
     protected override async Task OnInitializedAsync()
     {
-        _notifications = await SCode.ObtenirNotificationsPatron();
+        _notifications = await SCode.ObtenirNotificationsDirigeant();
         _chargement = false;
 
         _timer = new System.Timers.Timer(15000);
@@ -130,7 +130,7 @@ else
     {
         try
         {
-            _notifications = await SCode.ObtenirNotificationsPatron();
+            _notifications = await SCode.ObtenirNotificationsDirigeant();
             await InvokeAsync(StateHasChanged);
         }
         catch { }

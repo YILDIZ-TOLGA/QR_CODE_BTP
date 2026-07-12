@@ -23,14 +23,14 @@ public class S_Entreprise
         _logger = p_logger;
     }
 
-    public async Task<(bool Succes, string Message)> CreerSalarie(DTO_CreerSalarie p_dto, int p_patronId)
+    public async Task<(bool Succes, string Message)> CreerCollaborateur(DTO_CreerCollaborateur p_dto, int p_dirigeantId)
     {
         if (string.IsNullOrWhiteSpace(p_dto.Email))
             return (false, "L'email est obligatoire.");
         if (string.IsNullOrWhiteSpace(p_dto.Nom) || string.IsNullOrWhiteSpace(p_dto.Prenom))
             return (false, "Le nom et le prénom sont obligatoires.");
 
-        var _entreprise = await _daoEntreprise.ObtenirParPatronId(p_patronId);
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
         if (_entreprise == null)
             return (false, "Vous n'avez pas encore d'entreprise.");
 
@@ -41,7 +41,7 @@ public class S_Entreprise
         var _sel = BCrypt.Net.BCrypt.GenerateSalt();
         var _hash = BCrypt.Net.BCrypt.HashPassword(_motDePasseTemporaire, _sel);
 
-        var _salarie = new E_Utilisateur
+        var _collaborateur = new E_Utilisateur
         {
             Email = p_dto.Email.Trim().ToLower(),
             MotDePasseHash = _hash,
@@ -49,33 +49,33 @@ public class S_Entreprise
             Nom = p_dto.Nom.Trim(),
             Prenom = p_dto.Prenom.Trim(),
             Telephone = p_dto.Telephone?.Trim(),
-            Role = Enum_Role.Salarie,
+            Role = Enum_Role.Collaborateur,
             EstActif = true,
             EmailVerifie = true
         };
 
-        await _daoUtilisateur.Creer(_salarie);
+        await _daoUtilisateur.Creer(_collaborateur);
 
-        var _lien = new E_SalarieEntreprise
+        var _lien = new E_CollaborateurEntreprise
         {
-            SalarieId = _salarie.Id,
+            CollaborateurId = _collaborateur.Id,
             EntrepriseId = _entreprise.Id,
             StatutInvitation = Enum_StatutInvitation.Acceptee
         };
-        await _daoEntreprise.AjouterSalarie(_lien);
+        await _daoEntreprise.AjouterCollaborateur(_lien);
         _lien.StatutInvitation = Enum_StatutInvitation.Acceptee;
         await _daoEntreprise.Sauvegarder();
 
-        _logger.LogInformation("Salarié {Email} créé par patron {PatronId} pour entreprise {EntrepriseId}",
-            _salarie.Email, p_patronId, _entreprise.Id);
+        _logger.LogInformation("Salarié {Email} créé par dirigeant {DirigeantId} pour entreprise {EntrepriseId}",
+            _collaborateur.Email, p_dirigeantId, _entreprise.Id);
 
-        var _emailCopie = _salarie.Email;
-        var _prenomCopie = _salarie.Prenom;
+        var _emailCopie = _collaborateur.Email;
+        var _prenomCopie = _collaborateur.Prenom;
         var _mdpCopie = _motDePasseTemporaire;
         var _nomEntrepriseCopie = _entreprise.Nom;
         _ = Task.Run(async () =>
         {
-            await _sEmail.EnvoyerCompteCreeParPatron(_emailCopie, _prenomCopie, _mdpCopie, _nomEntrepriseCopie);
+            await _sEmail.EnvoyerCompteCreeParDirigeant(_emailCopie, _prenomCopie, _mdpCopie, _nomEntrepriseCopie);
         });
 
         return (true, "Collaborateur créé. Il recevra ses identifiants par email.");
@@ -94,12 +94,12 @@ public class S_Entreprise
         return new string(_result);
     }
 
-    public async Task<(bool Succes, string Message, DTO_EntrepriseAffichage? Entreprise)> Creer(DTO_CreerEntreprise p_dto, int p_patronId)
+    public async Task<(bool Succes, string Message, DTO_EntrepriseAffichage? Entreprise)> Creer(DTO_CreerEntreprise p_dto, int p_dirigeantId)
     {
         if (string.IsNullOrWhiteSpace(p_dto.Nom))
             return (false, "Le nom de l'entreprise est obligatoire.", null);
 
-        var _existante = await _daoEntreprise.ObtenirParPatronId(p_patronId);
+        var _existante = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
         if (_existante != null)
             return (false, "Vous avez déjà une entreprise.", null);
 
@@ -108,97 +108,97 @@ public class S_Entreprise
             Nom = p_dto.Nom.Trim(),
             Adresse = p_dto.Adresse?.Trim(),
             Siret = p_dto.Siret?.Trim(),
-            PatronId = p_patronId
+            DirigeantId = p_dirigeantId
         };
 
         await _daoEntreprise.Creer(_entreprise);
-        _logger.LogInformation("Entreprise '{Nom}' créée par patron {PatronId}", _entreprise.Nom, p_patronId);
+        _logger.LogInformation("Entreprise '{Nom}' créée par dirigeant {DirigeantId}", _entreprise.Nom, p_dirigeantId);
 
         return (true, "Entreprise créée avec succès.", VersDTO(_entreprise));
     }
 
-    public async Task<DTO_EntrepriseAffichage?> ObtenirParPatron(int p_patronId)
+    public async Task<DTO_EntrepriseAffichage?> ObtenirParDirigeant(int p_dirigeantId)
     {
-        var _entreprise = await _daoEntreprise.ObtenirParPatronId(p_patronId);
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
         return _entreprise == null ? null : VersDTO(_entreprise);
     }
 
-    public async Task<(bool Succes, string Message, DTO_SalarieAffichage? Salarie)> AjouterSalarie(string p_email, int p_patronId)
+    public async Task<(bool Succes, string Message, DTO_CollaborateurAffichage? Collaborateur)> AjouterCollaborateur(string p_email, int p_dirigeantId)
     {
         if (string.IsNullOrWhiteSpace(p_email))
             return (false, "L'email est obligatoire.", null);
 
-        var _entreprise = await _daoEntreprise.ObtenirParPatronId(p_patronId);
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
         if (_entreprise == null)
             return (false, "Vous n'avez pas encore d'entreprise.", null);
 
-        var _salarie = await _daoUtilisateur.ObtenirParEmail(p_email);
-        if (_salarie == null)
+        var _collaborateur = await _daoUtilisateur.ObtenirParEmail(p_email);
+        if (_collaborateur == null)
             return (false, "Aucun utilisateur trouvé avec cet email.", null);
 
-        if (_salarie.Role != Enum_Role.Salarie)
+        if (_collaborateur.Role != Enum_Role.Collaborateur)
             return (false, "Cet utilisateur n'a pas le rôle Collaborateur.", null);
 
-        if (await _daoEntreprise.SalarieEstDansEntreprise(_salarie.Id, _entreprise.Id))
+        if (await _daoEntreprise.CollaborateurEstDansEntreprise(_collaborateur.Id, _entreprise.Id))
             return (false, "Ce collaborateur est déjà dans votre entreprise.", null);
 
-        if (await _daoEntreprise.InvitationExiste(_salarie.Id, _entreprise.Id))
+        if (await _daoEntreprise.InvitationExiste(_collaborateur.Id, _entreprise.Id))
             return (false, "Une invitation est déjà en attente pour ce collaborateur.", null);
 
-        var _lien = new E_SalarieEntreprise
+        var _lien = new E_CollaborateurEntreprise
         {
-            SalarieId = _salarie.Id,
+            CollaborateurId = _collaborateur.Id,
             EntrepriseId = _entreprise.Id
         };
 
-        await _daoEntreprise.AjouterSalarie(_lien);
+        await _daoEntreprise.AjouterCollaborateur(_lien);
         _logger.LogInformation("Salarié {Email} ajouté à l'entreprise {EntrepriseId}", p_email, _entreprise.Id);
 
-        return (true, "Invitation envoyée avec succès.", new DTO_SalarieAffichage
+        return (true, "Invitation envoyée avec succès.", new DTO_CollaborateurAffichage
         {
             Id = _lien.Id,
-            SalarieId = _salarie.Id,
-            Nom = _salarie.Nom,
-            Prenom = _salarie.Prenom,
-            Email = _salarie.Email,
+            CollaborateurId = _collaborateur.Id,
+            Nom = _collaborateur.Nom,
+            Prenom = _collaborateur.Prenom,
+            Email = _collaborateur.Email,
             DateAjout = _lien.DateAjout,
             StatutInvitation = _lien.StatutInvitation
         });
     }
 
-    public async Task<List<DTO_SalarieAffichage>> ObtenirSalaries(int p_patronId)
+    public async Task<List<DTO_CollaborateurAffichage>> ObtenirCollaborateurs(int p_dirigeantId)
     {
-        var _entreprise = await _daoEntreprise.ObtenirParPatronId(p_patronId);
-        if (_entreprise == null) return new List<DTO_SalarieAffichage>();
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
+        if (_entreprise == null) return new List<DTO_CollaborateurAffichage>();
 
-        var _liens = await _daoEntreprise.ObtenirSalaries(_entreprise.Id);
-        return _liens.Select(l => new DTO_SalarieAffichage
+        var _liens = await _daoEntreprise.ObtenirCollaborateurs(_entreprise.Id);
+        return _liens.Select(l => new DTO_CollaborateurAffichage
         {
             Id = l.Id,
-            SalarieId = l.SalarieId,
-            Nom = l.Salarie.Nom,
-            Prenom = l.Salarie.Prenom,
-            Email = l.Salarie.Email,
+            CollaborateurId = l.CollaborateurId,
+            Nom = l.Collaborateur.Nom,
+            Prenom = l.Collaborateur.Prenom,
+            Email = l.Collaborateur.Email,
             DateAjout = l.DateAjout,
             StatutInvitation = l.StatutInvitation
         }).ToList();
     }
 
-    public async Task<(bool Succes, string Message)> RetirerSalarie(int p_lienId, int p_patronId)
+    public async Task<(bool Succes, string Message)> RetirerCollaborateur(int p_lienId, int p_dirigeantId)
     {
-        var _entreprise = await _daoEntreprise.ObtenirParPatronId(p_patronId);
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
         if (_entreprise == null)
             return (false, "Vous n'avez pas d'entreprise.");
 
-        var _liens = await _daoEntreprise.ObtenirSalaries(_entreprise.Id);
+        var _liens = await _daoEntreprise.ObtenirCollaborateurs(_entreprise.Id);
         var _lien = _liens.FirstOrDefault(l => l.Id == p_lienId);
         if (_lien == null)
             return (false, "Ce collaborateur n'est pas dans votre entreprise.");
 
-        await _daoEntreprise.RetirerSalarie(_lien);
-        await _daoCode.RevoquerCodesParSalarieEtEntreprise(_lien.SalarieId, _entreprise.Id);
+        await _daoEntreprise.RetirerCollaborateur(_lien);
+        await _daoCode.RevoquerCodesParCollaborateurEtEntreprise(_lien.CollaborateurId, _entreprise.Id);
 
-        _logger.LogInformation("Salarié {SalarieId} retiré de l'entreprise {EntrepriseId}, codes révoqués", _lien.SalarieId, _entreprise.Id);
+        _logger.LogInformation("Salarié {CollaborateurId} retiré de l'entreprise {EntrepriseId}, codes révoqués", _lien.CollaborateurId, _entreprise.Id);
         return (true, "Collaborateur retiré et ses codes liés révoqués.");
     }
 

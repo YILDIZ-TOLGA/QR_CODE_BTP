@@ -14,10 +14,10 @@ public class DAO_Entreprise
         _context = p_context;
     }
 
-    public async Task<E_Entreprise?> ObtenirParPatronId(int p_patronId)
+    public async Task<E_Entreprise?> ObtenirParDirigeantId(int p_dirigeantId)
     {
         return await _context.Entreprises
-            .FirstOrDefaultAsync(e => e.PatronId == p_patronId);
+            .FirstOrDefaultAsync(e => e.DirigeantId == p_dirigeantId);
     }
 
     public async Task<E_Entreprise?> ObtenirParId(int p_id)
@@ -33,72 +33,72 @@ public class DAO_Entreprise
         return p_entreprise;
     }
 
-    public async Task<E_SalarieEntreprise?> ObtenirLienSalarie(int p_salarieId, int p_entrepriseId)
+    public async Task<E_CollaborateurEntreprise?> ObtenirLienCollaborateur(int p_collaborateurId, int p_entrepriseId)
     {
-        return await _context.SalariesEntreprises
-            .FirstOrDefaultAsync(se => se.SalarieId == p_salarieId
+        return await _context.CollaborateursEntreprises
+            .FirstOrDefaultAsync(se => se.CollaborateurId == p_collaborateurId
                 && se.EntrepriseId == p_entrepriseId
                 && se.EstActif);
     }
 
-    public async Task<bool> SalarieEstDansEntreprise(int p_salarieId, int p_entrepriseId)
+    public async Task<bool> CollaborateurEstDansEntreprise(int p_collaborateurId, int p_entrepriseId)
     {
-        return await _context.SalariesEntreprises
-            .AnyAsync(se => se.SalarieId == p_salarieId
+        return await _context.CollaborateursEntreprises
+            .AnyAsync(se => se.CollaborateurId == p_collaborateurId
                 && se.EntrepriseId == p_entrepriseId
                 && se.EstActif
                 && se.StatutInvitation == Enum_StatutInvitation.Acceptee);
     }
 
-    public async Task<bool> InvitationExiste(int p_salarieId, int p_entrepriseId)
+    public async Task<bool> InvitationExiste(int p_collaborateurId, int p_entrepriseId)
     {
-        return await _context.SalariesEntreprises
-            .AnyAsync(se => se.SalarieId == p_salarieId
+        return await _context.CollaborateursEntreprises
+            .AnyAsync(se => se.CollaborateurId == p_collaborateurId
                 && se.EntrepriseId == p_entrepriseId
                 && se.EstActif
                 && se.StatutInvitation == Enum_StatutInvitation.EnAttente);
     }
 
-    public async Task<E_SalarieEntreprise> AjouterSalarie(E_SalarieEntreprise p_lien)
+    public async Task<E_CollaborateurEntreprise> AjouterCollaborateur(E_CollaborateurEntreprise p_lien)
     {
         p_lien.DateAjout = DateTime.UtcNow;
         p_lien.EstActif = true;
         p_lien.StatutInvitation = Enum_StatutInvitation.EnAttente;
-        _context.SalariesEntreprises.Add(p_lien);
+        _context.CollaborateursEntreprises.Add(p_lien);
         await _context.SaveChangesAsync();
         return p_lien;
     }
 
-    public async Task<List<E_SalarieEntreprise>> ObtenirSalaries(int p_entrepriseId)
+    public async Task<List<E_CollaborateurEntreprise>> ObtenirCollaborateurs(int p_entrepriseId)
     {
-        return await _context.SalariesEntreprises
-            .Include(se => se.Salarie)
+        return await _context.CollaborateursEntreprises
+            .Include(se => se.Collaborateur)
             .Where(se => se.EntrepriseId == p_entrepriseId && se.EstActif)
             .OrderBy(se => se.StatutInvitation)
-            .ThenBy(se => se.Salarie.Nom)
+            .ThenBy(se => se.Collaborateur.Nom)
             .ToListAsync();
     }
 
-    public async Task<List<E_SalarieEntreprise>> ObtenirInvitationsParSalarie(int p_salarieId)
+    public async Task<List<E_CollaborateurEntreprise>> ObtenirInvitationsParCollaborateur(int p_collaborateurId)
     {
-        return await _context.SalariesEntreprises
+        return await _context.CollaborateursEntreprises
             .Include(se => se.Entreprise)
-                .ThenInclude(e => e.Patron)
-            .Where(se => se.SalarieId == p_salarieId && se.EstActif)
+                .ThenInclude(e => e.Dirigeant)
+            .Where(se => se.CollaborateurId == p_collaborateurId && se.EstActif)
             .OrderBy(se => se.StatutInvitation)
             .ThenByDescending(se => se.DateAjout)
             .ToListAsync();
     }
 
-    public async Task<E_SalarieEntreprise?> ObtenirLienParId(int p_id)
+    public async Task<E_CollaborateurEntreprise?> ObtenirLienParId(int p_id)
     {
-        return await _context.SalariesEntreprises
+        return await _context.CollaborateursEntreprises
             .Include(se => se.Entreprise)
-                .ThenInclude(e => e.Patron)
+                .ThenInclude(e => e.Dirigeant)
             .FirstOrDefaultAsync(se => se.Id == p_id);
     }
 
-    public async Task RetirerSalarie(E_SalarieEntreprise p_lien)
+    public async Task RetirerCollaborateur(E_CollaborateurEntreprise p_lien)
     {
         p_lien.EstActif = false;
         await _context.SaveChangesAsync();

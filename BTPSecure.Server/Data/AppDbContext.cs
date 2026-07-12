@@ -10,7 +10,7 @@ public class AppDbContext : DbContext
 
     public DbSet<E_Utilisateur> Utilisateurs => Set<E_Utilisateur>();
     public DbSet<E_Entreprise> Entreprises => Set<E_Entreprise>();
-    public DbSet<E_SalarieEntreprise> SalariesEntreprises => Set<E_SalarieEntreprise>();
+    public DbSet<E_CollaborateurEntreprise> CollaborateursEntreprises => Set<E_CollaborateurEntreprise>();
     public DbSet<E_Code> Codes => Set<E_Code>();
     public DbSet<E_FournisseurContact> FournisseursContacts => Set<E_FournisseurContact>();
     public DbSet<E_ResetMotDePasse> ResetsMotDePasse => Set<E_ResetMotDePasse>();
@@ -45,22 +45,26 @@ public class AppDbContext : DbContext
             e.Property(ent => ent.Adresse).HasMaxLength(500);
             e.Property(ent => ent.Siret).HasMaxLength(20);
             e.Property(ent => ent.EstAutorisee).HasDefaultValue(false);
-            e.HasOne(ent => ent.Patron)
+            // Colonne physique conservée : "PatronId"
+            e.Property(ent => ent.DirigeantId).HasColumnName("PatronId");
+            e.HasOne(ent => ent.Dirigeant)
                 .WithMany()
-                .HasForeignKey(ent => ent.PatronId)
+                .HasForeignKey(ent => ent.DirigeantId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // E_SalarieEntreprise
-        p_modelBuilder.Entity<E_SalarieEntreprise>(e =>
+        // E_CollaborateurEntreprise (table physique conservée : "salaries_entreprises")
+        p_modelBuilder.Entity<E_CollaborateurEntreprise>(e =>
         {
             e.ToTable("salaries_entreprises");
             e.HasKey(se => se.Id);
             e.Property(se => se.EstActif).HasDefaultValue(true);
             e.Property(se => se.StatutInvitation).HasConversion<int>().HasDefaultValue(Enum_StatutInvitation.EnAttente);
-            e.HasOne(se => se.Salarie)
+            // Colonne physique conservée : "SalarieId"
+            e.Property(se => se.CollaborateurId).HasColumnName("SalarieId");
+            e.HasOne(se => se.Collaborateur)
                 .WithMany()
-                .HasForeignKey(se => se.SalarieId)
+                .HasForeignKey(se => se.CollaborateurId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(se => se.Entreprise)
                 .WithMany()
@@ -79,13 +83,16 @@ public class AppDbContext : DbContext
             e.Property(c => c.NomEntreprise).IsRequired().HasMaxLength(200);
             e.Property(c => c.TypeCode).HasConversion<int>();
             e.Property(c => c.Statut).HasConversion<int>();
-            e.HasOne(c => c.Patron)
+            // Colonnes physiques conservées : "PatronId" et "SalarieId"
+            e.Property(c => c.DirigeantId).HasColumnName("PatronId");
+            e.Property(c => c.CollaborateurId).HasColumnName("SalarieId");
+            e.HasOne(c => c.Dirigeant)
                 .WithMany()
-                .HasForeignKey(c => c.PatronId)
+                .HasForeignKey(c => c.DirigeantId)
                 .OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(c => c.Salarie)
+            e.HasOne(c => c.Collaborateur)
                 .WithMany()
-                .HasForeignKey(c => c.SalarieId)
+                .HasForeignKey(c => c.CollaborateurId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(c => c.Fournisseur)
                 .WithMany()
@@ -111,11 +118,13 @@ public class AppDbContext : DbContext
             e.Property(f => f.Email).IsRequired().HasMaxLength(256);
             e.Property(f => f.Siret).IsRequired().HasMaxLength(14);
             e.Property(f => f.Siren).HasMaxLength(9);
-            e.HasOne(f => f.Patron)
+            // Colonne physique conservée : "PatronId"
+            e.Property(f => f.DirigeantId).HasColumnName("PatronId");
+            e.HasOne(f => f.Dirigeant)
                 .WithMany()
-                .HasForeignKey(f => f.PatronId)
+                .HasForeignKey(f => f.DirigeantId)
                 .OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(f => new { f.PatronId, f.Siret });
+            e.HasIndex(f => new { f.DirigeantId, f.Siret });
         });
 
         // E_ResetMotDePasse

@@ -24,15 +24,15 @@ public class S_Code
         return (true, "Code créé avec succès.", _code);
     }
 
-    public async Task<List<DTO_CodeAffichage>> ObtenirParPatron()
+    public async Task<List<DTO_CodeAffichage>> ObtenirParDirigeant()
     {
-        var _result = await _http.GetFromJsonAsync<List<DTO_CodeAffichage>>("api/codes/patron");
+        var _result = await _http.GetFromJsonAsync<List<DTO_CodeAffichage>>("api/codes/dirigeant");
         return _result ?? new List<DTO_CodeAffichage>();
     }
 
-    public async Task<List<DTO_CodeAffichage>> ObtenirParSalarie()
+    public async Task<List<DTO_CodeAffichage>> ObtenirParCollaborateur()
     {
-        var _result = await _http.GetFromJsonAsync<List<DTO_CodeAffichage>>("api/codes/salarie");
+        var _result = await _http.GetFromJsonAsync<List<DTO_CodeAffichage>>("api/codes/collaborateur");
         return _result ?? new List<DTO_CodeAffichage>();
     }
 
@@ -73,18 +73,18 @@ public class S_Code
         return (false, _msg);
     }
 
-    public async Task<List<DTO_NotificationPatron>> ObtenirNotificationsPatron()
+    public async Task<List<DTO_NotificationDirigeant>> ObtenirNotificationsDirigeant()
     {
         try
         {
-            var _result = await _http.GetFromJsonAsync<List<DTO_NotificationPatron>>("api/codes/notifications-patron");
+            var _result = await _http.GetFromJsonAsync<List<DTO_NotificationDirigeant>>("api/codes/notifications-dirigeant");
             if (_result == null)
-                return new List<DTO_NotificationPatron>();
+                return new List<DTO_NotificationDirigeant>();
             return _result;
         }
         catch
         {
-            return new List<DTO_NotificationPatron>();
+            return new List<DTO_NotificationDirigeant>();
         }
     }
 

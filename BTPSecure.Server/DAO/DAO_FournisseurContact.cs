@@ -13,10 +13,10 @@ public class DAO_FournisseurContact
         _context = p_context;
     }
 
-    public async Task<List<E_FournisseurContact>> ObtenirParPatron(int p_patronId)
+    public async Task<List<E_FournisseurContact>> ObtenirParDirigeant(int p_dirigeantId)
     {
         return await _context.FournisseursContacts
-            .Where(f => f.PatronId == p_patronId)
+            .Where(f => f.DirigeantId == p_dirigeantId)
             .OrderBy(f => f.NomEntreprise)
             .ToListAsync();
     }
@@ -26,10 +26,10 @@ public class DAO_FournisseurContact
         return await _context.FournisseursContacts.FindAsync(p_id);
     }
 
-    public async Task<E_FournisseurContact?> ObtenirParPatronEtSiret(int p_patronId, string p_siret)
+    public async Task<E_FournisseurContact?> ObtenirParDirigeantEtSiret(int p_dirigeantId, string p_siret)
     {
         return await _context.FournisseursContacts
-            .FirstOrDefaultAsync(f => f.PatronId == p_patronId && f.Siret == p_siret);
+            .FirstOrDefaultAsync(f => f.DirigeantId == p_dirigeantId && f.Siret == p_siret);
     }
 
     public async Task<E_FournisseurContact> Creer(E_FournisseurContact p_contact)

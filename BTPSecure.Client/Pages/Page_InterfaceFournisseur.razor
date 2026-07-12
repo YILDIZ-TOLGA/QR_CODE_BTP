@@ -30,9 +30,9 @@
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
                                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
                                         <RadzenIcon Icon="business" Style="color: var(--rz-primary);" />
-                                        <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_cmd.NomEntreprisePatron</RadzenText>
+                                        <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_cmd.NomEntrepriseDirigeant</RadzenText>
                                     </RadzenStack>
-                                    <RadzenBadge BadgeStyle="@(_cmd.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                    <RadzenBadge BadgeStyle="@(_cmd.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
                                                  Text="@_cmd.TypeCode.ToString()" IsPill="true" />
                                 </RadzenStack>
 
@@ -146,7 +146,7 @@
                         <RadzenStack Gap="0.5rem">
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                                 <RadzenText Style="color: var(--rz-text-secondary-color);">Collaborateur</RadzenText>
-                                <RadzenText Style="font-weight: 600;">@_resultat.PrenomSalarie @_resultat.NomSalarie</RadzenText>
+                                <RadzenText Style="font-weight: 600;">@_resultat.PrenomCollaborateur @_resultat.NomCollaborateur</RadzenText>
                             </RadzenStack>
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                                 <RadzenText Style="color: var(--rz-text-secondary-color);">Entreprise</RadzenText>

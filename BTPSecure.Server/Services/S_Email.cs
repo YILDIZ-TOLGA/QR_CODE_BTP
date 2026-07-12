@@ -16,8 +16,8 @@ public class S_Email
         _http = new HttpClient { BaseAddress = new Uri("https://api.brevo.com/") };
     }
 
-    public async Task<bool> EnvoyerCompteCreeParPatron(string p_emailDestinataire, string p_prenom,
-        string p_motDePasseTemporaire, string p_nomEntreprisePatron)
+    public async Task<bool> EnvoyerCompteCreeParDirigeant(string p_emailDestinataire, string p_prenom,
+        string p_motDePasseTemporaire, string p_nomEntrepriseDirigeant)
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
@@ -46,7 +46,7 @@ public class S_Email
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <h2 style=""color: #1565C0; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
-        <p>L'entreprise <strong>{p_nomEntreprisePatron}</strong> vient de vous créer un compte collaborateur sur BTPSecure.</p>
+        <p>L'entreprise <strong>{p_nomEntrepriseDirigeant}</strong> vient de vous créer un compte collaborateur sur BTPSecure.</p>
 
         <p>Vous pouvez dès maintenant vous connecter avec les identifiants suivants :</p>
 
@@ -80,7 +80,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = $"Votre compte BTPSecure a été créé par {p_nomEntreprisePatron}",
+            subject = $"Votre compte BTPSecure a été créé par {p_nomEntrepriseDirigeant}",
             htmlContent = _corpsHtml
         };
 
@@ -310,7 +310,7 @@ public class S_Email
         }
     }
 
-    public async Task<bool> EnvoyerInvitationFournisseur(string p_emailDestinataire, string p_nomEntreprisePatron,
+    public async Task<bool> EnvoyerInvitationFournisseur(string p_emailDestinataire, string p_nomEntrepriseDirigeant,
         string p_nomEntrepriseFournisseur, string p_siret, string? p_siren, string p_emailFournisseurAssocie)
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
@@ -345,7 +345,7 @@ public class S_Email
 
         <p>Bonjour,</p>
 
-        <p>L'entreprise <strong>{p_nomEntreprisePatron}</strong> vient de créer une commande sur BTPSecure et vous a désigné comme fournisseur.</p>
+        <p>L'entreprise <strong>{p_nomEntrepriseDirigeant}</strong> vient de créer une commande sur BTPSecure et vous a désigné comme fournisseur.</p>
 
         <p>Pour visualiser et gérer cette commande, vous devez créer un compte fournisseur sur BTPSecure en utilisant les informations suivantes :</p>
 

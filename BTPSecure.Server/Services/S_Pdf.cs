@@ -41,7 +41,7 @@ public class S_Pdf
                     col.Item().PaddingBottom(5).Row(row =>
                     {
                         row.RelativeItem().Text("Collaborateur :").Bold();
-                        row.RelativeItem().Text($"{p_code.Salarie.Prenom} {p_code.Salarie.Nom}");
+                        row.RelativeItem().Text($"{p_code.Collaborateur.Prenom} {p_code.Collaborateur.Nom}");
                     });
 
                     col.Item().PaddingBottom(5).Row(row =>

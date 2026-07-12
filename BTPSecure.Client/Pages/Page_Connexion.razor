@@ -122,13 +122,13 @@
         {
             _url = "/admin";
         }
-        else if (_claimRole.Value == "Patron")
+        else if (_claimRole.Value == "Dirigeant")
         {
-            _url = "/patron";
+            _url = "/dirigeant";
         }
-        else if (_claimRole.Value == "Salarie")
+        else if (_claimRole.Value == "Collaborateur")
         {
-            _url = "/salarie";
+            _url = "/collaborateur";
         }
         else if (_claimRole.Value == "Fournisseur")
         {
@@ -168,13 +168,13 @@
         {
             _url = "/admin";
         }
-        else if (_reponse.Role == Enum_Role.Patron)
+        else if (_reponse.Role == Enum_Role.Dirigeant)
         {
-            _url = "/patron";
+            _url = "/dirigeant";
         }
-        else if (_reponse.Role == Enum_Role.Salarie)
+        else if (_reponse.Role == Enum_Role.Collaborateur)
         {
-            _url = "/salarie";
+            _url = "/collaborateur";
         }
         else if (_reponse.Role == Enum_Role.Fournisseur)
         {

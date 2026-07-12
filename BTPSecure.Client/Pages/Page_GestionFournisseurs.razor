@@ -1,5 +1,5 @@
-@page "/patron/fournisseurs"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Patron")]
+@page "/dirigeant/fournisseurs"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
 @inject Services.S_FournisseurContact SFournisseur
 @inject NotificationService Notification
 @inject DialogService Dialog

@@ -30,26 +30,26 @@ public class S_Code
         _logger = p_logger;
     }
 
-    public async Task<(bool Succes, string Message, DTO_CodeAffichage? Code)> Creer(DTO_CreerCode p_dto, int p_patronId)
+    public async Task<(bool Succes, string Message, DTO_CodeAffichage? Code)> Creer(DTO_CreerCode p_dto, int p_dirigeantId)
     {
         if (string.IsNullOrWhiteSpace(p_dto.NumeroCommande))
             return (false, "Le numéro de commande est obligatoire.", null);
 
         var _entreprise = await _daoEntreprise.ObtenirParId(p_dto.EntrepriseId);
-        if (_entreprise == null || _entreprise.PatronId != p_patronId)
+        if (_entreprise == null || _entreprise.DirigeantId != p_dirigeantId)
             return (false, "Entreprise non trouvée ou vous n'en êtes pas le dirigeant.", null);
 
         if (!_entreprise.EstAutorisee)
             return (false, "Votre entreprise n'est pas encore autorisée par l'administrateur à créer des codes.", null);
 
-        if (!await _daoEntreprise.SalarieEstDansEntreprise(p_dto.SalarieId, p_dto.EntrepriseId))
+        if (!await _daoEntreprise.CollaborateurEstDansEntreprise(p_dto.CollaborateurId, p_dto.EntrepriseId))
             return (false, "Ce collaborateur n'appartient pas à votre entreprise.", null);
 
-        var _salarie = await _daoUtilisateur.ObtenirParId(p_dto.SalarieId);
-        if (_salarie == null)
+        var _collaborateur = await _daoUtilisateur.ObtenirParId(p_dto.CollaborateurId);
+        if (_collaborateur == null)
             return (false, "Collaborateur non trouvé.", null);
 
-        if (p_dto.TypeCode == Enum_TypeCode.Confiance)
+        if (p_dto.TypeCode == Enum_TypeCode.LibreService)
         {
             p_dto.DureeValiditeHeures = 48;
         }
@@ -66,7 +66,7 @@ public class S_Code
             if (p_dto.FournisseurContactId.HasValue)
             {
                 _contact = await _daoFournisseurContact.ObtenirParId(p_dto.FournisseurContactId.Value);
-                if (_contact == null || _contact.PatronId != p_patronId)
+                if (_contact == null || _contact.DirigeantId != p_dirigeantId)
                     return (false, "Fournisseur sélectionné introuvable.", null);
             }
             else
@@ -88,12 +88,12 @@ public class S_Code
                         return (false, "Le SIREN du nouveau fournisseur doit contenir 9 chiffres.", null);
                 }
 
-                _contact = await _daoFournisseurContact.ObtenirParPatronEtSiret(p_patronId, _siret);
+                _contact = await _daoFournisseurContact.ObtenirParDirigeantEtSiret(p_dirigeantId, _siret);
                 if (_contact == null)
                 {
                     _contact = new E_FournisseurContact
                     {
-                        PatronId = p_patronId,
+                        DirigeantId = p_dirigeantId,
                         NomEntreprise = p_dto.NouveauFournisseurNomEntreprise.Trim(),
                         Email = p_dto.NouveauFournisseurEmail.Trim().ToLower(),
                         Siret = _siret,
@@ -119,14 +119,14 @@ public class S_Code
             Info = p_dto.Info?.Trim(),
             ListeMateriaux = p_dto.ListeMateriaux?.Trim(),
             DureeValidite = p_dto.DureeValiditeHeures,
-            PatronId = p_patronId,
-            SalarieId = p_dto.SalarieId,
+            DirigeantId = p_dirigeantId,
+            CollaborateurId = p_dto.CollaborateurId,
             EntrepriseId = p_dto.EntrepriseId,
             FournisseurContactId = _fournisseurContactId,
             Reference = _reference
         };
 
-        if (p_dto.TypeCode == Enum_TypeCode.Confiance)
+        if (p_dto.TypeCode == Enum_TypeCode.LibreService)
         {
             _code.DateExpiration = DateTime.UtcNow.AddHours(p_dto.DureeValiditeHeures!.Value);
         }
@@ -136,9 +136,9 @@ public class S_Code
         }
 
         await _daoCode.Creer(_code);
-        _code.Salarie = _salarie;
+        _code.Collaborateur = _collaborateur;
 
-        _logger.LogInformation("Code {Valeur} créé par patron {PatronId} pour salarié {SalarieId}", _valeur, p_patronId, p_dto.SalarieId);
+        _logger.LogInformation("Code {Valeur} créé par dirigeant {DirigeantId} pour salarié {CollaborateurId}", _valeur, p_dirigeantId, p_dto.CollaborateurId);
 
         // Envoi d'invitation au fournisseur s'il n'a pas encore de compte avec ce SIRET
         if (p_dto.UtiliserFournisseur && _fournisseurContactId.HasValue)
@@ -166,15 +166,15 @@ public class S_Code
         return (true, "Code créé avec succès.", VersDTO(_code));
     }
 
-    public async Task<List<DTO_CodeAffichage>> ObtenirParPatron(int p_patronId)
+    public async Task<List<DTO_CodeAffichage>> ObtenirParDirigeant(int p_dirigeantId)
     {
-        var _codes = await _daoCode.ObtenirParPatron(p_patronId);
+        var _codes = await _daoCode.ObtenirParDirigeant(p_dirigeantId);
         return _codes.Select(VersDTO).ToList();
     }
 
-    public async Task<List<DTO_CodeAffichage>> ObtenirParSalarie(int p_salarieId)
+    public async Task<List<DTO_CodeAffichage>> ObtenirParCollaborateur(int p_collaborateurId)
     {
-        var _codes = await _daoCode.ObtenirParSalarie(p_salarieId);
+        var _codes = await _daoCode.ObtenirParCollaborateur(p_collaborateurId);
         return _codes.Select(VersDTO).ToList();
     }
 
@@ -202,7 +202,7 @@ public class S_Code
             _code.Statut = Enum_StatutCode.Utilise;
             _code.DateExpiration = DateTime.UtcNow.AddMinutes(10);
         }
-        else if (_code.TypeCode == Enum_TypeCode.Confiance)
+        else if (_code.TypeCode == Enum_TypeCode.LibreService)
         {
             _code.Valeur = await GenererValeurUnique();
         }
@@ -215,8 +215,8 @@ public class S_Code
         {
             EstValide = true,
             Message = "Code validé avec succès.",
-            NomSalarie = _code.Salarie.Nom,
-            PrenomSalarie = _code.Salarie.Prenom,
+            NomCollaborateur = _code.Collaborateur.Nom,
+            PrenomCollaborateur = _code.Collaborateur.Prenom,
             NumeroCommande = _code.NumeroCommande,
             NomEntreprise = _code.NomEntreprise,
             ListeMateriaux = _code.ListeMateriaux,
@@ -228,13 +228,13 @@ public class S_Code
         return (true, "Code validé.", _resultat);
     }
 
-    public async Task<(bool Succes, string Message)> Revoquer(int p_codeId, int p_patronId)
+    public async Task<(bool Succes, string Message)> Revoquer(int p_codeId, int p_dirigeantId)
     {
         var _code = await _daoCode.ObtenirParId(p_codeId);
         if (_code == null)
             return (false, "Code non trouvé.");
 
-        if (_code.PatronId != p_patronId)
+        if (_code.DirigeantId != p_dirigeantId)
             return (false, "Vous n'êtes pas autorisé à révoquer ce code.");
 
         if (_code.Statut != Enum_StatutCode.Actif)
@@ -243,7 +243,7 @@ public class S_Code
         _code.Statut = Enum_StatutCode.Revoque;
         await _daoCode.Sauvegarder();
 
-        _logger.LogInformation("Code {Id} révoqué par patron {PatronId}", p_codeId, p_patronId);
+        _logger.LogInformation("Code {Id} révoqué par dirigeant {DirigeantId}", p_codeId, p_dirigeantId);
         return (true, "Code révoqué avec succès.");
     }
 
@@ -297,7 +297,7 @@ public class S_Code
         {
             CodeId = c.Id,
             Reference = c.Reference ?? "",
-            NomEntreprisePatron = c.NomEntreprise,
+            NomEntrepriseDirigeant = c.NomEntreprise,
             NumeroCommande = c.NumeroCommande,
             DateCreation = c.DateCreation,
             DateExpiration = c.DateExpiration,
@@ -350,19 +350,19 @@ public class S_Code
         return (true, "Commande marquée comme prête.");
     }
 
-    public async Task<List<DTO_NotificationPatron>> ObtenirNotificationsPatron(int p_patronId)
+    public async Task<List<DTO_NotificationDirigeant>> ObtenirNotificationsDirigeant(int p_dirigeantId)
     {
-        var _codes = await _daoCode.ObtenirNotificationsPourPatron(p_patronId);
+        var _codes = await _daoCode.ObtenirNotificationsPourDirigeant(p_dirigeantId);
 
-        return _codes.Select(c => new DTO_NotificationPatron
+        return _codes.Select(c => new DTO_NotificationDirigeant
         {
             CodeId = c.Id,
             Reference = c.Reference ?? "",
             NumeroCommande = c.NumeroCommande,
             NomFournisseur = c.FournisseurContact?.NomEntreprise ?? "",
             EmailFournisseur = c.FournisseurContact?.Email ?? "",
-            NomSalarie = c.Salarie?.Nom ?? "",
-            PrenomSalarie = c.Salarie?.Prenom ?? "",
+            NomCollaborateur = c.Collaborateur?.Nom ?? "",
+            PrenomCollaborateur = c.Collaborateur?.Prenom ?? "",
             DatePrete = c.DatePrete ?? DateTime.UtcNow,
             DateExpiration = c.DateExpiration,
             ListeMateriaux = c.ListeMateriaux,
@@ -384,9 +384,9 @@ public class S_Code
             ListeMateriaux = p_code.ListeMateriaux,
             DateCreation = p_code.DateCreation,
             DateExpiration = p_code.DateExpiration,
-            NomSalarie = p_code.Salarie?.Nom ?? "",
-            PrenomSalarie = p_code.Salarie?.Prenom ?? "",
-            SalarieId = p_code.SalarieId,
+            NomCollaborateur = p_code.Collaborateur?.Nom ?? "",
+            PrenomCollaborateur = p_code.Collaborateur?.Prenom ?? "",
+            CollaborateurId = p_code.CollaborateurId,
             Reference = p_code.Reference,
             NomFournisseurContact = p_code.FournisseurContact?.NomEntreprise,
             FournisseurContactId = p_code.FournisseurContactId

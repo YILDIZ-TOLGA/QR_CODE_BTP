@@ -8,7 +8,7 @@ namespace BTPSecure.Server.Controllers;
 
 [ApiController]
 [Route("api/entreprises")]
-[Authorize(Roles = "Patron")]
+[Authorize(Roles = "Dirigeant")]
 public class C_Entreprise : ControllerBase
 {
     private readonly S_Entreprise _sEntreprise;
@@ -34,37 +34,37 @@ public class C_Entreprise : ControllerBase
     [HttpGet("ma-entreprise")]
     public async Task<IActionResult> ObtenirMonEntreprise()
     {
-        var _entreprise = await _sEntreprise.ObtenirParPatron(ObtenirUtilisateurId());
+        var _entreprise = await _sEntreprise.ObtenirParDirigeant(ObtenirUtilisateurId());
         return Ok(_entreprise);
     }
 
-    [HttpPost("ajouter-salarie")]
-    public async Task<IActionResult> AjouterSalarie([FromBody] DTO_AjouterSalarie p_dto)
+    [HttpPost("ajouter-collaborateur")]
+    public async Task<IActionResult> AjouterCollaborateur([FromBody] DTO_AjouterCollaborateur p_dto)
     {
-        var (_succes, _message, _salarie) = await _sEntreprise.AjouterSalarie(p_dto.Email, ObtenirUtilisateurId());
+        var (_succes, _message, _collaborateur) = await _sEntreprise.AjouterCollaborateur(p_dto.Email, ObtenirUtilisateurId());
         if (!_succes) return BadRequest(new { message = _message });
-        return Ok(_salarie);
+        return Ok(_collaborateur);
     }
 
-    [HttpPost("creer-salarie")]
-    public async Task<IActionResult> CreerSalarie([FromBody] DTO_CreerSalarie p_dto)
+    [HttpPost("creer-collaborateur")]
+    public async Task<IActionResult> CreerCollaborateur([FromBody] DTO_CreerCollaborateur p_dto)
     {
-        var (_succes, _message) = await _sEntreprise.CreerSalarie(p_dto, ObtenirUtilisateurId());
+        var (_succes, _message) = await _sEntreprise.CreerCollaborateur(p_dto, ObtenirUtilisateurId());
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(new { message = _message });
     }
 
-    [HttpGet("salaries")]
-    public async Task<IActionResult> ObtenirSalaries()
+    [HttpGet("collaborateurs")]
+    public async Task<IActionResult> ObtenirCollaborateurs()
     {
-        var _salaries = await _sEntreprise.ObtenirSalaries(ObtenirUtilisateurId());
-        return Ok(_salaries);
+        var _collaborateurs = await _sEntreprise.ObtenirCollaborateurs(ObtenirUtilisateurId());
+        return Ok(_collaborateurs);
     }
 
-    [HttpDelete("retirer-salarie/{p_id}")]
-    public async Task<IActionResult> RetirerSalarie(int p_id)
+    [HttpDelete("retirer-collaborateur/{p_id}")]
+    public async Task<IActionResult> RetirerCollaborateur(int p_id)
     {
-        var (_succes, _message) = await _sEntreprise.RetirerSalarie(p_id, ObtenirUtilisateurId());
+        var (_succes, _message) = await _sEntreprise.RetirerCollaborateur(p_id, ObtenirUtilisateurId());
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(new { message = _message });
     }

@@ -15,25 +15,25 @@ public class S_FournisseurContact
         _logger = p_logger;
     }
 
-    public async Task<List<DTO_FournisseurContact>> Lister(int p_patronId)
+    public async Task<List<DTO_FournisseurContact>> Lister(int p_dirigeantId)
     {
-        var _liste = await _dao.ObtenirParPatron(p_patronId);
+        var _liste = await _dao.ObtenirParDirigeant(p_dirigeantId);
         return _liste.Select(VersDTO).ToList();
     }
 
-    public async Task<(bool Succes, string Message, DTO_FournisseurContact? Contact)> Creer(DTO_CreerFournisseurContact p_dto, int p_patronId)
+    public async Task<(bool Succes, string Message, DTO_FournisseurContact? Contact)> Creer(DTO_CreerFournisseurContact p_dto, int p_dirigeantId)
     {
         var (_valide, _msg, _siret, _siren) = ValiderEntrees(p_dto);
         if (!_valide)
             return (false, _msg, null);
 
-        var _existant = await _dao.ObtenirParPatronEtSiret(p_patronId, _siret!);
+        var _existant = await _dao.ObtenirParDirigeantEtSiret(p_dirigeantId, _siret!);
         if (_existant != null)
             return (false, "Un fournisseur avec ce SIRET existe déjà dans votre carnet.", null);
 
         var _contact = new E_FournisseurContact
         {
-            PatronId = p_patronId,
+            DirigeantId = p_dirigeantId,
             NomEntreprise = p_dto.NomEntreprise.Trim(),
             Email = p_dto.Email.Trim().ToLower(),
             Siret = _siret!,
@@ -41,14 +41,14 @@ public class S_FournisseurContact
         };
 
         await _dao.Creer(_contact);
-        _logger.LogInformation("Fournisseur contact {Nom} créé par patron {PatronId}", _contact.NomEntreprise, p_patronId);
+        _logger.LogInformation("Fournisseur contact {Nom} créé par dirigeant {DirigeantId}", _contact.NomEntreprise, p_dirigeantId);
         return (true, "Fournisseur ajouté au carnet.", VersDTO(_contact));
     }
 
-    public async Task<(bool Succes, string Message)> Modifier(int p_id, DTO_CreerFournisseurContact p_dto, int p_patronId)
+    public async Task<(bool Succes, string Message)> Modifier(int p_id, DTO_CreerFournisseurContact p_dto, int p_dirigeantId)
     {
         var _contact = await _dao.ObtenirParId(p_id);
-        if (_contact == null || _contact.PatronId != p_patronId)
+        if (_contact == null || _contact.DirigeantId != p_dirigeantId)
             return (false, "Fournisseur non trouvé.");
 
         var (_valide, _msg, _siret, _siren) = ValiderEntrees(p_dto);
@@ -57,7 +57,7 @@ public class S_FournisseurContact
 
         if (_contact.Siret != _siret)
         {
-            var _autre = await _dao.ObtenirParPatronEtSiret(p_patronId, _siret!);
+            var _autre = await _dao.ObtenirParDirigeantEtSiret(p_dirigeantId, _siret!);
             if (_autre != null && _autre.Id != p_id)
                 return (false, "Un autre fournisseur avec ce SIRET existe déjà.");
         }
@@ -68,18 +68,18 @@ public class S_FournisseurContact
         _contact.Siren = _siren;
 
         await _dao.Sauvegarder();
-        _logger.LogInformation("Fournisseur contact {Id} modifié par patron {PatronId}", p_id, p_patronId);
+        _logger.LogInformation("Fournisseur contact {Id} modifié par dirigeant {DirigeantId}", p_id, p_dirigeantId);
         return (true, "Fournisseur mis à jour.");
     }
 
-    public async Task<(bool Succes, string Message)> Supprimer(int p_id, int p_patronId)
+    public async Task<(bool Succes, string Message)> Supprimer(int p_id, int p_dirigeantId)
     {
         var _contact = await _dao.ObtenirParId(p_id);
-        if (_contact == null || _contact.PatronId != p_patronId)
+        if (_contact == null || _contact.DirigeantId != p_dirigeantId)
             return (false, "Fournisseur non trouvé.");
 
         await _dao.Supprimer(_contact);
-        _logger.LogInformation("Fournisseur contact {Id} supprimé par patron {PatronId}", p_id, p_patronId);
+        _logger.LogInformation("Fournisseur contact {Id} supprimé par dirigeant {DirigeantId}", p_id, p_dirigeantId);
         return (true, "Fournisseur supprimé du carnet.");
     }
 

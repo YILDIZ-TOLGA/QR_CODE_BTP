@@ -6,7 +6,7 @@ public class DTO_CommandeAVenir
 {
     public int CodeId { get; set; }
     public string Reference { get; set; } = string.Empty;
-    public string NomEntreprisePatron { get; set; } = string.Empty;
+    public string NomEntrepriseDirigeant { get; set; } = string.Empty;
     public string NumeroCommande { get; set; } = string.Empty;
     public DateTime DateCreation { get; set; }
     public DateTime? DateExpiration { get; set; }

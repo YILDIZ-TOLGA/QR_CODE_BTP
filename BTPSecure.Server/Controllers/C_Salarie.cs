@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace BTPSecure.Server.Controllers;
 
 [ApiController]
-[Route("api/salarie")]
-[Authorize(Roles = "Salarie")]
-public class C_Salarie : ControllerBase
+[Route("api/collaborateur")]
+[Authorize(Roles = "Collaborateur")]
+public class C_Collaborateur : ControllerBase
 {
     private readonly S_Invitation _sInvitation;
 
-    public C_Salarie(S_Invitation p_sInvitation)
+    public C_Collaborateur(S_Invitation p_sInvitation)
     {
         _sInvitation = p_sInvitation;
     }

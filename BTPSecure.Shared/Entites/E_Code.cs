@@ -16,10 +16,10 @@ public class E_Code
     public DateTime DateCreation { get; set; }
     public DateTime? DateExpiration { get; set; }
     public DateTime? DateValidation { get; set; }
-    public int PatronId { get; set; }
-    public E_Utilisateur Patron { get; set; } = null!;
-    public int SalarieId { get; set; }
-    public E_Utilisateur Salarie { get; set; } = null!;
+    public int DirigeantId { get; set; }
+    public E_Utilisateur Dirigeant { get; set; } = null!;
+    public int CollaborateurId { get; set; }
+    public E_Utilisateur Collaborateur { get; set; } = null!;
     public int? FournisseurId { get; set; }
     public E_Utilisateur? Fournisseur { get; set; }
     public int EntrepriseId { get; set; }

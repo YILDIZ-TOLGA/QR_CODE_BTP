@@ -1,5 +1,5 @@
-@page "/salarie"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Salarie")]
+@page "/collaborateur"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Collaborateur")]
 @implements IDisposable
 @inject Services.S_Code SCode
 @inject Services.S_Invitation SInvitation
@@ -45,7 +45,7 @@ else
                                     <RadzenStack Gap="0.25rem">
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                             <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2">Dirigeant : @_inv.PrenomPatron @_inv.NomPatron</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Body2">Dirigeant : @_inv.PrenomDirigeant @_inv.NomDirigeant</RadzenText>
                                         </RadzenStack>
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                             <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
@@ -103,7 +103,7 @@ else
                                     <RadzenStack Gap="0.4rem">
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                             <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2">Dirigeant : @_ent.PrenomPatron @_ent.NomPatron</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Body2">Dirigeant : @_ent.PrenomDirigeant @_ent.NomDirigeant</RadzenText>
                                         </RadzenStack>
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                             <RadzenIcon Icon="event" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
@@ -148,7 +148,7 @@ else
                         <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
                             <RadzenStack Gap="1rem">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-                                    <RadzenBadge BadgeStyle="@(_code.TypeCode == Enum_TypeCode.Confiance ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                    <RadzenBadge BadgeStyle="@(_code.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
                                                  Text="@_code.TypeCode.ToString()" IsPill="true" />
                                     <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Actif" IsPill="true" />
                                 </RadzenStack>
@@ -241,7 +241,7 @@ else
     private async Task ChargerDonnees()
     {
         _invitations = await SInvitation.ObtenirInvitations();
-        _codes = await SCode.ObtenirParSalarie();
+        _codes = await SCode.ObtenirParCollaborateur();
     }
 
     private async Task AccepterInvitation(DTO_InvitationAffichage p_inv)

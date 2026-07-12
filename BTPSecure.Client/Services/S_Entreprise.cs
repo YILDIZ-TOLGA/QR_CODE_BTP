@@ -43,42 +43,42 @@ public class S_Entreprise
         }
     }
 
-    public async Task<(bool Succes, string Message)> CreerSalarie(DTO_CreerSalarie p_dto)
+    public async Task<(bool Succes, string Message)> CreerCollaborateur(DTO_CreerCollaborateur p_dto)
     {
-        var _reponse = await _http.PostAsJsonAsync("api/entreprises/creer-salarie", p_dto);
+        var _reponse = await _http.PostAsJsonAsync("api/entreprises/creer-collaborateur", p_dto);
         if (_reponse.IsSuccessStatusCode)
-            return (true, "Salarié créé. Il recevra ses identifiants par email.");
+            return (true, "Collaborateur créé. Il recevra ses identifiants par email.");
         var _erreur = await LireErreur(_reponse);
         return (false, _erreur);
     }
 
-    public async Task<(bool Succes, string Message, DTO_SalarieAffichage? Salarie)> AjouterSalarie(string p_email)
+    public async Task<(bool Succes, string Message, DTO_CollaborateurAffichage? Collaborateur)> AjouterCollaborateur(string p_email)
     {
-        var _reponse = await _http.PostAsJsonAsync("api/entreprises/ajouter-salarie", new DTO_AjouterSalarie { Email = p_email });
+        var _reponse = await _http.PostAsJsonAsync("api/entreprises/ajouter-collaborateur", new DTO_AjouterCollaborateur { Email = p_email });
         if (!_reponse.IsSuccessStatusCode)
         {
             var _erreur = await LireErreur(_reponse);
             return (false, _erreur, null);
         }
-        var _salarie = await _reponse.Content.ReadFromJsonAsync<DTO_SalarieAffichage>();
-        return (true, "Salarié ajouté.", _salarie);
+        var _collaborateur = await _reponse.Content.ReadFromJsonAsync<DTO_CollaborateurAffichage>();
+        return (true, "Collaborateur ajouté.", _collaborateur);
     }
 
-    public async Task<List<DTO_SalarieAffichage>> ObtenirSalaries()
+    public async Task<List<DTO_CollaborateurAffichage>> ObtenirCollaborateurs()
     {
-        var _result = await _http.GetFromJsonAsync<List<DTO_SalarieAffichage>>("api/entreprises/salaries");
-        return _result ?? new List<DTO_SalarieAffichage>();
+        var _result = await _http.GetFromJsonAsync<List<DTO_CollaborateurAffichage>>("api/entreprises/collaborateurs");
+        return _result ?? new List<DTO_CollaborateurAffichage>();
     }
 
-    public async Task<(bool Succes, string Message)> RetirerSalarie(int p_id)
+    public async Task<(bool Succes, string Message)> RetirerCollaborateur(int p_id)
     {
-        var _reponse = await _http.DeleteAsync($"api/entreprises/retirer-salarie/{p_id}");
+        var _reponse = await _http.DeleteAsync($"api/entreprises/retirer-collaborateur/{p_id}");
         if (!_reponse.IsSuccessStatusCode)
         {
             var _erreur = await LireErreur(_reponse);
             return (false, _erreur);
         }
-        return (true, "Salarié retiré.");
+        return (true, "Collaborateur retiré.");
     }
 
     private static async Task<string> LireErreur(HttpResponseMessage p_reponse)

@@ -26,12 +26,12 @@ public class S_Admin
                 Id = _e.Id,
                 Nom = _e.Nom,
                 Siret = _e.Siret,
-                NomPatron = _e.Patron.Nom,
-                PrenomPatron = _e.Patron.Prenom,
-                EmailPatron = _e.Patron.Email,
+                NomDirigeant = _e.Dirigeant.Nom,
+                PrenomDirigeant = _e.Dirigeant.Prenom,
+                EmailDirigeant = _e.Dirigeant.Email,
                 DateCreation = _e.DateCreation,
                 EstAutorisee = _e.EstAutorisee,
-                NombreSalaries = await _daoAdmin.CompterSalaries(_e.Id),
+                NombreCollaborateurs = await _daoAdmin.CompterCollaborateurs(_e.Id),
                 NombreCodes = await _daoAdmin.CompterCodes(_e.Id)
             });
         }

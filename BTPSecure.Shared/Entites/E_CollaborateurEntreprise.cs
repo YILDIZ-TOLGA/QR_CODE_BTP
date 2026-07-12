@@ -2,11 +2,11 @@ using BTPSecure.Shared.Enums;
 
 namespace BTPSecure.Shared.Entites;
 
-public class E_SalarieEntreprise
+public class E_CollaborateurEntreprise
 {
     public int Id { get; set; }
-    public int SalarieId { get; set; }
-    public E_Utilisateur Salarie { get; set; } = null!;
+    public int CollaborateurId { get; set; }
+    public E_Utilisateur Collaborateur { get; set; } = null!;
     public int EntrepriseId { get; set; }
     public E_Entreprise Entreprise { get; set; } = null!;
     public DateTime DateAjout { get; set; }

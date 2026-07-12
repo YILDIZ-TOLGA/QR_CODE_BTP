@@ -217,7 +217,7 @@ else
             </RadzenTemplateForm>
         </RadzenCard>
 
-        @if ((_profil.Role == Enum_Role.Patron || _profil.Role == Enum_Role.Salarie) && _profil.Entreprises.Count > 0)
+        @if ((_profil.Role == Enum_Role.Dirigeant || _profil.Role == Enum_Role.Collaborateur) && _profil.Entreprises.Count > 0)
         {
             <RadzenCard Variant="Variant.Outlined">
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Style="margin-bottom: 1rem;">
@@ -274,11 +274,11 @@ else
         {
             return "Admin";
         }
-        if (p_role == Enum_Role.Patron)
+        if (p_role == Enum_Role.Dirigeant)
         {
             return "Dirigeant";
         }
-        if (p_role == Enum_Role.Salarie)
+        if (p_role == Enum_Role.Collaborateur)
         {
             return "Collaborateur";
         }

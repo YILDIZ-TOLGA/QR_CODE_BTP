@@ -4,7 +4,7 @@ namespace BTPSecure.Shared.DTOs;
 
 public class DTO_CreerCode
 {
-    public int SalarieId { get; set; }
+    public int CollaborateurId { get; set; }
     public int EntrepriseId { get; set; }
     public string NumeroCommande { get; set; } = string.Empty;
     public Enum_TypeCode TypeCode { get; set; }
