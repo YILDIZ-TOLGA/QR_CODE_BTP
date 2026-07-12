@@ -4,12 +4,13 @@ namespace BTPSecure.Server.Middleware;
 /// Restreint l'accès aux endpoints de diagnostic aux requêtes provenant
 /// de localhost uniquement (127.0.0.1 / ::1).
 /// Toute requête externe reçoit une réponse 403 Forbidden.
+/// NB : "/health" n'est PAS protégé — le healthcheck Railway le ping depuis
+/// une IP interne (ex: 100.64.0.2), il doit rester accessible.
 /// </summary>
 public class LocalhostOnlyMiddleware
 {
     private static readonly string[] _protectedPaths =
     [
-        "/health",
         "/env-keys",
         "/db-status"
     ];
