@@ -15,6 +15,7 @@ public class E_Utilisateur
     public string? Siren { get; set; }
     public Enum_Role Role { get; set; }
     public DateTime DateCreation { get; set; }
+    public int? ParentFournisseurId { get; set; }
     public bool EstActif { get; set; } = true;
     public bool EstValide { get; set; } = true;
     public bool EmailVerifie { get; set; }

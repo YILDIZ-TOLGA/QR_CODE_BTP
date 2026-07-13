@@ -94,6 +94,7 @@ builder.Services.AddScoped<S_Entreprise>();
 builder.Services.AddScoped<S_Admin>();
 builder.Services.AddScoped<S_Invitation>();
 builder.Services.AddScoped<S_FournisseurContact>();
+builder.Services.AddScoped<S_SousCompte>();
 builder.Services.AddSingleton<S_Pdf>();
 builder.Services.AddSingleton<S_Email>();
 

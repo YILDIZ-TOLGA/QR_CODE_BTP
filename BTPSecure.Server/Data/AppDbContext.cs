@@ -35,6 +35,11 @@ public class AppDbContext : DbContext
             e.Property(u => u.EmailVerifie).HasDefaultValue(false);
             e.Property(u => u.TokenVerification).HasMaxLength(128);
             e.HasIndex(u => u.TokenVerification);
+            e.HasIndex(u => u.ParentFournisseurId);
+            e.HasOne<E_Utilisateur>()
+                .WithMany()
+                .HasForeignKey(u => u.ParentFournisseurId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // E_Entreprise

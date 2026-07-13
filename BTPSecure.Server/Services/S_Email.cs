@@ -114,6 +114,96 @@ public class S_Email
         }
     }
 
+    public async Task<bool> EnvoyerIdentifiantsSousCompte(string p_emailDestinataire, string p_prenom, string p_motDePasseTemporaire, string p_nomPrincipal)
+    {
+        var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
+        var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "BTPSecure";
+        var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
+
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            _logger.LogWarning("BREVO_API_KEY manquante, identifiants sous-compte non envoyés à {Email}", p_emailDestinataire);
+            return false;
+        }
+
+        var _lienConnexion = $"{_siteUrl}/connexion";
+        var _lienProfil = $"{_siteUrl}/profil";
+
+        var _corpsHtml = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset=""utf-8""></head>
+<body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
+    <div style=""background: #1565C0; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ BTPSecure</h1>
+        <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Votre accès fournisseur</p>
+    </div>
+
+    <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
+        <h2 style=""color: #1565C0; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
+
+        <p><strong>{p_nomPrincipal}</strong> vient de vous créer un accès pour valider des codes sur BTPSecure.</p>
+
+        <div style=""background: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0;"">
+            <p style=""margin: 0.25rem 0;""><strong>Email :</strong> {p_emailDestinataire}</p>
+            <p style=""margin: 0.25rem 0;""><strong>Mot de passe temporaire :</strong> <code style=""background: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 1.1rem;"">{p_motDePasseTemporaire}</code></p>
+        </div>
+
+        <p style=""text-align: center; margin: 32px 0;"">
+            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #1565C0; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+                Se connecter
+            </a>
+        </p>
+
+        <div style=""background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px 16px; border-radius: 4px; margin: 16px 0;"">
+            <p style=""margin: 0; color: #856404;"">
+                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion via <a href=""{_lienProfil}"" style=""color: #1565C0;"">Mon profil</a>.
+            </p>
+        </div>
+
+        <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
+        <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
+            Cet email est envoyé automatiquement par BTPSecure. Ne pas répondre directement.
+        </p>
+    </div>
+</body>
+</html>";
+
+        var _payload = new
+        {
+            sender = new { name = _fromName, email = _fromEmail },
+            to = new[] { new { email = p_emailDestinataire } },
+            subject = "Votre accès fournisseur BTPSecure",
+            htmlContent = _corpsHtml
+        };
+
+        try
+        {
+            var _request = new HttpRequestMessage(HttpMethod.Post, "v3/smtp/email")
+            {
+                Content = JsonContent.Create(_payload)
+            };
+            _request.Headers.Add("api-key", _apiKey);
+            _request.Headers.Add("accept", "application/json");
+
+            var _reponse = await _http.SendAsync(_request);
+            if (_reponse.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Identifiants sous-compte envoyés à {Email}", p_emailDestinataire);
+                return true;
+            }
+            var _body = await _reponse.Content.ReadAsStringAsync();
+            _logger.LogError("Erreur Brevo sous-compte {Status} pour {Email} : {Body}", _reponse.StatusCode, p_emailDestinataire, _body);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception envoi identifiants sous-compte à {Email}", p_emailDestinataire);
+            return false;
+        }
+    }
+
     public async Task<bool> EnvoyerCodeTiers(string p_emailDestinataire, string p_valeurCode, string p_nomEntreprise, string p_numeroCommande)
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];

@@ -1,0 +1,115 @@
+@page "/fournisseur/historique"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Fournisseur")]
+@inject Services.S_SousCompte SSousCompte
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenIcon Icon="history" Style="font-size: 2rem; color: var(--rz-primary);" />
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Historique des validations</RadzenText>
+</RadzenStack>
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else if (_historique.Count == 0)
+{
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 3rem 0;">
+            <RadzenIcon Icon="history_toggle_off" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-text-secondary-color);">Aucune validation pour le moment</RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+}
+else
+{
+    <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-base-100); margin-bottom: 1rem;">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" Wrap="FlexWrap.Wrap">
+            <RadzenIcon Icon="filter_alt" Style="color: var(--rz-primary);" />
+            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin: 0;">Filtrer par validateur</RadzenText>
+            <RadzenDropDown @bind-Value="_filtreValidateurId" Data="_optionsValidateur" TextProperty="Label" ValueProperty="Id" Style="min-width: 220px;" />
+            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_historiqueFiltre.Count} validation(s)")" IsPill="true" />
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenRow Gap="1rem">
+        @foreach (var _h in _historiqueFiltre)
+        {
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+                            <RadzenText Style="font-family: monospace; font-weight: 600;">@_h.Valeur</RadzenText>
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Validé" IsPill="true" />
+                        </RadzenStack>
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="business" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Body2">@_h.NomEntreprise</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Commande : @_h.NumeroCommande</RadzenText>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Validé par : @_h.NomValidateur</RadzenText>
+                        </RadzenStack>
+                        @if (_h.AchatsSupplementaires > 0)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@($"Achats suppl. : {_h.AchatsSupplementaires} € HT")" IsPill="true" />
+                        }
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@_h.DateValidation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        }
+    </RadzenRow>
+}
+
+@code {
+    private List<DTO_ValidationHistorique> _historique = new();
+    private bool _chargement = true;
+    private int _filtreValidateurId = 0;
+
+    private List<OptionItem> _optionsValidateur
+    {
+        get
+        {
+            var _liste = new List<OptionItem> { new() { Id = 0, Label = "Tous" } };
+            var _validateurs = _historique
+                .GroupBy(h => h.ValidateurId)
+                .Select(g => new OptionItem { Id = g.Key, Label = g.First().NomValidateur })
+                .OrderBy(o => o.Label);
+            _liste.AddRange(_validateurs);
+            return _liste;
+        }
+    }
+
+    private List<DTO_ValidationHistorique> _historiqueFiltre
+    {
+        get
+        {
+            if (_filtreValidateurId == 0)
+            {
+                return _historique;
+            }
+            return _historique.Where(h => h.ValidateurId == _filtreValidateurId).ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _historique = await SSousCompte.ObtenirHistorique();
+        _chargement = false;
+    }
+
+    private class OptionItem
+    {
+        public int Id { get; set; }
+        public string Label { get; set; } = string.Empty;
+    }
+}

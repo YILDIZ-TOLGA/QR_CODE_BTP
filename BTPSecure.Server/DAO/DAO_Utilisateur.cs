@@ -46,4 +46,25 @@ public class DAO_Utilisateur
         await _context.SaveChangesAsync();
         return p_utilisateur;
     }
+
+    public async Task<List<E_Utilisateur>> ObtenirSousComptes(int p_parentId)
+    {
+        return await _context.Utilisateurs
+            .Where(u => u.ParentFournisseurId == p_parentId)
+            .OrderByDescending(u => u.DateCreation)
+            .ToListAsync();
+    }
+
+    public async Task<List<int>> ObtenirIdsSousComptes(int p_parentId)
+    {
+        return await _context.Utilisateurs
+            .Where(u => u.ParentFournisseurId == p_parentId)
+            .Select(u => u.Id)
+            .ToListAsync();
+    }
+
+    public async Task Sauvegarder()
+    {
+        await _context.SaveChangesAsync();
+    }
 }

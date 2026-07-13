@@ -3,6 +3,7 @@
 @inject NavigationManager Navigation
 @inject S_Auth SAuth
 @inject Services.S_Code SCode
+@inject Services.S_SousCompte SSousCompte
 @inject AuthenticationStateProvider AuthStateProvider
 
 <RadzenLayout>
@@ -69,6 +70,11 @@
                     @if (_role == "Fournisseur")
                     {
                         <RadzenPanelMenuItem Text="Valider un code" Icon="verified" Path="fournisseur" Match="NavLinkMatch.All" />
+                        @if (_estFournisseurPrincipal)
+                        {
+                            <RadzenPanelMenuItem Text="Mes sous-comptes" Icon="badge" Path="fournisseur/sous-comptes" Match="NavLinkMatch.All" />
+                            <RadzenPanelMenuItem Text="Historique" Icon="history" Path="fournisseur/historique" Match="NavLinkMatch.All" />
+                        }
                     }
                     <RadzenPanelMenuItem Text="Mon profil" Icon="account_circle" Path="profil" Match="NavLinkMatch.All" />
                 </RadzenPanelMenu>
@@ -104,6 +110,7 @@
     private string _email = "";
     private string _role = "";
     private bool _peutCreerCodes = false;
+    private bool _estFournisseurPrincipal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -149,6 +156,13 @@
         {
             var _ctx = await SCode.ObtenirContexteCreation();
             _peutCreerCodes = _ctx.PeutCreer;
+        }
+
+        // Un fournisseur principal (pas un sous-compte) gère ses sous-comptes + historique
+        _estFournisseurPrincipal = false;
+        if (_role == "Fournisseur")
+        {
+            _estFournisseurPrincipal = await SSousCompte.EstPrincipal();
         }
     }
 

@@ -44,6 +44,18 @@ public class DAO_Code
             .FirstOrDefaultAsync(c => c.Valeur == p_valeur);
     }
 
+    public async Task<List<E_Code>> ObtenirValidationsParFournisseurs(List<int> p_fournisseurIds)
+    {
+        return await _context.Codes
+            .Include(c => c.Fournisseur)
+            .Include(c => c.Entreprise)
+            .Where(c => c.FournisseurId != null
+                && p_fournisseurIds.Contains(c.FournisseurId.Value)
+                && c.DateValidation != null)
+            .OrderByDescending(c => c.DateValidation)
+            .ToListAsync();
+    }
+
     public async Task<E_Code?> ObtenirCodePermanentActif(int p_collaborateurId, int p_entrepriseId)
     {
         return await _context.Codes
