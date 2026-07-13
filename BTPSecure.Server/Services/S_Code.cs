@@ -191,6 +191,55 @@ public class S_Code
         return _codes.Select(VersDTO).ToList();
     }
 
+    // Contexte de création de code : résout l'entreprise pour un Dirigeant OU un Responsable Admin
+    public async Task<DTO_ContexteCreationCode> ObtenirContexteCreation(int p_userId)
+    {
+        var _ctx = new DTO_ContexteCreationCode { PeutCreer = false };
+
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_userId);
+        if (_entreprise == null)
+        {
+            var _lienRA = await _daoEntreprise.ObtenirPremierLienResponsableAdmin(p_userId);
+            if (_lienRA != null)
+                _entreprise = _lienRA.Entreprise;
+        }
+
+        if (_entreprise == null)
+            return _ctx;
+
+        _ctx.PeutCreer = true;
+        _ctx.EntrepriseId = _entreprise.Id;
+        _ctx.NomEntreprise = _entreprise.Nom;
+        _ctx.EstAutorisee = _entreprise.EstAutorisee;
+
+        var _liens = await _daoEntreprise.ObtenirCollaborateurs(_entreprise.Id);
+        _ctx.Collaborateurs = _liens
+            .Where(l => l.StatutInvitation == Enum_StatutInvitation.Acceptee)
+            .Select(l => new DTO_CollaborateurAffichage
+            {
+                Id = l.Id,
+                CollaborateurId = l.CollaborateurId,
+                Nom = l.Collaborateur.Nom,
+                Prenom = l.Collaborateur.Prenom,
+                Email = l.Collaborateur.Email,
+                StatutInvitation = l.StatutInvitation,
+                RoleEntreprise = l.RoleEntreprise
+            }).ToList();
+
+        var _fournisseurs = await _daoFournisseurContact.ObtenirParDirigeant(_entreprise.DirigeantId);
+        _ctx.Fournisseurs = _fournisseurs.Select(f => new DTO_FournisseurContact
+        {
+            Id = f.Id,
+            NomEntreprise = f.NomEntreprise,
+            Email = f.Email,
+            Siret = f.Siret,
+            Siren = f.Siren,
+            DateCreation = f.DateCreation
+        }).ToList();
+
+        return _ctx;
+    }
+
     public async Task<List<DTO_CodeAffichage>> ObtenirParCollaborateur(int p_collaborateurId)
     {
         var _codes = await _daoCode.ObtenirParCollaborateur(p_collaborateurId);

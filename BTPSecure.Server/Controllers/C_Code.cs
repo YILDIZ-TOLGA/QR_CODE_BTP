@@ -41,6 +41,14 @@ public class C_Code : ControllerBase
         return Ok(_codes);
     }
 
+    [HttpGet("contexte-creation")]
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
+    public async Task<IActionResult> ObtenirContexteCreation()
+    {
+        var _ctx = await _sCode.ObtenirContexteCreation(ObtenirUtilisateurId());
+        return Ok(_ctx);
+    }
+
     [HttpGet("collaborateur")]
     [Authorize(Roles = "Collaborateur")]
     public async Task<IActionResult> ObtenirParCollaborateur()

@@ -33,6 +33,16 @@ public class DAO_Entreprise
         return p_entreprise;
     }
 
+    public async Task<E_CollaborateurEntreprise?> ObtenirPremierLienResponsableAdmin(int p_collaborateurId)
+    {
+        return await _context.CollaborateursEntreprises
+            .Include(se => se.Entreprise)
+            .FirstOrDefaultAsync(se => se.CollaborateurId == p_collaborateurId
+                && se.EstActif
+                && se.StatutInvitation == Enum_StatutInvitation.Acceptee
+                && se.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin);
+    }
+
     public async Task<E_CollaborateurEntreprise?> ObtenirLienCollaborateur(int p_collaborateurId, int p_entrepriseId)
     {
         return await _context.CollaborateursEntreprises

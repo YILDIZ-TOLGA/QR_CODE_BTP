@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject NavigationManager Navigation
 @inject S_Auth SAuth
+@inject Services.S_Code SCode
 @inject AuthenticationStateProvider AuthStateProvider
 
 <RadzenLayout>
@@ -59,6 +60,10 @@
                     @if (_role == "Collaborateur")
                     {
                         <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="collaborateur" Match="NavLinkMatch.All" />
+                        @if (_peutCreerCodes)
+                        {
+                            <RadzenPanelMenuItem Text="Créer un code" Icon="add_circle" Path="dirigeant/creer-code" Match="NavLinkMatch.All" />
+                        }
                     }
                     @if (_role == "Fournisseur")
                     {
@@ -97,6 +102,7 @@
     private bool _estConnecte = false;
     private string _email = "";
     private string _role = "";
+    private bool _peutCreerCodes = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,6 +140,14 @@
         if (_claimRole != null)
         {
             _role = _claimRole.Value;
+        }
+
+        // Un Collaborateur Responsable Admin peut créer des codes → afficher le menu
+        _peutCreerCodes = false;
+        if (_role == "Collaborateur")
+        {
+            var _ctx = await SCode.ObtenirContexteCreation();
+            _peutCreerCodes = _ctx.PeutCreer;
         }
     }
 

@@ -30,6 +30,21 @@ public class S_Code
         return _result ?? new List<DTO_CodeAffichage>();
     }
 
+    public async Task<DTO_ContexteCreationCode> ObtenirContexteCreation()
+    {
+        try
+        {
+            var _result = await _http.GetFromJsonAsync<DTO_ContexteCreationCode>("api/codes/contexte-creation");
+            if (_result == null)
+                return new DTO_ContexteCreationCode { PeutCreer = false };
+            return _result;
+        }
+        catch
+        {
+            return new DTO_ContexteCreationCode { PeutCreer = false };
+        }
+    }
+
     public async Task<List<DTO_CodeAffichage>> ObtenirParCollaborateur()
     {
         var _result = await _http.GetFromJsonAsync<List<DTO_CodeAffichage>>("api/codes/collaborateur");

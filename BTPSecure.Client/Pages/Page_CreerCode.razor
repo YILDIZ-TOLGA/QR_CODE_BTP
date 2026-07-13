@@ -1,16 +1,33 @@
 @page "/dirigeant/creer-code"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant,Collaborateur")]
 @inject Services.S_Code SCode
-@inject Services.S_Entreprise SEntreprise
-@inject Services.S_FournisseurContact SFournisseur
 @inject NavigationManager Navigation
 @inject NotificationService Notification
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
     <RadzenButton Icon="arrow_back" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Large"
-                  Click='() => Navigation.NavigateTo("/dirigeant")' />
+                  Click='() => Navigation.NavigateTo("/")' />
     <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Créer un code d'autorisation</RadzenText>
 </RadzenStack>
+
+@if (!_peutCreer)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 2rem 0;">
+                    <RadzenIcon Icon="lock" Style="font-size: 3rem; color: var(--rz-danger);" />
+                    <RadzenText TextStyle="TextStyle.H6" TextAlign="TextAlign.Center">
+                        Vous n'êtes pas autorisé à créer des codes.
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
+                        Seuls le Dirigeant et les Responsables Admin de l'entreprise peuvent créer des codes.
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+}
 
 <RadzenRow JustifyContent="JustifyContent.Center">
     <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
@@ -70,13 +87,13 @@
                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.75rem" Style="width: 100%;">
                         <RadzenButton Text="Créer un autre" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Outlined" Style="flex: 1;" Click="Reinitialiser" />
-                        <RadzenButton Text="Tableau de bord" Icon="dashboard" ButtonStyle="ButtonStyle.Primary"
-                                      Style="flex: 1;" Click='() => Navigation.NavigateTo("/dirigeant")' />
+                        <RadzenButton Text="Accueil" Icon="dashboard" ButtonStyle="ButtonStyle.Primary"
+                                      Style="flex: 1;" Click='() => Navigation.NavigateTo("/")' />
                     </RadzenStack>
                 </RadzenStack>
             </RadzenCard>
         }
-        else
+        else if (_peutCreer)
         {
             <RadzenCard Variant="Variant.Outlined">
                 <RadzenTemplateForm TItem="DTO_CreerCode" Data="_dto" Submit="Creer">
@@ -237,7 +254,8 @@
     private DTO_CodeAffichage? _codeGenere;
     private bool _enChargement;
     private List<CollaborateurItem> _collaborateurs = new();
-    private DTO_EntrepriseAffichage? _entreprise;
+    private int _entrepriseId;
+    private bool _peutCreer = true;
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private string _modeFournisseur = "existant";
 
@@ -245,18 +263,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _entreprise = await SEntreprise.ObtenirMonEntreprise();
-        if (_entreprise != null)
+        var _ctx = await SCode.ObtenirContexteCreation();
+        _peutCreer = _ctx.PeutCreer;
+        if (_peutCreer)
         {
-            _dto.EntrepriseId = _entreprise.Id;
-            var _listeCollaborateurs = await SEntreprise.ObtenirCollaborateurs();
-            _collaborateurs = _listeCollaborateurs.Select(s => new CollaborateurItem
+            _entrepriseId = _ctx.EntrepriseId;
+            _dto.EntrepriseId = _ctx.EntrepriseId;
+            _collaborateurs = _ctx.Collaborateurs.Select(s => new CollaborateurItem
             {
                 CollaborateurId = s.CollaborateurId,
                 Label = $"{s.Prenom} {s.Nom} ({s.Email})"
             }).ToList();
+            _fournisseurs = _ctx.Fournisseurs;
         }
-        _fournisseurs = await SFournisseur.Lister();
     }
 
     private async Task Creer()
@@ -306,7 +325,7 @@
     private void Reinitialiser()
     {
         _codeGenere = null;
-        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.LibreService, EntrepriseId = _entreprise?.Id ?? 0 };
+        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.LibreService, EntrepriseId = _entrepriseId };
         _modeFournisseur = "existant";
     }
 
