@@ -1,0 +1,12 @@
+@inject DialogService Dialog
+
+<RadzenStack Gap="1rem">
+    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 1rem;">
+        <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@Contenu</RadzenText>
+    </RadzenCard>
+    <RadzenButton Text="Fermer" ButtonStyle="ButtonStyle.Primary" Click="@(() => Dialog.Close())" Style="align-self: flex-end;" />
+</RadzenStack>
+
+@code {
+    [Parameter] public string Contenu { get; set; } = string.Empty;
+}

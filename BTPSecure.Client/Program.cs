@@ -24,6 +24,7 @@ builder.Services.AddScoped<S_Invitation>();
 builder.Services.AddScoped<S_Profil>();
 builder.Services.AddScoped<S_FournisseurContact>();
 builder.Services.AddScoped<S_SousCompte>();
+builder.Services.AddScoped<S_Blacklist>();
 
 builder.Services.AddRadzenComponents();
 

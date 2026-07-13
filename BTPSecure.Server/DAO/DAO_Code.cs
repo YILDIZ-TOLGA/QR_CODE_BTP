@@ -33,6 +33,7 @@ public class DAO_Code
         return await _context.Codes
             .Include(c => c.Collaborateur)
             .Include(c => c.Entreprise)
+            .Include(c => c.Dirigeant)
             .FirstOrDefaultAsync(c => c.Id == p_id);
     }
 
@@ -41,6 +42,7 @@ public class DAO_Code
         return await _context.Codes
             .Include(c => c.Collaborateur)
             .Include(c => c.Entreprise)
+            .Include(c => c.Dirigeant)
             .FirstOrDefaultAsync(c => c.Valeur == p_valeur);
     }
 
@@ -103,6 +105,7 @@ public class DAO_Code
         var _maintenant = DateTime.UtcNow;
         var _codes = await _context.Codes
             .Include(c => c.FournisseurContact)
+            .Include(c => c.Dirigeant)
             .Where(c => c.FournisseurContact != null
                 && c.Statut == Enum_StatutCode.Actif
                 && c.FournisseurContact!.Siret == p_siret

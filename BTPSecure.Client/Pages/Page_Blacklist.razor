@@ -1,0 +1,113 @@
+@page "/fournisseur/blacklist"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Fournisseur")]
+@inject Services.S_Blacklist SBlacklist
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenIcon Icon="block" Style="font-size: 2rem; color: var(--rz-danger);" />
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Blacklist</RadzenText>
+</RadzenStack>
+
+<RadzenRow JustifyContent="JustifyContent.Center">
+    <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); margin-bottom: 1rem;">
+                Les commandes provenant d'un émetteur blacklisté n'apparaîtront plus et leurs codes ne pourront plus être validés.
+            </RadzenText>
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.End" Style="margin-bottom: 1.5rem;">
+                <RadzenFormField Text="Email à bloquer" Variant="Variant.Outlined" Style="flex: 1;">
+                    <Start><RadzenIcon Icon="mail" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="_nouvelEmail" Style="width: 100%;" Placeholder="email@exemple.com" />
+                    </ChildContent>
+                </RadzenFormField>
+                <RadzenButton Text="Ajouter" Icon="add" ButtonStyle="ButtonStyle.Danger"
+                              Click="Ajouter" Disabled="@string.IsNullOrWhiteSpace(_nouvelEmail)" />
+            </RadzenStack>
+
+            @if (_chargement)
+            {
+                <RadzenRow JustifyContent="JustifyContent.Center" Style="padding: 2rem 0;">
+                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                </RadzenRow>
+            }
+            else if (_liste.Count == 0)
+            {
+                <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+                    <RadzenIcon Icon="check_circle" Style="font-size: 2.5rem; color: var(--rz-success);" />
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">Aucun email blacklisté</RadzenText>
+                </RadzenStack>
+            }
+            else
+            {
+                <RadzenStack Gap="0.5rem">
+                    @foreach (var _b in _liste)
+                    {
+                        <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                                    <RadzenIcon Icon="block" Style="color: var(--rz-danger); font-size: 1.1rem;" />
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_b.Email</RadzenText>
+                                </RadzenStack>
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text" Size="ButtonSize.Small"
+                                              Click="() => Supprimer(_b)" />
+                            </RadzenStack>
+                        </RadzenCard>
+                    }
+                </RadzenStack>
+            }
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private List<DTO_Blacklist> _liste = new();
+    private string _nouvelEmail = string.Empty;
+    private bool _chargement = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Recharger();
+    }
+
+    private async Task Recharger()
+    {
+        _chargement = true;
+        _liste = await SBlacklist.Lister();
+        _chargement = false;
+    }
+
+    private async Task Ajouter()
+    {
+        var (_succes, _message) = await SBlacklist.Ajouter(_nouvelEmail);
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+            _nouvelEmail = string.Empty;
+            await Recharger();
+        }
+        else
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+    }
+
+    private async Task Supprimer(DTO_Blacklist p_b)
+    {
+        var _confirm = await Dialog.Confirm(
+            $"Retirer « {p_b.Email} » de la blacklist ?",
+            "Confirmation",
+            new ConfirmOptions { OkButtonText = "Retirer", CancelButtonText = "Annuler" });
+        if (_confirm == true)
+        {
+            var (_succes, _message) = await SBlacklist.Supprimer(p_b.Id);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                await Recharger();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+}

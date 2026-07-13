@@ -69,10 +69,11 @@
                     }
                     @if (_role == "Fournisseur")
                     {
-                        <RadzenPanelMenuItem Text="Valider un code" Icon="verified" Path="fournisseur" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Accueil" Icon="home" Path="fournisseur" Match="NavLinkMatch.All" />
                         @if (_estFournisseurPrincipal)
                         {
                             <RadzenPanelMenuItem Text="Mes sous-comptes" Icon="badge" Path="fournisseur/sous-comptes" Match="NavLinkMatch.All" />
+                            <RadzenPanelMenuItem Text="Blacklist" Icon="block" Path="fournisseur/blacklist" Match="NavLinkMatch.All" />
                             <RadzenPanelMenuItem Text="Historique" Icon="history" Path="fournisseur/historique" Match="NavLinkMatch.All" />
                         }
                     }

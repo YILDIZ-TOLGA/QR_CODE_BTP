@@ -12,6 +12,7 @@ public class S_Code
     private readonly DAO_Entreprise _daoEntreprise;
     private readonly DAO_Utilisateur _daoUtilisateur;
     private readonly DAO_FournisseurContact _daoFournisseurContact;
+    private readonly DAO_Blacklist _daoBlacklist;
     private readonly S_Pdf _sPdf;
     private readonly S_Email _sEmail;
     private readonly ILogger<S_Code> _logger;
@@ -19,15 +20,27 @@ public class S_Code
     private const string CARACTERES_AUTORISES = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
     public S_Code(DAO_Code p_daoCode, DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
-        DAO_FournisseurContact p_daoFournisseurContact, S_Pdf p_sPdf, S_Email p_sEmail, ILogger<S_Code> p_logger)
+        DAO_FournisseurContact p_daoFournisseurContact, DAO_Blacklist p_daoBlacklist, S_Pdf p_sPdf, S_Email p_sEmail, ILogger<S_Code> p_logger)
     {
         _daoCode = p_daoCode;
         _daoEntreprise = p_daoEntreprise;
         _daoUtilisateur = p_daoUtilisateur;
         _daoFournisseurContact = p_daoFournisseurContact;
+        _daoBlacklist = p_daoBlacklist;
         _sPdf = p_sPdf;
         _sEmail = p_sEmail;
         _logger = p_logger;
+    }
+
+    // Racine fournisseur (compte principal) pour la blacklist
+    private async Task<int> ObtenirRacineFournisseur(int p_userId)
+    {
+        var _u = await _daoUtilisateur.ObtenirParId(p_userId);
+        if (_u == null)
+            return p_userId;
+        if (_u.ParentFournisseurId.HasValue)
+            return _u.ParentFournisseurId.Value;
+        return p_userId;
     }
 
     public async Task<(bool Succes, string Message, DTO_CodeAffichage? Code)> Creer(DTO_CreerCode p_dto, int p_dirigeantId)
@@ -358,6 +371,14 @@ public class S_Code
         if (_code.Statut != Enum_StatutCode.Actif)
             return (false, "Ce code n'est plus actif.", new DTO_ResultatValidation { EstValide = false, Message = $"Ce code est {_code.Statut.ToString().ToLower()}." });
 
+        // Blocage : le dirigeant émetteur est-il blacklisté par ce fournisseur ?
+        if (_code.Dirigeant != null)
+        {
+            var _racineId = await ObtenirRacineFournisseur(p_fournisseurId);
+            if (await _daoBlacklist.Existe(_racineId, _code.Dirigeant.Email))
+                return (false, "Émetteur blacklisté.", new DTO_ResultatValidation { EstValide = false, Message = "Vous avez blacklisté l'émetteur de ce code." });
+        }
+
         if (_code.DateExpiration.HasValue && _code.DateExpiration.Value < DateTime.UtcNow)
         {
             _code.Statut = Enum_StatutCode.Expire;
@@ -539,6 +560,14 @@ public class S_Code
             return new List<DTO_CommandeAVenir>();
 
         var _codes = await _daoCode.ObtenirCommandesPourFournisseur(_utilisateur.Siret, _utilisateur.Siren);
+
+        // Exclure les commandes des dirigeants blacklistés
+        var _racineId = await ObtenirRacineFournisseur(p_fournisseurId);
+        var _blacklist = await _daoBlacklist.ListerEmails(_racineId);
+        if (_blacklist.Count > 0)
+        {
+            _codes = _codes.Where(c => c.Dirigeant == null || !_blacklist.Contains(c.Dirigeant.Email)).ToList();
+        }
 
         return _codes.Select(c => new DTO_CommandeAVenir
         {

@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<E_Code> Codes => Set<E_Code>();
     public DbSet<E_FournisseurContact> FournisseursContacts => Set<E_FournisseurContact>();
     public DbSet<E_ResetMotDePasse> ResetsMotDePasse => Set<E_ResetMotDePasse>();
+    public DbSet<E_Blacklist> Blacklists => Set<E_Blacklist>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -135,6 +136,19 @@ public class AppDbContext : DbContext
                 .HasForeignKey(f => f.DirigeantId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(f => new { f.DirigeantId, f.Siret });
+        });
+
+        // E_Blacklist
+        p_modelBuilder.Entity<E_Blacklist>(e =>
+        {
+            e.ToTable("blacklists");
+            e.HasKey(b => b.Id);
+            e.Property(b => b.Email).IsRequired().HasMaxLength(256);
+            e.HasIndex(b => new { b.FournisseurId, b.Email }).IsUnique();
+            e.HasOne(b => b.Fournisseur)
+                .WithMany()
+                .HasForeignKey(b => b.FournisseurId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // E_ResetMotDePasse
