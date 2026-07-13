@@ -155,14 +155,9 @@
                             </Helper>
                         </RadzenFormField>
 
-                        <RadzenStack Gap="0.5rem">
-                            <RadzenText TextStyle="TextStyle.Subtitle2">Type de code</RadzenText>
-                            <RadzenSelectBar @bind-Value="_dto.TypeCode" TValue="Enum_TypeCode" Size="ButtonSize.Medium" Style="width: 100%;">
-                                <Items>
-                                    <RadzenSelectBarItem Text="Libre-service" Value="Enum_TypeCode.LibreService" Icon="schedule" />
-                                    <RadzenSelectBarItem Text="Liste matériaux" Value="Enum_TypeCode.Liste" Icon="list_alt" />
-                                </Items>
-                            </RadzenSelectBar>
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenCheckBox @bind-Value="_libreService" Name="LibreServiceCb" />
+                            <RadzenLabel Text="Code libre-service (sans liste de matériaux)" Component="LibreServiceCb" />
                         </RadzenStack>
 
                         <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-info-light); padding: 0.75rem;">
@@ -290,7 +285,26 @@
 </RadzenRow>
 
 @code {
-    private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.LibreService };
+    private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.Liste };
+
+    private bool _libreService
+    {
+        get
+        {
+            return _dto.TypeCode == Enum_TypeCode.LibreService;
+        }
+        set
+        {
+            if (value)
+            {
+                _dto.TypeCode = Enum_TypeCode.LibreService;
+            }
+            else
+            {
+                _dto.TypeCode = Enum_TypeCode.Liste;
+            }
+        }
+    }
     private DTO_CodeAffichage? _codeGenere;
     private bool _enChargement;
     private List<CollaborateurItem> _collaborateurs = new();
@@ -371,7 +385,7 @@
     private void Reinitialiser()
     {
         _codeGenere = null;
-        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.LibreService, EntrepriseId = _entrepriseId };
+        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Liste, EntrepriseId = _entrepriseId };
         _modeFournisseur = "existant";
     }
 
