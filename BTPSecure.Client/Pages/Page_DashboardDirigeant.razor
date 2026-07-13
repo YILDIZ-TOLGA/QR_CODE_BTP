@@ -1,5 +1,5 @@
 @page "/dirigeant"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant,Collaborateur")]
 @implements IDisposable
 @inject Services.S_Entreprise SEntreprise
 @inject Services.S_Code SCode
@@ -8,7 +8,29 @@
 @inject NotificationService Notification
 @inject DialogService Dialog
 
-@if (_entreprise == null && !_chargement)
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else if (!_aAcces && !_estDirigeantSansEntreprise)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 60vh;">
+        <RadzenColumn Size="12" SizeMD="8" SizeLG="5">
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 2rem 0;">
+                    <RadzenIcon Icon="lock" Style="font-size: 3rem; color: var(--rz-danger);" />
+                    <RadzenText TextStyle="TextStyle.H6" TextAlign="TextAlign.Center">Accès non autorisé</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
+                        Ce tableau de bord est réservé au Dirigeant et aux Responsables Admin de l'entreprise.
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+}
+else if (_estDirigeantSansEntreprise)
 {
     <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 70vh;">
         <RadzenColumn Size="12" SizeMD="8" SizeLG="5">
@@ -55,16 +77,10 @@
         </RadzenColumn>
     </RadzenRow>
 }
-else if (_chargement)
-{
-    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
-        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
-    </RadzenRow>
-}
 else
 {
     <RadzenStack Gap="1.5rem">
-        @if (_nbNotifications > 0)
+        @if (_estProprietaire && _nbNotifications > 0)
         {
             <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-success); color: white; cursor: pointer;"
                         @onclick='() => Navigation.NavigateTo("/dirigeant/notifications")'>
@@ -132,8 +148,11 @@ else
                     <RadzenIcon Icon="groups" Style="font-size: 1.5rem; color: var(--rz-primary);" />
                     <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Collaborateurs</RadzenText>
                 </RadzenStack>
-                <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Success"
-                              Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutCollaborateur" />
+                @if (_estProprietaire)
+                {
+                    <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Success"
+                                  Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutCollaborateur" />
+                }
             </RadzenStack>
 
             @if (_collaborateurs.Count == 0)
@@ -176,7 +195,7 @@ else
                                         <RadzenText TextStyle="TextStyle.Body2" Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_sal.Email</RadzenText>
                                     </RadzenStack>
 
-                                    @if (_sal.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
+                                    @if (_estProprietaire && _sal.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
                                     {
                                         <RadzenFormField Text="Rôle dans l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
                                             <Start><RadzenIcon Icon="manage_accounts" /></Start>
@@ -189,9 +208,12 @@ else
                                         </RadzenFormField>
                                     }
 
-                                    <RadzenButton Text="Retirer" Icon="person_remove" ButtonStyle="ButtonStyle.Danger"
-                                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
-                                                  Click="() => RetirerCollaborateur(_sal)" />
+                                    @if (_estProprietaire)
+                                    {
+                                        <RadzenButton Text="Retirer" Icon="person_remove" ButtonStyle="ButtonStyle.Danger"
+                                                      Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                                      Click="() => RetirerCollaborateur(_sal)" />
+                                    }
                                 </RadzenStack>
                             </RadzenCard>
                         </RadzenColumn>
@@ -386,6 +408,9 @@ else
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private int _nbNotifications = 0;
     private bool _chargement = true;
+    private bool _estProprietaire = true;
+    private bool _aAcces = false;
+    private bool _estDirigeantSansEntreprise = false;
 
     // Filtres
     private string _filtreType = "tous";
@@ -515,15 +540,15 @@ else
 
     private async Task ChargerDonnees()
     {
-        _entreprise = await SEntreprise.ObtenirMonEntreprise();
-        if (_entreprise != null)
-        {
-            _collaborateurs = await SEntreprise.ObtenirCollaborateurs();
-            _codes = await SCode.ObtenirParDirigeant();
-            _fournisseurs = await SFournisseur.Lister();
-            var _notifs = await SCode.ObtenirNotificationsDirigeant();
-            _nbNotifications = _notifs.Count;
-        }
+        var _ctx = await SCode.ObtenirContexteDashboard();
+        _aAcces = _ctx.AAcces;
+        _estProprietaire = _ctx.EstProprietaire;
+        _estDirigeantSansEntreprise = _ctx.EstDirigeantSansEntreprise;
+        _entreprise = _ctx.Entreprise;
+        _collaborateurs = _ctx.Collaborateurs;
+        _codes = _ctx.Codes;
+        _fournisseurs = _ctx.Fournisseurs;
+        _nbNotifications = _ctx.NbNotifications;
     }
 
     private async Task CreerEntreprise()

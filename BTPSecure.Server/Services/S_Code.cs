@@ -191,6 +191,82 @@ public class S_Code
         return _codes.Select(VersDTO).ToList();
     }
 
+    // Contexte du tableau de bord : accessible au Dirigeant propriétaire OU à un Responsable Admin
+    public async Task<DTO_ContexteDashboard> ObtenirContexteDashboard(int p_userId, bool p_estDirigeantRole)
+    {
+        var _ctx = new DTO_ContexteDashboard();
+
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_userId);
+        if (_entreprise != null)
+        {
+            _ctx.EstProprietaire = true;
+            _ctx.AAcces = true;
+        }
+        else
+        {
+            var _lienRA = await _daoEntreprise.ObtenirPremierLienResponsableAdmin(p_userId);
+            if (_lienRA != null)
+            {
+                _entreprise = _lienRA.Entreprise;
+                _ctx.AAcces = true;
+            }
+            else if (p_estDirigeantRole)
+            {
+                _ctx.EstDirigeantSansEntreprise = true;
+                return _ctx;
+            }
+            else
+            {
+                return _ctx;
+            }
+        }
+
+        if (_entreprise == null)
+            return _ctx;
+
+        _ctx.Entreprise = new DTO_EntrepriseAffichage
+        {
+            Id = _entreprise.Id,
+            Nom = _entreprise.Nom,
+            Adresse = _entreprise.Adresse,
+            Siret = _entreprise.Siret,
+            DateCreation = _entreprise.DateCreation,
+            EstAutorisee = _entreprise.EstAutorisee
+        };
+
+        var _liens = await _daoEntreprise.ObtenirCollaborateurs(_entreprise.Id);
+        _ctx.Collaborateurs = _liens.Select(l => new DTO_CollaborateurAffichage
+        {
+            Id = l.Id,
+            CollaborateurId = l.CollaborateurId,
+            Nom = l.Collaborateur.Nom,
+            Prenom = l.Collaborateur.Prenom,
+            Email = l.Collaborateur.Email,
+            DateAjout = l.DateAjout,
+            StatutInvitation = l.StatutInvitation,
+            RoleEntreprise = l.RoleEntreprise
+        }).ToList();
+
+        var _codes = await _daoCode.ObtenirParDirigeant(_entreprise.DirigeantId);
+        _ctx.Codes = _codes.Select(VersDTO).ToList();
+
+        var _fournisseurs = await _daoFournisseurContact.ObtenirParDirigeant(_entreprise.DirigeantId);
+        _ctx.Fournisseurs = _fournisseurs.Select(f => new DTO_FournisseurContact
+        {
+            Id = f.Id,
+            NomEntreprise = f.NomEntreprise,
+            Email = f.Email,
+            Siret = f.Siret,
+            Siren = f.Siren,
+            DateCreation = f.DateCreation
+        }).ToList();
+
+        var _notifs = await _daoCode.ObtenirNotificationsPourDirigeant(_entreprise.DirigeantId);
+        _ctx.NbNotifications = _notifs.Count;
+
+        return _ctx;
+    }
+
     // Contexte de création de code : résout l'entreprise pour un Dirigeant OU un Responsable Admin
     public async Task<DTO_ContexteCreationCode> ObtenirContexteCreation(int p_userId)
     {
@@ -296,13 +372,25 @@ public class S_Code
         return (true, "Code validé.", _resultat);
     }
 
-    public async Task<(bool Succes, string Message)> Revoquer(int p_codeId, int p_dirigeantId)
+    public async Task<(bool Succes, string Message)> Revoquer(int p_codeId, int p_userId)
     {
         var _code = await _daoCode.ObtenirParId(p_codeId);
         if (_code == null)
             return (false, "Code non trouvé.");
 
-        if (_code.DirigeantId != p_dirigeantId)
+        // Autorisé : le Dirigeant propriétaire OU un Responsable Admin de l'entreprise du code
+        bool _autorise = _code.DirigeantId == p_userId;
+        if (!_autorise)
+        {
+            var _lien = await _daoEntreprise.ObtenirLienCollaborateur(p_userId, _code.EntrepriseId);
+            if (_lien != null
+                && _lien.StatutInvitation == Enum_StatutInvitation.Acceptee
+                && _lien.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+            {
+                _autorise = true;
+            }
+        }
+        if (!_autorise)
             return (false, "Vous n'êtes pas autorisé à révoquer ce code.");
 
         if (_code.Statut != Enum_StatutCode.Actif)
@@ -311,7 +399,7 @@ public class S_Code
         _code.Statut = Enum_StatutCode.Revoque;
         await _daoCode.Sauvegarder();
 
-        _logger.LogInformation("Code {Id} révoqué par dirigeant {DirigeantId}", p_codeId, p_dirigeantId);
+        _logger.LogInformation("Code {Id} révoqué par utilisateur {UserId}", p_codeId, p_userId);
         return (true, "Code révoqué avec succès.");
     }
 

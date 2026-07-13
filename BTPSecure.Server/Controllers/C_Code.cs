@@ -49,6 +49,15 @@ public class C_Code : ControllerBase
         return Ok(_ctx);
     }
 
+    [HttpGet("contexte-dashboard")]
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
+    public async Task<IActionResult> ObtenirContexteDashboard()
+    {
+        bool _estDirigeant = User.IsInRole("Dirigeant");
+        var _ctx = await _sCode.ObtenirContexteDashboard(ObtenirUtilisateurId(), _estDirigeant);
+        return Ok(_ctx);
+    }
+
     [HttpGet("collaborateur")]
     [Authorize(Roles = "Collaborateur")]
     public async Task<IActionResult> ObtenirParCollaborateur()
@@ -101,7 +110,7 @@ public class C_Code : ControllerBase
     }
 
     [HttpPost("revoquer/{p_id}")]
-    [Authorize(Roles = "Dirigeant")]
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
     public async Task<IActionResult> Revoquer(int p_id)
     {
         var (_succes, _message) = await _sCode.Revoquer(p_id, ObtenirUtilisateurId());
