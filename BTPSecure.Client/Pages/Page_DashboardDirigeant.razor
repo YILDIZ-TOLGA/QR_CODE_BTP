@@ -4,6 +4,7 @@
 @inject Services.S_Entreprise SEntreprise
 @inject Services.S_Code SCode
 @inject Services.S_FournisseurContact SFournisseur
+@inject AuthenticationStateProvider AuthState
 @inject NavigationManager Navigation
 @inject NotificationService Notification
 @inject DialogService Dialog
@@ -370,7 +371,7 @@ else
                                         }
                                     </RadzenStack>
 
-                                    @if (_c.Statut == Enum_StatutCode.Actif)
+                                    @if (_c.Statut == Enum_StatutCode.Actif && PeutRevoquer(_c))
                                     {
                                         <RadzenButton Text="Révoquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
                                                       Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
@@ -500,9 +501,36 @@ else
     }
 
     private System.Timers.Timer? _timer;
+    private int _userId = 0;
+
+    // Un Responsable Admin ne peut pas révoquer son propre code ni celui d'un autre Responsable Admin
+    private bool PeutRevoquer(DTO_CodeAffichage p_code)
+    {
+        if (_estProprietaire)
+        {
+            return true;
+        }
+        if (p_code.CollaborateurId == _userId)
+        {
+            return false;
+        }
+        var _cible = _collaborateurs.FirstOrDefault(c => c.CollaborateurId == p_code.CollaborateurId);
+        if (_cible != null && _cible.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+        {
+            return false;
+        }
+        return true;
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        var _etat = await AuthState.GetAuthenticationStateAsync();
+        var _claimId = _etat.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (_claimId != null)
+        {
+            int.TryParse(_claimId.Value, out _userId);
+        }
+
         try
         {
             await ChargerDonnees();

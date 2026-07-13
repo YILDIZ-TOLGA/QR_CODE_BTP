@@ -290,7 +290,8 @@ public class S_Code
 
         var _liens = await _daoEntreprise.ObtenirCollaborateurs(_entreprise.Id);
         _ctx.Collaborateurs = _liens
-            .Where(l => l.StatutInvitation == Enum_StatutInvitation.Acceptee)
+            .Where(l => l.StatutInvitation == Enum_StatutInvitation.Acceptee
+                && l.CollaborateurId != p_userId)
             .Select(l => new DTO_CollaborateurAffichage
             {
                 Id = l.Id,
@@ -379,19 +380,31 @@ public class S_Code
             return (false, "Code non trouvé.");
 
         // Autorisé : le Dirigeant propriétaire OU un Responsable Admin de l'entreprise du code
-        bool _autorise = _code.DirigeantId == p_userId;
-        if (!_autorise)
+        bool _estProprietaire = _code.DirigeantId == p_userId;
+        bool _estResponsableAdmin = false;
+        if (!_estProprietaire)
         {
             var _lien = await _daoEntreprise.ObtenirLienCollaborateur(p_userId, _code.EntrepriseId);
             if (_lien != null
                 && _lien.StatutInvitation == Enum_StatutInvitation.Acceptee
                 && _lien.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
             {
-                _autorise = true;
+                _estResponsableAdmin = true;
             }
         }
-        if (!_autorise)
+        if (!_estProprietaire && !_estResponsableAdmin)
             return (false, "Vous n'êtes pas autorisé à révoquer ce code.");
+
+        // Un Responsable Admin ne peut pas révoquer son propre code ni celui d'un autre Responsable Admin
+        if (_estResponsableAdmin)
+        {
+            if (_code.CollaborateurId == p_userId)
+                return (false, "Vous ne pouvez pas révoquer votre propre code.");
+
+            var _lienCible = await _daoEntreprise.ObtenirLienCollaborateur(_code.CollaborateurId, _code.EntrepriseId);
+            if (_lienCible != null && _lienCible.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+                return (false, "Vous ne pouvez pas révoquer le code d'un autre Responsable Admin.");
+        }
 
         if (_code.Statut != Enum_StatutCode.Actif)
             return (false, "Seuls les codes actifs peuvent être révoqués.");
