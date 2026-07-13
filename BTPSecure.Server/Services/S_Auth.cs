@@ -171,6 +171,13 @@ public class S_Auth
         var _sel = BCrypt.Net.BCrypt.GenerateSalt();
         var _hash = BCrypt.Net.BCrypt.HashPassword(p_dto.MotDePasse, _sel);
 
+        // Les fournisseurs doivent être validés par un administrateur avant de pouvoir se connecter
+        bool _estValide = true;
+        if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+        {
+            _estValide = false;
+        }
+
         var _utilisateur = new E_Utilisateur
         {
             Email = p_dto.Email.ToLower(),
@@ -182,7 +189,8 @@ public class S_Auth
             Siret = _siret,
             Siren = _siren,
             Role = p_dto.Role,
-            EstActif = true
+            EstActif = true,
+            EstValide = _estValide
         };
 
         _utilisateur.EmailVerifie = false;
@@ -269,6 +277,9 @@ public class S_Auth
 
         if (!_utilisateur.EmailVerifie)
             return (false, "Votre email n'est pas vérifié. Consultez votre boîte mail ou demandez un nouveau lien.", null);
+
+        if (_utilisateur.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur && !_utilisateur.EstValide)
+            return (false, "Votre compte fournisseur est en attente de validation par un administrateur.", null);
 
         var _token = GenererToken(_utilisateur);
 

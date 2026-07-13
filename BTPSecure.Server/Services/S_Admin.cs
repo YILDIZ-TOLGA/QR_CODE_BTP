@@ -39,6 +39,51 @@ public class S_Admin
         return _result;
     }
 
+    public async Task<List<DTO_FournisseurAdmin>> ObtenirFournisseurs()
+    {
+        var _fournisseurs = await _daoAdmin.ObtenirFournisseurs();
+        return _fournisseurs.Select(f => new DTO_FournisseurAdmin
+        {
+            Id = f.Id,
+            Nom = f.Nom,
+            Prenom = f.Prenom,
+            Email = f.Email,
+            Siret = f.Siret,
+            Siren = f.Siren,
+            Telephone = f.Telephone,
+            DateCreation = f.DateCreation,
+            EstValide = f.EstValide,
+            EstActif = f.EstActif
+        }).ToList();
+    }
+
+    public async Task<(bool Succes, string Message)> ValiderFournisseur(int p_fournisseurId)
+    {
+        var _fournisseur = await _daoAdmin.ObtenirUtilisateurParId(p_fournisseurId);
+        if (_fournisseur == null || _fournisseur.Role != BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+            return (false, "Fournisseur non trouvé.");
+
+        _fournisseur.EstValide = true;
+        _fournisseur.EstActif = true;
+        await _daoAdmin.Sauvegarder();
+
+        _logger.LogInformation("Fournisseur {Email} (ID:{Id}) validé par l'admin.", _fournisseur.Email, _fournisseur.Id);
+        return (true, $"Fournisseur {_fournisseur.Nom} validé.");
+    }
+
+    public async Task<(bool Succes, string Message)> DesactiverFournisseur(int p_fournisseurId)
+    {
+        var _fournisseur = await _daoAdmin.ObtenirUtilisateurParId(p_fournisseurId);
+        if (_fournisseur == null || _fournisseur.Role != BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+            return (false, "Fournisseur non trouvé.");
+
+        _fournisseur.EstActif = false;
+        await _daoAdmin.Sauvegarder();
+
+        _logger.LogInformation("Fournisseur {Email} (ID:{Id}) désactivé par l'admin.", _fournisseur.Email, _fournisseur.Id);
+        return (true, $"Fournisseur {_fournisseur.Nom} désactivé.");
+    }
+
     public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId)
     {
         var _entreprise = await _daoAdmin.ObtenirEntrepriseParId(p_entrepriseId);

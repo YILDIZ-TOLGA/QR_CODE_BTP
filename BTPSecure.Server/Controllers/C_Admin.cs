@@ -30,4 +30,27 @@ public class C_Admin : ControllerBase
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(new { message = _message });
     }
+
+    [HttpGet("fournisseurs")]
+    public async Task<IActionResult> ObtenirFournisseurs()
+    {
+        var _fournisseurs = await _sAdmin.ObtenirFournisseurs();
+        return Ok(_fournisseurs);
+    }
+
+    [HttpPost("valider-fournisseur/{p_id}")]
+    public async Task<IActionResult> ValiderFournisseur(int p_id)
+    {
+        var (_succes, _message) = await _sAdmin.ValiderFournisseur(p_id);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
+
+    [HttpPost("desactiver-fournisseur/{p_id}")]
+    public async Task<IActionResult> DesactiverFournisseur(int p_id)
+    {
+        var (_succes, _message) = await _sAdmin.DesactiverFournisseur(p_id);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
 }

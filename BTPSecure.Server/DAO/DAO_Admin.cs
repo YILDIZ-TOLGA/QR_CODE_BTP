@@ -40,6 +40,19 @@ public class DAO_Admin
             .CountAsync(c => c.EntrepriseId == p_entrepriseId);
     }
 
+    public async Task<List<E_Utilisateur>> ObtenirFournisseurs()
+    {
+        return await _context.Utilisateurs
+            .Where(u => u.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+            .OrderByDescending(u => u.DateCreation)
+            .ToListAsync();
+    }
+
+    public async Task<E_Utilisateur?> ObtenirUtilisateurParId(int p_id)
+    {
+        return await _context.Utilisateurs.FindAsync(p_id);
+    }
+
     public async Task Sauvegarder()
     {
         await _context.SaveChangesAsync();

@@ -39,6 +39,44 @@ public class S_Admin
         return (true, "Autorisation modifiée.");
     }
 
+    public async Task<List<DTO_FournisseurAdmin>> ObtenirFournisseurs()
+    {
+        var _result = await _http.GetFromJsonAsync<List<DTO_FournisseurAdmin>>("api/admin/fournisseurs");
+        return _result ?? new List<DTO_FournisseurAdmin>();
+    }
+
+    public async Task<(bool Succes, string Message)> ValiderFournisseur(int p_id)
+    {
+        var _reponse = await _http.PostAsJsonAsync($"api/admin/valider-fournisseur/{p_id}", new { });
+        if (_reponse.IsSuccessStatusCode)
+            return (true, "Fournisseur validé.");
+        return (false, await LireErreur(_reponse));
+    }
+
+    public async Task<(bool Succes, string Message)> DesactiverFournisseur(int p_id)
+    {
+        var _reponse = await _http.PostAsJsonAsync($"api/admin/desactiver-fournisseur/{p_id}", new { });
+        if (_reponse.IsSuccessStatusCode)
+            return (true, "Fournisseur désactivé.");
+        return (false, await LireErreur(_reponse));
+    }
+
+    private static async Task<string> LireErreur(HttpResponseMessage p_reponse)
+    {
+        try
+        {
+            var _body = await p_reponse.Content.ReadAsStringAsync();
+            if (!string.IsNullOrWhiteSpace(_body))
+            {
+                var _erreur = System.Text.Json.JsonSerializer.Deserialize<MessageReponse>(_body,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return _erreur?.Message ?? "Erreur.";
+            }
+        }
+        catch { }
+        return "Une erreur est survenue.";
+    }
+
     private class MessageReponse
     {
         public string Message { get; set; } = string.Empty;
