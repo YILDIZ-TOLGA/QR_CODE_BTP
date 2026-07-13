@@ -116,125 +116,19 @@
         @if (_commandes.Count > 0)
         {
             <RadzenCard Variant="Variant.Outlined" Style="margin-top: 1.5rem;">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem" Style="margin-bottom: 1rem;">
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <RadzenIcon Icon="local_shipping" Style="font-size: 1.5rem; color: var(--rz-primary);" />
-                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Commandes</RadzenText>
-                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_commandesFiltrees.Count.ToString()" IsPill="true" />
-                    </RadzenStack>
-                    <RadzenSelectBar @bind-Value="_filtreCommandes" TValue="string" Size="ButtonSize.Small">
-                        <Items>
-                            <RadzenSelectBarItem Text="Toutes" Value="@("toutes")" />
-                            <RadzenSelectBarItem Text="À préparer" Value="@("apreparer")" />
-                            <RadzenSelectBarItem Text="Prêtes" Value="@("pretes")" />
-                        </Items>
-                    </RadzenSelectBar>
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1rem;">
+                    <RadzenIcon Icon="local_shipping" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Commandes</RadzenText>
                 </RadzenStack>
 
-                @if (_commandesFiltrees.Count == 0)
-                {
-                    <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 1.5rem 0;">
-                        <RadzenIcon Icon="inbox" Style="font-size: 2rem; color: var(--rz-text-disabled-color);" />
-                        <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">Aucune commande dans cette catégorie</RadzenText>
-                    </RadzenStack>
-                }
-                else
-                {
-                    <RadzenStack Gap="1rem">
-                        @foreach (var _cmd in _commandesFiltrees)
-                        {
-                            <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-base-100); padding: 1rem;">
-                                <RadzenStack Gap="0.6rem">
-                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
-                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
-                                            <RadzenIcon Icon="business" Style="color: var(--rz-primary);" />
-                                            <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_cmd.NomEntrepriseDirigeant</RadzenText>
-                                        </RadzenStack>
-                                        <RadzenBadge BadgeStyle="@(_cmd.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
-                                                     Text="@Services.H_TypeCode.Libelle(_cmd.TypeCode)" IsPill="true" />
-                                    </RadzenStack>
+                <RadzenTabs @bind-SelectedIndex="_ongletIndex">
+                    <Tabs>
+                        <RadzenTabsItem Text="@($"Toutes ({_commandes.Count})")">@ListeCommandes</RadzenTabsItem>
+                        <RadzenTabsItem Text="@($"À préparer ({_commandes.Count(c => !c.EstPrete)})")">@ListeCommandes</RadzenTabsItem>
+                        <RadzenTabsItem Text="@($"Prêtes ({_commandes.Count(c => c.EstPrete)})")">@ListeCommandes</RadzenTabsItem>
+                    </Tabs>
+                </RadzenTabs>
 
-                                    <RadzenStack Gap="0.25rem">
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Référence</RadzenText>
-                                        <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace; font-weight: 600;">@_cmd.Reference</RadzenText>
-                                    </RadzenStack>
-
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Commande : @_cmd.NumeroCommande</RadzenText>
-                                    </RadzenStack>
-
-                                    @if (_cmd.DateExpiration.HasValue)
-                                    {
-                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                            <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
-                                                Expire le @_cmd.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                            </RadzenText>
-                                        </RadzenStack>
-                                    }
-
-                                    @if (!string.IsNullOrEmpty(_cmd.ListeMateriaux))
-                                    {
-                                        <RadzenStack Gap="0.25rem">
-                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Matériaux</RadzenText>
-                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@Tronquer(_cmd.ListeMateriaux)</RadzenText>
-                                            @if (_cmd.ListeMateriaux.Length > SEUIL_TRONCATURE)
-                                            {
-                                                <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
-                                                              Variant="Variant.Text" Size="ButtonSize.Small"
-                                                              Click="() => VoirDetail(_cmd.ListeMateriaux)" />
-                                            }
-                                        </RadzenStack>
-                                    }
-
-                                    @if (_cmd.AchatsSupplementaires > 0)
-                                    {
-                                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@($"Achats supplémentaires : {_cmd.AchatsSupplementaires} € HT")" IsPill="true" />
-                                    }
-
-                                    @if (!string.IsNullOrEmpty(_cmd.Info))
-                                    {
-                                        <RadzenStack Gap="0.25rem">
-                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Info</RadzenText>
-                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_cmd.Info</RadzenText>
-                                        </RadzenStack>
-                                    }
-
-                                    @if (_cmd.EstPrete)
-                                    {
-                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                            <RadzenIcon Icon="task_alt" Style="color: var(--rz-success);" />
-                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-success); font-weight: 600;">
-                                                Commande marquée prête le @_cmd.DatePrete?.ToLocalTime().ToString("dd/MM HH:mm")
-                                            </RadzenText>
-                                        </RadzenStack>
-                                    }
-                                    else
-                                    {
-                                        <RadzenButton Text="Commande prête" Icon="task_alt" ButtonStyle="ButtonStyle.Info"
-                                                      Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                                      Click="() => MarquerPrete(_cmd.CodeId)" />
-                                    }
-
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.End">
-                                        <RadzenFormField Text="Code à saisir" Variant="Variant.Outlined" Style="flex: 1;">
-                                            <Start><RadzenIcon Icon="key" /></Start>
-                                            <ChildContent>
-                                                <RadzenTextBox @bind-Value="_codesSaisis[_cmd.CodeId]"
-                                                               Style="width: 100%; font-family: monospace; text-transform: uppercase; letter-spacing: 2px;"
-                                                               Placeholder="XXXX-XXXX" MaxLength="9" />
-                                            </ChildContent>
-                                        </RadzenFormField>
-                                        <RadzenButton Text="Valider" Icon="check" ButtonStyle="ButtonStyle.Success"
-                                                      Click="() => ValiderCommande(_cmd.CodeId)"
-                                                      Disabled="@(string.IsNullOrWhiteSpace(ObtenirCodeSaisi(_cmd.CodeId)))" />
-                                    </RadzenStack>
-                                </RadzenStack>
-                            </RadzenCard>
-                        }
-                    </RadzenStack>
-                }
             </RadzenCard>
         }
     </RadzenColumn>
@@ -246,7 +140,7 @@
     private bool _enChargement;
     private List<DTO_CommandeAVenir> _commandes = new();
     private Dictionary<int, string> _codesSaisis = new();
-    private string _filtreCommandes = "toutes";
+    private int _ongletIndex = 0;
 
     private const int SEUIL_TRONCATURE = 140;
 
@@ -254,17 +148,125 @@
     {
         get
         {
-            if (_filtreCommandes == "apreparer")
+            if (_ongletIndex == 1)
             {
                 return _commandes.Where(c => !c.EstPrete).ToList();
             }
-            if (_filtreCommandes == "pretes")
+            if (_ongletIndex == 2)
             {
                 return _commandes.Where(c => c.EstPrete).ToList();
             }
             return _commandes;
         }
     }
+
+    // Rendu partagé de la liste des commandes (utilisé par chaque onglet)
+    private RenderFragment ListeCommandes => @<div>
+        @if (_commandesFiltrees.Count == 0)
+        {
+            <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 1.5rem 0;">
+                <RadzenIcon Icon="inbox" Style="font-size: 2rem; color: var(--rz-text-disabled-color);" />
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">Aucune commande dans cette catégorie</RadzenText>
+            </RadzenStack>
+        }
+        else
+        {
+            <RadzenStack Gap="1rem" Style="padding-top: 1rem;">
+                @foreach (var _cmd in _commandesFiltrees)
+                {
+                    <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-base-100); padding: 1rem;">
+                        <RadzenStack Gap="0.6rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                                    <RadzenIcon Icon="business" Style="color: var(--rz-primary);" />
+                                    <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_cmd.NomEntrepriseDirigeant</RadzenText>
+                                </RadzenStack>
+                                <RadzenBadge BadgeStyle="@(_cmd.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                             Text="@Services.H_TypeCode.Libelle(_cmd.TypeCode)" IsPill="true" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0.25rem">
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Référence</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace; font-weight: 600;">@_cmd.Reference</RadzenText>
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Commande : @_cmd.NumeroCommande</RadzenText>
+                            </RadzenStack>
+
+                            @if (_cmd.DateExpiration.HasValue)
+                            {
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                    <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                        Expire le @_cmd.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </RadzenText>
+                                </RadzenStack>
+                            }
+
+                            @if (!string.IsNullOrEmpty(_cmd.ListeMateriaux))
+                            {
+                                <RadzenStack Gap="0.25rem">
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Matériaux</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@Tronquer(_cmd.ListeMateriaux)</RadzenText>
+                                    @if (_cmd.ListeMateriaux.Length > SEUIL_TRONCATURE)
+                                    {
+                                        <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
+                                                      Variant="Variant.Text" Size="ButtonSize.Small"
+                                                      Click="@(() => VoirDetail(_cmd.ListeMateriaux))" />
+                                    }
+                                </RadzenStack>
+                            }
+
+                            @if (_cmd.AchatsSupplementaires > 0)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@($"Achats supplémentaires : {_cmd.AchatsSupplementaires} € HT")" IsPill="true" />
+                            }
+
+                            @if (!string.IsNullOrEmpty(_cmd.Info))
+                            {
+                                <RadzenStack Gap="0.25rem">
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Info</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_cmd.Info</RadzenText>
+                                </RadzenStack>
+                            }
+
+                            @if (_cmd.EstPrete)
+                            {
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                    <RadzenIcon Icon="task_alt" Style="color: var(--rz-success);" />
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-success); font-weight: 600;">
+                                        Commande marquée prête le @_cmd.DatePrete?.ToLocalTime().ToString("dd/MM HH:mm")
+                                    </RadzenText>
+                                </RadzenStack>
+                            }
+                            else
+                            {
+                                <RadzenButton Text="Commande prête" Icon="task_alt" ButtonStyle="ButtonStyle.Info"
+                                              Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                              Click="@(() => MarquerPrete(_cmd.CodeId))" />
+                            }
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.End">
+                                <RadzenFormField Text="Code à saisir" Variant="Variant.Outlined" Style="flex: 1;">
+                                    <Start><RadzenIcon Icon="key" /></Start>
+                                    <ChildContent>
+                                        <RadzenTextBox @bind-Value="_codesSaisis[_cmd.CodeId]"
+                                                       Style="width: 100%; font-family: monospace; text-transform: uppercase; letter-spacing: 2px;"
+                                                       Placeholder="XXXX-XXXX" MaxLength="9" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                                <RadzenButton Text="Valider" Icon="check" ButtonStyle="ButtonStyle.Success"
+                                              Click="@(() => ValiderCommande(_cmd.CodeId))"
+                                              Disabled="@(string.IsNullOrWhiteSpace(ObtenirCodeSaisi(_cmd.CodeId)))" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenCard>
+                }
+            </RadzenStack>
+        }
+    </div>;
 
     private static string Tronquer(string p_texte)
     {
