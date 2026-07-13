@@ -95,9 +95,16 @@ public class S_Entreprise
         };
         await _daoEntreprise.AjouterCollaborateur(_lien);
         _lien.StatutInvitation = Enum_StatutInvitation.Acceptee;
+        _lien.RoleEntreprise = p_dto.RoleEntreprise;
         await _daoEntreprise.Sauvegarder();
 
-        _logger.LogInformation("Salarié {Email} créé par dirigeant {DirigeantId} pour entreprise {EntrepriseId}",
+        // Code permanent si créé directement en Responsable / Responsable Admin
+        if (p_dto.RoleEntreprise == Enum_RoleEntreprise.Responsable || p_dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+        {
+            await _sCode.CreerCodePermanent(_collaborateur.Id, _entreprise);
+        }
+
+        _logger.LogInformation("Collaborateur {Email} créé par dirigeant {DirigeantId} pour entreprise {EntrepriseId}",
             _collaborateur.Email, p_dirigeantId, _entreprise.Id);
 
         var _emailCopie = _collaborateur.Email;

@@ -92,6 +92,25 @@
                             </ChildContent>
                         </RadzenFormField>
 
+                        <RadzenFormField Text="Rôle dans l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="manage_accounts" /></Start>
+                            <ChildContent>
+                                <RadzenDropDown @bind-Value="_dto.RoleEntreprise" Data="_rolesEntreprise"
+                                                TextProperty="Text" ValueProperty="Value" Style="width: 100%;" />
+                            </ChildContent>
+                        </RadzenFormField>
+
+                        @if (_dto.RoleEntreprise == Enum_RoleEntreprise.Responsable || _dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+                        {
+                            <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat">
+                                Ce collaborateur recevra un <strong>code permanent</strong> libre-service.
+                                @if (_dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+                                {
+                                    <text> En tant que Responsable Admin, il pourra aussi <strong>créer des codes</strong>.</text>
+                                }
+                            </RadzenAlert>
+                        }
+
                         <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat">
                             Un mot de passe temporaire sera généré automatiquement et envoyé par email au collaborateur. Il pourra le changer via « Mon profil → Changer mon mot de passe » après sa première connexion.
                         </RadzenAlert>
@@ -111,6 +130,13 @@
     private bool _enChargement;
     private bool _succes;
     private string _emailEnvoye = string.Empty;
+
+    private List<object> _rolesEntreprise = new()
+    {
+        new { Text = "Collaborateur", Value = Enum_RoleEntreprise.Collaborateur },
+        new { Text = "Responsable", Value = Enum_RoleEntreprise.Responsable },
+        new { Text = "Responsable Admin", Value = Enum_RoleEntreprise.ResponsableAdmin }
+    };
 
     private async Task Creer()
     {
