@@ -10,5 +10,6 @@ public class DTO_ResultatValidation
     public string? NomEntreprise { get; set; }
     public string? ListeMateriaux { get; set; }
     public string? Info { get; set; }
+    public int AchatsSupplementaires { get; set; }
     public string? PdfBase64 { get; set; }
 }

@@ -335,11 +335,11 @@ else
                                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem" Wrap="FlexWrap.Wrap">
                                         @if (_c.TypeCode == Enum_TypeCode.LibreService)
                                         {
-                                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_c.TypeCode.ToString()" IsPill="true" />
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@Services.H_TypeCode.Libelle(_c.TypeCode)" IsPill="true" />
                                         }
                                         else
                                         {
-                                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@_c.TypeCode.ToString()" IsPill="true" />
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@Services.H_TypeCode.Libelle(_c.TypeCode)" IsPill="true" />
                                         }
                                         <RadzenBadge BadgeStyle="@ObtenirStyleStatut(_c.Statut)" Text="@_c.Statut.ToString()" IsPill="true" />
                                     </RadzenStack>
@@ -353,8 +353,15 @@ else
 
                                     <RadzenStack Gap="0.4rem">
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                            <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2">@_c.PrenomCollaborateur @_c.NomCollaborateur</RadzenText>
+                                            <RadzenIcon Icon="@(string.IsNullOrEmpty(_c.EmailTiers) ? "person" : "alternate_email")" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            @if (string.IsNullOrEmpty(_c.EmailTiers))
+                                            {
+                                                <RadzenText TextStyle="TextStyle.Body2">@_c.PrenomCollaborateur @_c.NomCollaborateur</RadzenText>
+                                            }
+                                            else
+                                            {
+                                                <RadzenText TextStyle="TextStyle.Body2">@_c.EmailTiers <span style="color: var(--rz-text-secondary-color);">(externe)</span></RadzenText>
+                                            }
                                         </RadzenStack>
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                             <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
@@ -424,7 +431,7 @@ else
     private List<object> _optionsType = new()
     {
         new { Text = "Tous", Value = "tous" },
-        new { Text = "LibreService", Value = "libreservice" },
+        new { Text = "Libre-service", Value = "libreservice" },
         new { Text = "Liste", Value = "liste" }
     };
 

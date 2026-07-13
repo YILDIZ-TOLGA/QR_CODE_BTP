@@ -13,6 +13,7 @@ public class DTO_CommandeAVenir
     public string? ListeMateriaux { get; set; }
     public string? Info { get; set; }
     public Enum_TypeCode TypeCode { get; set; }
+    public int AchatsSupplementaires { get; set; }
     public bool EstPrete { get; set; }
     public DateTime? DatePrete { get; set; }
 }

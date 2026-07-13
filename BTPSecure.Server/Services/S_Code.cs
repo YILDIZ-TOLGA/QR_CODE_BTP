@@ -61,20 +61,37 @@ public class S_Code
         if (!_entreprise.EstAutorisee)
             return (false, "Votre entreprise n'est pas encore autorisée par l'administrateur à créer des codes.", null);
 
-        if (!await _daoEntreprise.CollaborateurEstDansEntreprise(p_dto.CollaborateurId, p_dto.EntrepriseId))
-            return (false, "Ce collaborateur n'appartient pas à votre entreprise.", null);
-
-        var _collaborateur = await _daoUtilisateur.ObtenirParId(p_dto.CollaborateurId);
-        if (_collaborateur == null)
-            return (false, "Collaborateur non trouvé.", null);
-
-        if (p_dto.TypeCode == Enum_TypeCode.LibreService)
+        // Destinataire : un collaborateur de l'entreprise OU un tiers externe (email)
+        E_Utilisateur? _collaborateur = null;
+        int? _collaborateurId = null;
+        string? _emailTiers = null;
+        if (p_dto.PourTiers)
         {
-            p_dto.DureeValiditeHeures = 48;
+            if (string.IsNullOrWhiteSpace(p_dto.EmailTiers))
+                return (false, "L'email du destinataire externe est obligatoire.", null);
+            _emailTiers = p_dto.EmailTiers.Trim().ToLower();
+        }
+        else
+        {
+            if (!await _daoEntreprise.CollaborateurEstDansEntreprise(p_dto.CollaborateurId, p_dto.EntrepriseId))
+                return (false, "Ce collaborateur n'appartient pas à votre entreprise.", null);
+
+            _collaborateur = await _daoUtilisateur.ObtenirParId(p_dto.CollaborateurId);
+            if (_collaborateur == null)
+                return (false, "Collaborateur non trouvé.", null);
+            _collaborateurId = p_dto.CollaborateurId;
         }
 
         if (p_dto.TypeCode == Enum_TypeCode.Liste && string.IsNullOrWhiteSpace(p_dto.ListeMateriaux))
             return (false, "La liste des matériaux est obligatoire pour un code Liste.", null);
+
+        // Achats supplémentaires HT (uniquement pour le type Liste, valeurs autorisées 0/50/100/200)
+        int _achats = 0;
+        if (p_dto.TypeCode == Enum_TypeCode.Liste)
+        {
+            if (p_dto.AchatsSupplementaires == 50 || p_dto.AchatsSupplementaires == 100 || p_dto.AchatsSupplementaires == 200)
+                _achats = p_dto.AchatsSupplementaires;
+        }
 
         int? _fournisseurContactId = null;
         string? _reference = null;
@@ -137,27 +154,36 @@ public class S_Code
             NomEntreprise = _entreprise.Nom,
             Info = p_dto.Info?.Trim(),
             ListeMateriaux = p_dto.ListeMateriaux?.Trim(),
-            DureeValidite = p_dto.DureeValiditeHeures,
+            DureeValidite = 24,
             DirigeantId = _proprietaireId,
-            CollaborateurId = p_dto.CollaborateurId,
+            CollaborateurId = _collaborateurId,
+            EmailTiers = _emailTiers,
+            AchatsSupplementaires = _achats,
             EntrepriseId = p_dto.EntrepriseId,
             FournisseurContactId = _fournisseurContactId,
             Reference = _reference
         };
 
-        if (p_dto.TypeCode == Enum_TypeCode.LibreService)
-        {
-            _code.DateExpiration = DateTime.UtcNow.AddHours(p_dto.DureeValiditeHeures!.Value);
-        }
-        else if (p_dto.TypeCode == Enum_TypeCode.Liste)
-        {
-            _code.DateExpiration = DateTime.UtcNow.AddDays(7);
-        }
+        // Validité 24 h fixe pour tout code créé
+        _code.DateExpiration = DateTime.UtcNow.AddHours(24);
 
         await _daoCode.Creer(_code);
         _code.Collaborateur = _collaborateur;
 
-        _logger.LogInformation("Code {Valeur} créé par dirigeant {DirigeantId} pour salarié {CollaborateurId}", _valeur, p_dirigeantId, p_dto.CollaborateurId);
+        _logger.LogInformation("Code {Valeur} créé par utilisateur {UserId}", _valeur, p_dirigeantId);
+
+        // Envoi du code au destinataire externe (tiers)
+        if (p_dto.PourTiers && _emailTiers != null)
+        {
+            var _emailCopie = _emailTiers;
+            var _valeurCopie = _valeur;
+            var _nomEntrepriseCopie = _entreprise.Nom;
+            var _numCmdCopie = _code.NumeroCommande;
+            _ = Task.Run(async () =>
+            {
+                await _sEmail.EnvoyerCodeTiers(_emailCopie, _valeurCopie, _nomEntrepriseCopie, _numCmdCopie);
+            });
+        }
 
         // Envoi d'invitation au fournisseur s'il n'a pas encore de compte avec ce SIRET
         if (p_dto.UtiliserFournisseur && _fournisseurContactId.HasValue)
@@ -342,30 +368,45 @@ public class S_Code
         _code.FournisseurId = p_fournisseurId;
         _code.DateValidation = DateTime.UtcNow;
 
-        if (_code.TypeCode == Enum_TypeCode.Liste)
+        // Code permanent (Responsable) → régénère sa valeur et reste actif.
+        // Tout autre code → usage unique : consommé après une validation.
+        if (_code.EstPermanent)
+        {
+            _code.Valeur = await GenererValeurUnique();
+        }
+        else
         {
             _code.Statut = Enum_StatutCode.Utilise;
             _code.DateExpiration = DateTime.UtcNow.AddMinutes(10);
-        }
-        else if (_code.TypeCode == Enum_TypeCode.LibreService)
-        {
-            _code.Valeur = await GenererValeurUnique();
         }
 
         await _daoCode.Sauvegarder();
 
         var _pdf = _sPdf.GenererConfirmation(_code);
 
+        string _nomAff = "";
+        string _prenomAff = "";
+        if (_code.Collaborateur != null)
+        {
+            _nomAff = _code.Collaborateur.Nom;
+            _prenomAff = _code.Collaborateur.Prenom;
+        }
+        else if (_code.EmailTiers != null)
+        {
+            _nomAff = _code.EmailTiers;
+        }
+
         var _resultat = new DTO_ResultatValidation
         {
             EstValide = true,
             Message = "Code validé avec succès.",
-            NomCollaborateur = _code.Collaborateur.Nom,
-            PrenomCollaborateur = _code.Collaborateur.Prenom,
+            NomCollaborateur = _nomAff,
+            PrenomCollaborateur = _prenomAff,
             NumeroCommande = _code.NumeroCommande,
             NomEntreprise = _code.NomEntreprise,
             ListeMateriaux = _code.ListeMateriaux,
             Info = _code.Info,
+            AchatsSupplementaires = _code.AchatsSupplementaires,
             PdfBase64 = Convert.ToBase64String(_pdf)
         };
 
@@ -396,12 +437,12 @@ public class S_Code
             return (false, "Vous n'êtes pas autorisé à révoquer ce code.");
 
         // Un Responsable Admin ne peut pas révoquer son propre code ni celui d'un autre Responsable Admin
-        if (_estResponsableAdmin)
+        if (_estResponsableAdmin && _code.CollaborateurId.HasValue)
         {
-            if (_code.CollaborateurId == p_userId)
+            if (_code.CollaborateurId.Value == p_userId)
                 return (false, "Vous ne pouvez pas révoquer votre propre code.");
 
-            var _lienCible = await _daoEntreprise.ObtenirLienCollaborateur(_code.CollaborateurId, _code.EntrepriseId);
+            var _lienCible = await _daoEntreprise.ObtenirLienCollaborateur(_code.CollaborateurId.Value, _code.EntrepriseId);
             if (_lienCible != null && _lienCible.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
                 return (false, "Vous ne pouvez pas révoquer le code d'un autre Responsable Admin.");
         }
@@ -510,6 +551,7 @@ public class S_Code
             ListeMateriaux = c.ListeMateriaux,
             Info = c.Info,
             TypeCode = c.TypeCode,
+            AchatsSupplementaires = c.AchatsSupplementaires,
             EstPrete = c.EstPrete,
             DatePrete = c.DatePrete
         }).ToList();
@@ -592,10 +634,12 @@ public class S_Code
             DateExpiration = p_code.DateExpiration,
             NomCollaborateur = p_code.Collaborateur?.Nom ?? "",
             PrenomCollaborateur = p_code.Collaborateur?.Prenom ?? "",
-            CollaborateurId = p_code.CollaborateurId,
+            CollaborateurId = p_code.CollaborateurId ?? 0,
             Reference = p_code.Reference,
             NomFournisseurContact = p_code.FournisseurContact?.NomEntreprise,
-            FournisseurContactId = p_code.FournisseurContactId
+            FournisseurContactId = p_code.FournisseurContactId,
+            EmailTiers = p_code.EmailTiers,
+            AchatsSupplementaires = p_code.AchatsSupplementaires
         };
     }
 }

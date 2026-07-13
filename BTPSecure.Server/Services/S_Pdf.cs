@@ -38,10 +38,24 @@ public class S_Pdf
                         row.RelativeItem().Text(p_code.Valeur).FontSize(16).Bold().FontColor(Colors.Blue.Darken2);
                     });
 
+                    string _destinataire;
+                    if (p_code.Collaborateur != null)
+                    {
+                        _destinataire = $"{p_code.Collaborateur.Prenom} {p_code.Collaborateur.Nom}";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(p_code.EmailTiers))
+                    {
+                        _destinataire = $"{p_code.EmailTiers} (externe)";
+                    }
+                    else
+                    {
+                        _destinataire = "N/A";
+                    }
+
                     col.Item().PaddingBottom(5).Row(row =>
                     {
-                        row.RelativeItem().Text("Collaborateur :").Bold();
-                        row.RelativeItem().Text($"{p_code.Collaborateur.Prenom} {p_code.Collaborateur.Nom}");
+                        row.RelativeItem().Text("Destinataire :").Bold();
+                        row.RelativeItem().Text(_destinataire);
                     });
 
                     col.Item().PaddingBottom(5).Row(row =>
@@ -55,6 +69,15 @@ public class S_Pdf
                         row.RelativeItem().Text("Entreprise :").Bold();
                         row.RelativeItem().Text(p_code.NomEntreprise);
                     });
+
+                    if (p_code.AchatsSupplementaires > 0)
+                    {
+                        col.Item().PaddingBottom(5).Row(row =>
+                        {
+                            row.RelativeItem().Text("Achats supplémentaires autorisés :").Bold();
+                            row.RelativeItem().Text($"{p_code.AchatsSupplementaires} € HT");
+                        });
+                    }
 
                     if (!string.IsNullOrWhiteSpace(p_code.ListeMateriaux))
                     {

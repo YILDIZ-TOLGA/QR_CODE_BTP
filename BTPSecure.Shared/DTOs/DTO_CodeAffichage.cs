@@ -20,4 +20,6 @@ public class DTO_CodeAffichage
     public string? Reference { get; set; }
     public string? NomFournisseurContact { get; set; }
     public int? FournisseurContactId { get; set; }
+    public string? EmailTiers { get; set; }
+    public int AchatsSupplementaires { get; set; }
 }

@@ -18,8 +18,10 @@ public class E_Code
     public DateTime? DateValidation { get; set; }
     public int DirigeantId { get; set; }
     public E_Utilisateur Dirigeant { get; set; } = null!;
-    public int CollaborateurId { get; set; }
-    public E_Utilisateur Collaborateur { get; set; } = null!;
+    public int? CollaborateurId { get; set; }
+    public E_Utilisateur? Collaborateur { get; set; }
+    public string? EmailTiers { get; set; }
+    public int AchatsSupplementaires { get; set; }
     public int? FournisseurId { get; set; }
     public E_Utilisateur? Fournisseur { get; set; }
     public int EntrepriseId { get; set; }

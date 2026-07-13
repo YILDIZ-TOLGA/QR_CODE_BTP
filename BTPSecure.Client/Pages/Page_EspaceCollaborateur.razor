@@ -149,7 +149,7 @@ else
                             <RadzenStack Gap="1rem">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
                                     <RadzenBadge BadgeStyle="@(_code.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
-                                                 Text="@_code.TypeCode.ToString()" IsPill="true" />
+                                                 Text="@Services.H_TypeCode.Libelle(_code.TypeCode)" IsPill="true" />
                                     <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Actif" IsPill="true" />
                                 </RadzenStack>
 

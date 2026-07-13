@@ -114,6 +114,92 @@ public class S_Email
         }
     }
 
+    public async Task<bool> EnvoyerCodeTiers(string p_emailDestinataire, string p_valeurCode, string p_nomEntreprise, string p_numeroCommande)
+    {
+        var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
+        var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "BTPSecure";
+
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            _logger.LogWarning("BREVO_API_KEY manquante, code tiers non envoyé à {Email}", p_emailDestinataire);
+            return false;
+        }
+
+        var _corpsHtml = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset=""utf-8""></head>
+<body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
+    <div style=""background: #1565C0; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ BTPSecure</h1>
+        <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Code d'autorisation d'achat</p>
+    </div>
+
+    <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
+        <p>Bonjour,</p>
+
+        <p>L'entreprise <strong>{p_nomEntreprise}</strong> vous a transmis un code d'autorisation d'achat.</p>
+
+        <p style=""margin: 0.25rem 0;""><strong>Numéro de commande :</strong> {p_numeroCommande}</p>
+
+        <div style=""text-align: center; margin: 28px 0;"">
+            <div style=""display: inline-block; background: #1565C0; color: white; padding: 16px 32px; border-radius: 8px; font-family: monospace; font-size: 1.8rem; letter-spacing: 4px; font-weight: 700;"">
+                {p_valeurCode}
+            </div>
+        </div>
+
+        <p style=""color: #666; font-size: 14px;"">
+            Présentez ce code au fournisseur pour valider l'achat. Ce code est valable <strong>24 heures</strong> et utilisable <strong>une seule fois</strong>.
+        </p>
+
+        <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
+
+        <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
+            Cet email est envoyé automatiquement par BTPSecure. Ne pas répondre directement.
+        </p>
+    </div>
+</body>
+</html>";
+
+        var _payload = new
+        {
+            sender = new { name = _fromName, email = _fromEmail },
+            to = new[] { new { email = p_emailDestinataire } },
+            subject = $"Votre code d'autorisation d'achat — {p_nomEntreprise}",
+            htmlContent = _corpsHtml
+        };
+
+        try
+        {
+            var _request = new HttpRequestMessage(HttpMethod.Post, "v3/smtp/email")
+            {
+                Content = JsonContent.Create(_payload)
+            };
+            _request.Headers.Add("api-key", _apiKey);
+            _request.Headers.Add("accept", "application/json");
+
+            var _reponse = await _http.SendAsync(_request);
+
+            if (_reponse.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Code tiers envoyé à {Email}", p_emailDestinataire);
+                return true;
+            }
+            else
+            {
+                var _body = await _reponse.Content.ReadAsStringAsync();
+                _logger.LogError("Erreur Brevo code tiers {Status} pour {Email} : {Body}", _reponse.StatusCode, p_emailDestinataire, _body);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception envoi code tiers à {Email}", p_emailDestinataire);
+            return false;
+        }
+    }
+
     public async Task<bool> EnvoyerVerificationEmail(string p_emailDestinataire, string p_prenom, string p_token)
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];

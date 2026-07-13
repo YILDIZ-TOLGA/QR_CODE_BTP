@@ -49,9 +49,23 @@
 
                     <RadzenStack Gap="0.5rem" Style="width: 100%;">
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                            <RadzenText Style="color: var(--rz-text-secondary-color);">Collaborateur</RadzenText>
-                            <RadzenText Style="font-weight: 600;">@_codeGenere.PrenomCollaborateur @_codeGenere.NomCollaborateur</RadzenText>
+                            <RadzenText Style="color: var(--rz-text-secondary-color);">Destinataire</RadzenText>
+                            @if (string.IsNullOrEmpty(_codeGenere.EmailTiers))
+                            {
+                                <RadzenText Style="font-weight: 600;">@_codeGenere.PrenomCollaborateur @_codeGenere.NomCollaborateur</RadzenText>
+                            }
+                            else
+                            {
+                                <RadzenText Style="font-weight: 600;">@_codeGenere.EmailTiers (externe)</RadzenText>
+                            }
                         </RadzenStack>
+                        @if (_codeGenere.AchatsSupplementaires > 0)
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText Style="color: var(--rz-text-secondary-color);">Achats supplémentaires</RadzenText>
+                                <RadzenText Style="font-weight: 600;">@_codeGenere.AchatsSupplementaires € HT</RadzenText>
+                            </RadzenStack>
+                        }
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                             <RadzenText Style="color: var(--rz-text-secondary-color);">Commande</RadzenText>
                             <RadzenText Style="font-weight: 600;">@_codeGenere.NumeroCommande</RadzenText>
@@ -59,7 +73,7 @@
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                             <RadzenText Style="color: var(--rz-text-secondary-color);">Type</RadzenText>
                             <RadzenBadge BadgeStyle="@(_codeGenere.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
-                                         Text="@_codeGenere.TypeCode.ToString()" IsPill="true" />
+                                         Text="@Services.H_TypeCode.Libelle(_codeGenere.TypeCode)" IsPill="true" />
                         </RadzenStack>
                         @if (_codeGenere.DateExpiration.HasValue)
                         {
@@ -98,17 +112,38 @@
             <RadzenCard Variant="Variant.Outlined">
                 <RadzenTemplateForm TItem="DTO_CreerCode" Data="_dto" Submit="Creer">
                     <RadzenStack Gap="1.25rem">
-                        <RadzenFormField Text="Collaborateur" Variant="Variant.Outlined" Style="width: 100%;">
-                            <Start><RadzenIcon Icon="person" /></Start>
-                            <ChildContent>
-                                <RadzenDropDown @bind-Value="_dto.CollaborateurId" Data="_collaborateurs" TextProperty="Label"
-                                                ValueProperty="CollaborateurId" Name="Collaborateur" Style="width: 100%;"
-                                                Placeholder="Sélectionner un collaborateur..." />
-                            </ChildContent>
-                            <Helper>
-                                <RadzenRequiredValidator Component="Collaborateur" Text="Le collaborateur est obligatoire." DefaultValue="0" />
-                            </Helper>
-                        </RadzenFormField>
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenCheckBox @bind-Value="_dto.PourTiers" Name="Tiers" />
+                            <RadzenLabel Text="Destinataire externe (pas un collaborateur)" Component="Tiers" />
+                        </RadzenStack>
+
+                        @if (!_dto.PourTiers)
+                        {
+                            <RadzenFormField Text="Collaborateur" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="person" /></Start>
+                                <ChildContent>
+                                    <RadzenDropDown @bind-Value="_dto.CollaborateurId" Data="_collaborateurs" TextProperty="Label"
+                                                    ValueProperty="CollaborateurId" Name="Collaborateur" Style="width: 100%;"
+                                                    Placeholder="Sélectionner un collaborateur..." />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="Collaborateur" Text="Le collaborateur est obligatoire." DefaultValue="0" />
+                                </Helper>
+                            </RadzenFormField>
+                        }
+                        else
+                        {
+                            <RadzenFormField Text="Email du destinataire externe" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="mail" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="_dto.EmailTiers" Name="EmailTiers" Style="width: 100%;" Placeholder="destinataire@email.com" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="EmailTiers" Text="L'email est obligatoire." />
+                                    <RadzenEmailValidator Component="EmailTiers" Text="Email invalide." />
+                                </Helper>
+                            </RadzenFormField>
+                        }
 
                         <RadzenFormField Text="Numéro de commande" Variant="Variant.Outlined" Style="width: 100%;">
                             <Start><RadzenIcon Icon="receipt_long" /></Start>
@@ -124,23 +159,20 @@
                             <RadzenText TextStyle="TextStyle.Subtitle2">Type de code</RadzenText>
                             <RadzenSelectBar @bind-Value="_dto.TypeCode" TValue="Enum_TypeCode" Size="ButtonSize.Medium" Style="width: 100%;">
                                 <Items>
-                                    <RadzenSelectBarItem Text="LibreService" Value="Enum_TypeCode.LibreService" Icon="schedule" />
+                                    <RadzenSelectBarItem Text="Libre-service" Value="Enum_TypeCode.LibreService" Icon="schedule" />
                                     <RadzenSelectBarItem Text="Liste matériaux" Value="Enum_TypeCode.Liste" Icon="list_alt" />
                                 </Items>
                             </RadzenSelectBar>
                         </RadzenStack>
 
-                        @if (_dto.TypeCode == Enum_TypeCode.LibreService)
-                        {
-                            <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-info-light); padding: 0.75rem;">
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                    <RadzenIcon Icon="timer" Style="color: var(--rz-info);" />
-                                    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0;">
-                                        <strong>Validité : 48 heures</strong> à partir de la création
-                                    </RadzenText>
-                                </RadzenStack>
-                            </RadzenCard>
-                        }
+                        <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-info-light); padding: 0.75rem;">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenIcon Icon="timer" Style="color: var(--rz-info);" />
+                                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0;">
+                                    <strong>Validité : 24 heures</strong> · usage unique (le code est consommé après une validation)
+                                </RadzenText>
+                            </RadzenStack>
+                        </RadzenCard>
 
                         @if (_dto.TypeCode == Enum_TypeCode.Liste)
                         {
@@ -153,6 +185,14 @@
                                 <Helper>
                                     <RadzenRequiredValidator Component="Materiaux" Text="La liste des matériaux est obligatoire." />
                                 </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Achats supplémentaires autorisés (HT)" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="euro" /></Start>
+                                <ChildContent>
+                                    <RadzenDropDown @bind-Value="_dto.AchatsSupplementaires" Data="_optionsAchats"
+                                                    TextProperty="Text" ValueProperty="Value" Style="width: 100%;" />
+                                </ChildContent>
                             </RadzenFormField>
                         }
 
@@ -259,7 +299,13 @@
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private string _modeFournisseur = "existant";
 
-    private const int DUREE_CONFIANCE_HEURES = 48;
+    private List<object> _optionsAchats = new()
+    {
+        new { Text = "Aucun (0 €)", Value = 0 },
+        new { Text = "50 € HT", Value = 50 },
+        new { Text = "100 € HT", Value = 100 },
+        new { Text = "200 € HT", Value = 200 }
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -282,9 +328,9 @@
     {
         _enChargement = true;
 
-        if (_dto.TypeCode == Enum_TypeCode.LibreService)
+        if (_dto.PourTiers)
         {
-            _dto.DureeValiditeHeures = DUREE_CONFIANCE_HEURES;
+            _dto.CollaborateurId = 0;
         }
 
         if (_dto.UtiliserFournisseur)

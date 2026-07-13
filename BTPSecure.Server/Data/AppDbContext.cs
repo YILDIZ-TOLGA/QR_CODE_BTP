@@ -105,6 +105,8 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             e.Property(c => c.Reference).HasMaxLength(300);
             e.Property(c => c.EstPermanent).HasDefaultValue(false);
+            e.Property(c => c.EmailTiers).HasMaxLength(256);
+            e.Property(c => c.AchatsSupplementaires).HasDefaultValue(0);
             e.HasOne(c => c.FournisseurContact)
                 .WithMany()
                 .HasForeignKey(c => c.FournisseurContactId)
