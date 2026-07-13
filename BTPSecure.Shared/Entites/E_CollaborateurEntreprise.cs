@@ -12,4 +12,5 @@ public class E_CollaborateurEntreprise
     public DateTime DateAjout { get; set; }
     public bool EstActif { get; set; } = true;
     public Enum_StatutInvitation StatutInvitation { get; set; } = Enum_StatutInvitation.EnAttente;
+    public Enum_RoleEntreprise RoleEntreprise { get; set; } = Enum_RoleEntreprise.Collaborateur;
 }

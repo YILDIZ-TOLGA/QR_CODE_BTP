@@ -81,6 +81,18 @@ public class S_Entreprise
         return (true, "Collaborateur retiré.");
     }
 
+    public async Task<(bool Succes, string Message)> ChangerRole(int p_collaborateurId, BTPSecure.Shared.Enums.Enum_RoleEntreprise p_role)
+    {
+        var _reponse = await _http.PostAsJsonAsync($"api/entreprises/changer-role/{p_collaborateurId}",
+            new DTO_ChangerRole { RoleEntreprise = p_role });
+        if (!_reponse.IsSuccessStatusCode)
+        {
+            var _erreur = await LireErreur(_reponse);
+            return (false, _erreur);
+        }
+        return (true, "Rôle mis à jour.");
+    }
+
     private static async Task<string> LireErreur(HttpResponseMessage p_reponse)
     {
         try

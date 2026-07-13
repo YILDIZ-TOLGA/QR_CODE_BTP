@@ -29,4 +29,5 @@ public class E_Code
     public E_FournisseurContact? FournisseurContact { get; set; }
     public bool EstPrete { get; set; }
     public DateTime? DatePrete { get; set; }
+    public bool EstPermanent { get; set; }
 }

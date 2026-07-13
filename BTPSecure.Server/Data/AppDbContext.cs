@@ -60,6 +60,7 @@ public class AppDbContext : DbContext
             e.HasKey(se => se.Id);
             e.Property(se => se.EstActif).HasDefaultValue(true);
             e.Property(se => se.StatutInvitation).HasConversion<int>().HasDefaultValue(Enum_StatutInvitation.EnAttente);
+            e.Property(se => se.RoleEntreprise).HasConversion<int>().HasDefaultValue(Enum_RoleEntreprise.Collaborateur);
             // Colonne physique conservée : "SalarieId"
             e.Property(se => se.CollaborateurId).HasColumnName("SalarieId");
             e.HasOne(se => se.Collaborateur)
@@ -103,6 +104,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey(c => c.EntrepriseId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.Property(c => c.Reference).HasMaxLength(300);
+            e.Property(c => c.EstPermanent).HasDefaultValue(false);
             e.HasOne(c => c.FournisseurContact)
                 .WithMany()
                 .HasForeignKey(c => c.FournisseurContactId)

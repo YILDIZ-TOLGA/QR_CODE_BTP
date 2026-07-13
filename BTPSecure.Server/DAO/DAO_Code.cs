@@ -44,6 +44,15 @@ public class DAO_Code
             .FirstOrDefaultAsync(c => c.Valeur == p_valeur);
     }
 
+    public async Task<E_Code?> ObtenirCodePermanentActif(int p_collaborateurId, int p_entrepriseId)
+    {
+        return await _context.Codes
+            .FirstOrDefaultAsync(c => c.CollaborateurId == p_collaborateurId
+                && c.EntrepriseId == p_entrepriseId
+                && c.EstPermanent
+                && c.Statut == Enum_StatutCode.Actif);
+    }
+
     public async Task<List<E_Code>> ObtenirParDirigeant(int p_dirigeantId)
     {
         var _codes = await _context.Codes

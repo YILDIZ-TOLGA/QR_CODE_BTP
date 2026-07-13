@@ -36,8 +36,27 @@ public class S_Code
             return (false, "Le numéro de commande est obligatoire.", null);
 
         var _entreprise = await _daoEntreprise.ObtenirParId(p_dto.EntrepriseId);
-        if (_entreprise == null || _entreprise.DirigeantId != p_dirigeantId)
-            return (false, "Entreprise non trouvée ou vous n'en êtes pas le dirigeant.", null);
+        if (_entreprise == null)
+            return (false, "Entreprise non trouvée.", null);
+
+        // Autorisation : le Dirigeant propriétaire OU un Responsable Admin de l'entreprise
+        bool _estDirigeant = _entreprise.DirigeantId == p_dirigeantId;
+        bool _estResponsableAdmin = false;
+        if (!_estDirigeant)
+        {
+            var _lienAuteur = await _daoEntreprise.ObtenirLienCollaborateur(p_dirigeantId, p_dto.EntrepriseId);
+            if (_lienAuteur != null
+                && _lienAuteur.StatutInvitation == Enum_StatutInvitation.Acceptee
+                && _lienAuteur.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+            {
+                _estResponsableAdmin = true;
+            }
+        }
+        if (!_estDirigeant && !_estResponsableAdmin)
+            return (false, "Vous n'êtes pas autorisé à créer des codes pour cette entreprise.", null);
+
+        // Propriétaire de l'entreprise = titulaire des ressources (code, carnet fournisseur)
+        var _proprietaireId = _entreprise.DirigeantId;
 
         if (!_entreprise.EstAutorisee)
             return (false, "Votre entreprise n'est pas encore autorisée par l'administrateur à créer des codes.", null);
@@ -66,7 +85,7 @@ public class S_Code
             if (p_dto.FournisseurContactId.HasValue)
             {
                 _contact = await _daoFournisseurContact.ObtenirParId(p_dto.FournisseurContactId.Value);
-                if (_contact == null || _contact.DirigeantId != p_dirigeantId)
+                if (_contact == null || _contact.DirigeantId != _proprietaireId)
                     return (false, "Fournisseur sélectionné introuvable.", null);
             }
             else
@@ -88,12 +107,12 @@ public class S_Code
                         return (false, "Le SIREN du nouveau fournisseur doit contenir 9 chiffres.", null);
                 }
 
-                _contact = await _daoFournisseurContact.ObtenirParDirigeantEtSiret(p_dirigeantId, _siret);
+                _contact = await _daoFournisseurContact.ObtenirParDirigeantEtSiret(_proprietaireId, _siret);
                 if (_contact == null)
                 {
                     _contact = new E_FournisseurContact
                     {
-                        DirigeantId = p_dirigeantId,
+                        DirigeantId = _proprietaireId,
                         NomEntreprise = p_dto.NouveauFournisseurNomEntreprise.Trim(),
                         Email = p_dto.NouveauFournisseurEmail.Trim().ToLower(),
                         Siret = _siret,
@@ -119,7 +138,7 @@ public class S_Code
             Info = p_dto.Info?.Trim(),
             ListeMateriaux = p_dto.ListeMateriaux?.Trim(),
             DureeValidite = p_dto.DureeValiditeHeures,
-            DirigeantId = p_dirigeantId,
+            DirigeantId = _proprietaireId,
             CollaborateurId = p_dto.CollaborateurId,
             EntrepriseId = p_dto.EntrepriseId,
             FournisseurContactId = _fournisseurContactId,
@@ -245,6 +264,43 @@ public class S_Code
 
         _logger.LogInformation("Code {Id} révoqué par dirigeant {DirigeantId}", p_codeId, p_dirigeantId);
         return (true, "Code révoqué avec succès.");
+    }
+
+    // Crée le code permanent libre-service d'un Responsable / Responsable Admin (idempotent)
+    public async Task CreerCodePermanent(int p_collaborateurId, E_Entreprise p_entreprise)
+    {
+        var _existant = await _daoCode.ObtenirCodePermanentActif(p_collaborateurId, p_entreprise.Id);
+        if (_existant != null)
+            return;
+
+        var _valeur = await GenererValeurUnique();
+        var _code = new E_Code
+        {
+            Valeur = _valeur,
+            TypeCode = Enum_TypeCode.LibreService,
+            NumeroCommande = "Accès permanent",
+            NomEntreprise = p_entreprise.Nom,
+            DirigeantId = p_entreprise.DirigeantId,
+            CollaborateurId = p_collaborateurId,
+            EntrepriseId = p_entreprise.Id,
+            EstPermanent = true,
+            DateExpiration = null
+        };
+        await _daoCode.Creer(_code);
+        _logger.LogInformation("Code permanent créé pour collaborateur {CollaborateurId} entreprise {EntrepriseId}", p_collaborateurId, p_entreprise.Id);
+    }
+
+    // Révoque le code permanent d'un collaborateur rétrogradé
+    public async Task RevoquerCodePermanent(int p_collaborateurId, int p_entrepriseId)
+    {
+        var _code = await _daoCode.ObtenirCodePermanentActif(p_collaborateurId, p_entrepriseId);
+        if (_code == null)
+            return;
+
+        _code.Statut = Enum_StatutCode.Revoque;
+        _code.EstPermanent = false;
+        await _daoCode.Sauvegarder();
+        _logger.LogInformation("Code permanent révoqué pour collaborateur {CollaborateurId}", p_collaborateurId);
     }
 
     private async Task<string> GenererValeurUnique()

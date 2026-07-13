@@ -68,4 +68,12 @@ public class C_Entreprise : ControllerBase
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(new { message = _message });
     }
+
+    [HttpPost("changer-role/{p_collaborateurId}")]
+    public async Task<IActionResult> ChangerRole(int p_collaborateurId, [FromBody] DTO_ChangerRole p_dto)
+    {
+        var (_succes, _message) = await _sEntreprise.ChangerRole(p_collaborateurId, p_dto.RoleEntreprise, ObtenirUtilisateurId());
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
 }

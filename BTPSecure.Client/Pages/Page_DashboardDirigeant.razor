@@ -146,14 +146,14 @@ else
             else
             {
                 <RadzenRow Gap="1rem">
-                    @foreach (var _sal in _collaborateurs)
+                    @foreach (var _sal in _collaborateursTries)
                     {
                         <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
                             <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
                                 <RadzenStack Gap="0.75rem">
                                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
                                         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
-                                            <RadzenIcon Icon="account_circle" Style="font-size: 1.8rem; color: var(--rz-primary);" />
+                                            <RadzenIcon Icon="@Services.H_RoleEntreprise.Icone(_sal.RoleEntreprise)" Style="font-size: 1.8rem; color: var(--rz-primary);" />
                                             <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_sal.Prenom @_sal.Nom</RadzenText>
                                         </RadzenStack>
                                         @if (_sal.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
@@ -167,9 +167,27 @@ else
                                     </RadzenStack>
 
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenBadge BadgeStyle="@Services.H_RoleEntreprise.Style(_sal.RoleEntreprise)"
+                                                     Text="@Services.H_RoleEntreprise.Libelle(_sal.RoleEntreprise)" IsPill="true" />
+                                    </RadzenStack>
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                         <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
                                         <RadzenText TextStyle="TextStyle.Body2" Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_sal.Email</RadzenText>
                                     </RadzenStack>
+
+                                    @if (_sal.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
+                                    {
+                                        <RadzenFormField Text="Rôle dans l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <Start><RadzenIcon Icon="manage_accounts" /></Start>
+                                            <ChildContent>
+                                                <RadzenDropDown TValue="Enum_RoleEntreprise" Value="_sal.RoleEntreprise"
+                                                                Data="_rolesEntreprise" TextProperty="Text" ValueProperty="Value"
+                                                                Change="@(_args => ChangerRole(_sal, (Enum_RoleEntreprise)_args))"
+                                                                Style="width: 100%;" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    }
 
                                     <RadzenButton Text="Retirer" Icon="person_remove" ButtonStyle="ButtonStyle.Danger"
                                                   Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
@@ -351,6 +369,19 @@ else
     private DTO_EntrepriseAffichage? _entreprise;
     private DTO_CreerEntreprise _dtoEntreprise = new();
     private List<DTO_CollaborateurAffichage> _collaborateurs = new();
+
+    // Tri : Responsable Admin puis Responsable puis Collaborateur (regroupement visuel dans la grille)
+    private List<DTO_CollaborateurAffichage> _collaborateursTries => _collaborateurs
+        .OrderByDescending(c => (int)c.RoleEntreprise)
+        .ThenBy(c => c.Nom)
+        .ToList();
+
+    private List<object> _rolesEntreprise = new()
+    {
+        new { Text = "Collaborateur", Value = Enum_RoleEntreprise.Collaborateur },
+        new { Text = "Responsable", Value = Enum_RoleEntreprise.Responsable },
+        new { Text = "Responsable Admin", Value = Enum_RoleEntreprise.ResponsableAdmin }
+    };
     private List<DTO_CodeAffichage> _codes = new();
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private int _nbNotifications = 0;
@@ -540,6 +571,35 @@ else
             }
             else
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private async Task ChangerRole(DTO_CollaborateurAffichage p_collaborateur, Enum_RoleEntreprise p_nouveauRole)
+    {
+        if (p_nouveauRole == p_collaborateur.RoleEntreprise)
+        {
+            return;
+        }
+
+        string _libelle = Services.H_RoleEntreprise.Libelle(p_nouveauRole);
+        var _confirm = await Dialog.Confirm(
+            $"Passer {p_collaborateur.Prenom} {p_collaborateur.Nom} au rôle « {_libelle} » ?",
+            "Changer le rôle",
+            new ConfirmOptions { OkButtonText = "Confirmer", CancelButtonText = "Annuler" });
+        if (_confirm != true)
+        {
+            return;
+        }
+
+        var (_succes, _message) = await SEntreprise.ChangerRole(p_collaborateur.CollaborateurId, p_nouveauRole);
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+            await ChargerDonnees();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
     }
 

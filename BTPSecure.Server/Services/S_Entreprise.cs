@@ -11,16 +11,47 @@ public class S_Entreprise
     private readonly DAO_Utilisateur _daoUtilisateur;
     private readonly DAO_Code _daoCode;
     private readonly S_Email _sEmail;
+    private readonly S_Code _sCode;
     private readonly ILogger<S_Entreprise> _logger;
 
     public S_Entreprise(DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
-        DAO_Code p_daoCode, S_Email p_sEmail, ILogger<S_Entreprise> p_logger)
+        DAO_Code p_daoCode, S_Email p_sEmail, S_Code p_sCode, ILogger<S_Entreprise> p_logger)
     {
         _daoEntreprise = p_daoEntreprise;
         _daoUtilisateur = p_daoUtilisateur;
         _daoCode = p_daoCode;
         _sEmail = p_sEmail;
+        _sCode = p_sCode;
         _logger = p_logger;
+    }
+
+    public async Task<(bool Succes, string Message)> ChangerRole(int p_collaborateurId, Enum_RoleEntreprise p_nouveauRole, int p_dirigeantId)
+    {
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
+        if (_entreprise == null)
+            return (false, "Vous n'avez pas d'entreprise.");
+
+        var _lien = await _daoEntreprise.ObtenirLienCollaborateur(p_collaborateurId, _entreprise.Id);
+        if (_lien == null)
+            return (false, "Ce collaborateur n'est pas dans votre entreprise.");
+
+        if (_lien.StatutInvitation != Enum_StatutInvitation.Acceptee)
+            return (false, "Ce collaborateur n'a pas encore accepté l'invitation.");
+
+        _lien.RoleEntreprise = p_nouveauRole;
+        await _daoEntreprise.Sauvegarder();
+
+        if (p_nouveauRole == Enum_RoleEntreprise.Responsable || p_nouveauRole == Enum_RoleEntreprise.ResponsableAdmin)
+        {
+            await _sCode.CreerCodePermanent(p_collaborateurId, _entreprise);
+        }
+        else
+        {
+            await _sCode.RevoquerCodePermanent(p_collaborateurId, _entreprise.Id);
+        }
+
+        _logger.LogInformation("Rôle du collaborateur {CollaborateurId} changé en {Role} par dirigeant {DirigeantId}", p_collaborateurId, p_nouveauRole, p_dirigeantId);
+        return (true, "Rôle mis à jour.");
     }
 
     public async Task<(bool Succes, string Message)> CreerCollaborateur(DTO_CreerCollaborateur p_dto, int p_dirigeantId)
@@ -180,7 +211,8 @@ public class S_Entreprise
             Prenom = l.Collaborateur.Prenom,
             Email = l.Collaborateur.Email,
             DateAjout = l.DateAjout,
-            StatutInvitation = l.StatutInvitation
+            StatutInvitation = l.StatutInvitation,
+            RoleEntreprise = l.RoleEntreprise
         }).ToList();
     }
 

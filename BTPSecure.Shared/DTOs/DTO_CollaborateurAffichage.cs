@@ -11,4 +11,5 @@ public class DTO_CollaborateurAffichage
     public string Email { get; set; } = string.Empty;
     public DateTime DateAjout { get; set; }
     public Enum_StatutInvitation StatutInvitation { get; set; }
+    public Enum_RoleEntreprise RoleEntreprise { get; set; }
 }

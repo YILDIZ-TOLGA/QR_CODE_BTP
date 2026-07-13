@@ -24,7 +24,8 @@ public class C_Code : ControllerBase
     }
 
     [HttpPost("creer")]
-    [Authorize(Roles = "Dirigeant")]
+    // Dirigeant OU Responsable Admin (vérif fine du rôle-entreprise faite dans S_Code.Creer)
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
     public async Task<IActionResult> Creer([FromBody] DTO_CreerCode p_dto)
     {
         var (_succes, _message, _code) = await _sCode.Creer(p_dto, ObtenirUtilisateurId());
