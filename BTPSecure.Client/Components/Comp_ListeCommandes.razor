@@ -1,0 +1,206 @@
+@inject Services.S_Code SCode
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+<RadzenFormField Text="Rechercher (entreprise, référence, commande)" Variant="Variant.Outlined" Style="width: 100%; margin-bottom: 1rem;">
+    <Start><RadzenIcon Icon="search" /></Start>
+    <ChildContent>
+        <RadzenTextBox @bind-Value="_recherche" @bind-Value:event="oninput" Style="width: 100%;" Placeholder="Filtrer..." />
+    </ChildContent>
+</RadzenFormField>
+
+@if (_commandesFiltrees.Count == 0)
+{
+    <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+        <RadzenIcon Icon="inbox" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
+        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucune commande</RadzenText>
+    </RadzenStack>
+}
+else
+{
+    <RadzenStack Gap="1rem">
+        @foreach (var _cmd in _commandesFiltrees)
+        {
+            <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-base-100); padding: 1rem;">
+                <RadzenStack Gap="0.6rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                            <RadzenIcon Icon="business" Style="color: var(--rz-primary);" />
+                            <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_cmd.NomEntrepriseDirigeant</RadzenText>
+                        </RadzenStack>
+                        <RadzenBadge BadgeStyle="@(_cmd.TypeCode == Enum_TypeCode.LibreService ? BadgeStyle.Info : BadgeStyle.Warning)"
+                                     Text="@Services.H_TypeCode.Libelle(_cmd.TypeCode)" IsPill="true" />
+                    </RadzenStack>
+
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Référence</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace; font-weight: 600;">@_cmd.Reference</RadzenText>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Commande : @_cmd.NumeroCommande</RadzenText>
+                    </RadzenStack>
+
+                    @if (_cmd.DateExpiration.HasValue)
+                    {
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                Expire le @_cmd.DateExpiration.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </RadzenText>
+                        </RadzenStack>
+                    }
+
+                    @if (!string.IsNullOrEmpty(_cmd.ListeMateriaux))
+                    {
+                        <RadzenStack Gap="0.25rem">
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Matériaux</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@Tronquer(_cmd.ListeMateriaux)</RadzenText>
+                            @if (_cmd.ListeMateriaux.Length > SEUIL_TRONCATURE)
+                            {
+                                <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
+                                              Variant="Variant.Text" Size="ButtonSize.Small"
+                                              Click="@(() => VoirDetail(_cmd.ListeMateriaux))" />
+                            }
+                        </RadzenStack>
+                    }
+
+                    @if (_cmd.AchatsSupplementaires > 0)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@($"Achats supplémentaires : {_cmd.AchatsSupplementaires} € HT")" IsPill="true" />
+                    }
+
+                    @if (!string.IsNullOrEmpty(_cmd.Info))
+                    {
+                        <RadzenStack Gap="0.25rem">
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Info</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_cmd.Info</RadzenText>
+                        </RadzenStack>
+                    }
+
+                    @if (_cmd.EstPrete)
+                    {
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="task_alt" Style="color: var(--rz-success);" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-success); font-weight: 600;">
+                                Commande marquée prête le @_cmd.DatePrete?.ToLocalTime().ToString("dd/MM HH:mm")
+                            </RadzenText>
+                        </RadzenStack>
+                    }
+                    else
+                    {
+                        <RadzenButton Text="Commande prête" Icon="task_alt" ButtonStyle="ButtonStyle.Info"
+                                      Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                      Click="@(() => MarquerPrete(_cmd.CodeId))" />
+                    }
+
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.End">
+                        <RadzenFormField Text="Code à saisir" Variant="Variant.Outlined" Style="flex: 1;">
+                            <Start><RadzenIcon Icon="key" /></Start>
+                            <ChildContent>
+                                <RadzenTextBox @bind-Value="_codesSaisis[_cmd.CodeId]"
+                                               Style="width: 100%; font-family: monospace; text-transform: uppercase; letter-spacing: 2px;"
+                                               Placeholder="XXXX-XXXX" MaxLength="9" />
+                            </ChildContent>
+                        </RadzenFormField>
+                        <RadzenButton Text="Valider" Icon="check" ButtonStyle="ButtonStyle.Success"
+                                      Click="@(() => ValiderCommande(_cmd.CodeId))"
+                                      Disabled="@(string.IsNullOrWhiteSpace(ObtenirCodeSaisi(_cmd.CodeId)))" />
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        }
+    </RadzenStack>
+}
+
+@code {
+    [Parameter] public List<DTO_CommandeAVenir> Commandes { get; set; } = new();
+    [Parameter] public EventCallback OnAction { get; set; }
+
+    private string _recherche = string.Empty;
+    private Dictionary<int, string> _codesSaisis = new();
+
+    private const int SEUIL_TRONCATURE = 140;
+
+    private List<DTO_CommandeAVenir> _commandesFiltrees
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_recherche))
+            {
+                return Commandes;
+            }
+            var _r = _recherche.Trim().ToLower();
+            return Commandes.Where(c =>
+                c.NomEntrepriseDirigeant.ToLower().Contains(_r)
+                || (c.Reference != null && c.Reference.ToLower().Contains(_r))
+                || c.NumeroCommande.ToLower().Contains(_r)).ToList();
+        }
+    }
+
+    private static string Tronquer(string p_texte)
+    {
+        if (p_texte.Length <= SEUIL_TRONCATURE)
+        {
+            return p_texte;
+        }
+        return p_texte.Substring(0, SEUIL_TRONCATURE) + "…";
+    }
+
+    private string ObtenirCodeSaisi(int p_codeId)
+    {
+        if (_codesSaisis.TryGetValue(p_codeId, out var _val))
+            return _val;
+        return string.Empty;
+    }
+
+    protected override void OnParametersSet()
+    {
+        foreach (var _c in Commandes)
+        {
+            if (!_codesSaisis.ContainsKey(_c.CodeId))
+                _codesSaisis[_c.CodeId] = string.Empty;
+        }
+    }
+
+    private async Task VoirDetail(string p_texte)
+    {
+        await Dialog.OpenAsync<Comp_DialogTexte>("Détail des matériaux",
+            new Dictionary<string, object?> { ["Contenu"] = p_texte },
+            new DialogOptions { Width = "520px", CloseDialogOnOverlayClick = true });
+    }
+
+    private async Task MarquerPrete(int p_codeId)
+    {
+        var (_succes, _message) = await SCode.MarquerPrete(p_codeId);
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", "Le dirigeant a été notifié.");
+            await OnAction.InvokeAsync();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private async Task ValiderCommande(int p_codeId)
+    {
+        var _val = ObtenirCodeSaisi(p_codeId);
+        if (string.IsNullOrWhiteSpace(_val))
+            return;
+
+        var (_succes, _res) = await SCode.ValiderPourCommande(p_codeId, _val.Trim().ToUpper());
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", "Code validé.");
+            _codesSaisis.Remove(p_codeId);
+            await OnAction.InvokeAsync();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _res?.Message ?? "Code invalide.");
+        }
+    }
+}

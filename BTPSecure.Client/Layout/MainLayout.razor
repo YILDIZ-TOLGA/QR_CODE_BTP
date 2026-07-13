@@ -70,6 +70,8 @@
                     @if (_role == "Fournisseur")
                     {
                         <RadzenPanelMenuItem Text="Accueil" Icon="home" Path="fournisseur" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="À préparer" Icon="pending_actions" Path="fournisseur/a-preparer" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="Prêtes" Icon="task_alt" Path="fournisseur/pretes" Match="NavLinkMatch.All" />
                         @if (_estFournisseurPrincipal)
                         {
                             <RadzenPanelMenuItem Text="Mes sous-comptes" Icon="badge" Path="fournisseur/sous-comptes" Match="NavLinkMatch.All" />
