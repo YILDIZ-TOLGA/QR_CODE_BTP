@@ -154,8 +154,12 @@ else
                 </RadzenStack>
                 @if (_estProprietaire)
                 {
-                    <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Success"
-                                  Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutCollaborateur" />
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                        <RadzenButton Text="Créer" Icon="person_add" ButtonStyle="ButtonStyle.Primary"
+                                      Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirCreationCollaborateur" />
+                        <RadzenButton Text="Inviter" Icon="person_search" ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Flat" Size="ButtonSize.Small" Click="OuvrirAjoutCollaborateur" />
+                    </RadzenStack>
                 }
             </RadzenStack>
 
@@ -589,6 +593,19 @@ else
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
     }
 
+    // Crée un NOUVEAU compte collaborateur via une pop-up (envoi des identifiants par mail)
+    private async Task OuvrirCreationCollaborateur()
+    {
+        var _resultat = await Dialog.OpenAsync<Comp_DialogCreerCollaborateur>("Créer un collaborateur",
+            options: new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
+        if (_resultat is string email && !string.IsNullOrWhiteSpace(email))
+        {
+            // Le composant a déjà notifié le succès → on rafraîchit juste la liste
+            _collaborateurs = await SEntreprise.ObtenirCollaborateurs();
+        }
+    }
+
+    // Invite un collaborateur DÉJÀ inscrit (par email) à rejoindre l'entreprise
     private async Task OuvrirAjoutCollaborateur()
     {
         var _email = await Dialog.OpenAsync<Comp_DialogAjoutCollaborateur>("Ajouter un collaborateur",

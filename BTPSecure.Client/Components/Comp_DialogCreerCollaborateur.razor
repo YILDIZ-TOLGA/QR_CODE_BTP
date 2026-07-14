@@ -1,0 +1,14 @@
+@inject DialogService Dialog
+
+@* Pop-up de création de collaborateur : héberge le formulaire réutilisable et ferme avec l'email créé *@
+
+<RadzenStack Style="min-width: 320px;">
+    <Comp_FormCreerCollaborateur OnCree="Ferme" />
+</RadzenStack>
+
+@code {
+    private void Ferme(string p_email)
+    {
+        Dialog.Close(p_email);
+    }
+}

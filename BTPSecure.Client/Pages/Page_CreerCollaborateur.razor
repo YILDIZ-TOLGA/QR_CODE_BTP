@@ -1,8 +1,6 @@
 @page "/dirigeant/creer-collaborateur"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
-@inject Services.S_Entreprise SEntreprise
 @inject NavigationManager Navigation
-@inject NotificationService Notification
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
     <RadzenButton Icon="arrow_back" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Large"
@@ -40,126 +38,24 @@
         else
         {
             <RadzenCard Variant="Variant.Outlined">
-                <RadzenStack Gap="1rem" Style="margin-bottom: 1.5rem;">
-                    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
-                        Renseignez les informations de votre collaborateur. Un compte lui sera créé et un email contenant ses identifiants temporaires lui sera envoyé.
-                    </RadzenText>
-                </RadzenStack>
-
-                <RadzenTemplateForm TItem="DTO_CreerCollaborateur" Data="_dto" Submit="Creer">
-                    <RadzenStack Gap="1.25rem">
-
-                        <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
-                            <Start><RadzenIcon Icon="mail" /></Start>
-                            <ChildContent>
-                                <RadzenTextBox @bind-Value="_dto.Email" Name="Email" Style="width: 100%;" />
-                            </ChildContent>
-                            <Helper>
-                                <RadzenRequiredValidator Component="Email" Text="L'email est obligatoire." />
-                                <RadzenEmailValidator Component="Email" Text="Email invalide." />
-                            </Helper>
-                        </RadzenFormField>
-
-                        <RadzenRow Gap="1rem">
-                            <RadzenColumn Size="12" SizeMD="6">
-                                <RadzenFormField Text="Nom" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <Start><RadzenIcon Icon="badge" /></Start>
-                                    <ChildContent>
-                                        <RadzenTextBox @bind-Value="_dto.Nom" Name="Nom" Style="width: 100%;" />
-                                    </ChildContent>
-                                    <Helper>
-                                        <RadzenRequiredValidator Component="Nom" Text="Obligatoire." />
-                                    </Helper>
-                                </RadzenFormField>
-                            </RadzenColumn>
-                            <RadzenColumn Size="12" SizeMD="6">
-                                <RadzenFormField Text="Prénom" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <Start><RadzenIcon Icon="person" /></Start>
-                                    <ChildContent>
-                                        <RadzenTextBox @bind-Value="_dto.Prenom" Name="Prenom" Style="width: 100%;" />
-                                    </ChildContent>
-                                    <Helper>
-                                        <RadzenRequiredValidator Component="Prenom" Text="Obligatoire." />
-                                    </Helper>
-                                </RadzenFormField>
-                            </RadzenColumn>
-                        </RadzenRow>
-
-                        <RadzenFormField Text="Téléphone" Variant="Variant.Outlined" Style="width: 100%;">
-                            <Start><RadzenIcon Icon="phone" /></Start>
-                            <ChildContent>
-                                <RadzenTextBox @bind-Value="_dto.Telephone" Style="width: 100%;" Placeholder="Optionnel" />
-                            </ChildContent>
-                        </RadzenFormField>
-
-                        <RadzenFormField Text="Rôle dans l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
-                            <Start><RadzenIcon Icon="manage_accounts" /></Start>
-                            <ChildContent>
-                                <RadzenDropDown @bind-Value="_dto.RoleEntreprise" Data="_rolesEntreprise"
-                                                TextProperty="Text" ValueProperty="Value" Style="width: 100%;" />
-                            </ChildContent>
-                        </RadzenFormField>
-
-                        @if (_dto.RoleEntreprise == Enum_RoleEntreprise.Responsable || _dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
-                        {
-                            <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat">
-                                Ce collaborateur recevra un <strong>code permanent</strong> libre-service.
-                                @if (_dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
-                                {
-                                    <text> En tant que Responsable Admin, il pourra aussi <strong>créer des codes</strong>.</text>
-                                }
-                            </RadzenAlert>
-                        }
-
-                        <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat">
-                            Un mot de passe temporaire sera généré automatiquement et envoyé par email au collaborateur. Il pourra le changer via « Mon profil → Changer mon mot de passe » après sa première connexion.
-                        </RadzenAlert>
-
-                        <RadzenButton Text="Créer le compte collaborateur" ButtonType="ButtonType.Submit" Icon="person_add"
-                                      ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large"
-                                      Style="width: 100%;" IsBusy="_enChargement" />
-                    </RadzenStack>
-                </RadzenTemplateForm>
+                <Comp_FormCreerCollaborateur OnCree="OnCollaborateurCree" />
             </RadzenCard>
         }
     </RadzenColumn>
 </RadzenRow>
 
 @code {
-    private DTO_CreerCollaborateur _dto = new();
-    private bool _enChargement;
     private bool _succes;
     private string _emailEnvoye = string.Empty;
 
-    private List<object> _rolesEntreprise = new()
+    private void OnCollaborateurCree(string p_email)
     {
-        new { Text = "Collaborateur", Value = Enum_RoleEntreprise.Collaborateur },
-        new { Text = "Responsable", Value = Enum_RoleEntreprise.Responsable },
-        new { Text = "Responsable Admin", Value = Enum_RoleEntreprise.ResponsableAdmin }
-    };
-
-    private async Task Creer()
-    {
-        _enChargement = true;
-        var _email = _dto.Email;
-        var (_ok, _message) = await SEntreprise.CreerCollaborateur(_dto);
-        _enChargement = false;
-
-        if (_ok)
-        {
-            _succes = true;
-            _emailEnvoye = _email;
-            Notification.Notify(NotificationSeverity.Success, "Succès", _message);
-        }
-        else
-        {
-            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
-        }
+        _succes = true;
+        _emailEnvoye = p_email;
     }
 
     private void Reinitialiser()
     {
-        _dto = new DTO_CreerCollaborateur();
         _succes = false;
         _emailEnvoye = string.Empty;
     }
