@@ -132,12 +132,9 @@
                                     <RadzenRequiredValidator Component="Collaborateur" Text="Le collaborateur est obligatoire." DefaultValue="0" />
                                 </Helper>
                             </RadzenFormField>
-                            @if (_estDirigeant)
-                            {
-                                <RadzenButton Text="Créer un collaborateur" Icon="person_add" ButtonStyle="ButtonStyle.Base"
-                                              Variant="Variant.Text" Size="ButtonSize.Small" Click="OuvrirCreationCollaborateur"
-                                              Style="align-self: flex-start;" />
-                            }
+                            <RadzenButton Text="Créer un collaborateur" Icon="person_add" ButtonStyle="ButtonStyle.Base"
+                                          Variant="Variant.Text" Size="ButtonSize.Small" Click="OuvrirCreationCollaborateur"
+                                          Style="align-self: flex-start;" />
                         }
                         else
                         {
@@ -400,8 +397,9 @@
     // Crée un collaborateur à la volée (pop-up) puis le sélectionne dans la liste
     private async Task OuvrirCreationCollaborateur()
     {
-        var _resultat = await Dialog.OpenAsync<Comp_DialogCreerCollaborateur>("Créer un collaborateur",
-            options: new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
+        var _params = new Dictionary<string, object?> { ["PeutCreerResponsableAdmin"] = _estDirigeant };
+        var _resultat = await Dialog.OpenAsync<Comp_DialogCreerCollaborateur>("Créer un collaborateur", _params,
+            new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
 
         if (_resultat is string email && !string.IsNullOrWhiteSpace(email))
         {

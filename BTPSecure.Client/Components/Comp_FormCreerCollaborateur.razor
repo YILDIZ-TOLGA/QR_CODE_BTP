@@ -87,16 +87,25 @@
 @code {
     // Déclenché après création réussie, avec l'email du collaborateur créé
     [Parameter] public EventCallback<string> OnCree { get; set; }
+    // Un Responsable Admin ne peut pas créer un autre Responsable Admin
+    [Parameter] public bool PeutCreerResponsableAdmin { get; set; } = true;
 
     private DTO_CreerCollaborateur _dto = new();
     private bool _enChargement;
+    private List<object> _rolesEntreprise = new();
 
-    private List<object> _rolesEntreprise = new()
+    protected override void OnInitialized()
     {
-        new { Text = "Collaborateur", Value = Enum_RoleEntreprise.Collaborateur },
-        new { Text = "Responsable", Value = Enum_RoleEntreprise.Responsable },
-        new { Text = "Responsable Admin", Value = Enum_RoleEntreprise.ResponsableAdmin }
-    };
+        _rolesEntreprise = new List<object>
+        {
+            new { Text = "Collaborateur", Value = Enum_RoleEntreprise.Collaborateur },
+            new { Text = "Responsable", Value = Enum_RoleEntreprise.Responsable }
+        };
+        if (PeutCreerResponsableAdmin)
+        {
+            _rolesEntreprise.Add(new { Text = "Responsable Admin", Value = Enum_RoleEntreprise.ResponsableAdmin });
+        }
+    }
 
     private async Task Creer()
     {

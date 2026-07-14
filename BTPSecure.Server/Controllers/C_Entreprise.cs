@@ -8,7 +8,7 @@ namespace BTPSecure.Server.Controllers;
 
 [ApiController]
 [Route("api/entreprises")]
-[Authorize(Roles = "Dirigeant")]
+[Authorize]
 public class C_Entreprise : ControllerBase
 {
     private readonly S_Entreprise _sEntreprise;
@@ -24,6 +24,7 @@ public class C_Entreprise : ControllerBase
     }
 
     [HttpPost("creer")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> Creer([FromBody] DTO_CreerEntreprise p_dto)
     {
         var (_succes, _message, _entreprise) = await _sEntreprise.Creer(p_dto, ObtenirUtilisateurId());
@@ -32,6 +33,7 @@ public class C_Entreprise : ControllerBase
     }
 
     [HttpGet("ma-entreprise")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> ObtenirMonEntreprise()
     {
         var _entreprise = await _sEntreprise.ObtenirParDirigeant(ObtenirUtilisateurId());
@@ -39,6 +41,7 @@ public class C_Entreprise : ControllerBase
     }
 
     [HttpPost("ajouter-collaborateur")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> AjouterCollaborateur([FromBody] DTO_AjouterCollaborateur p_dto)
     {
         var (_succes, _message, _collaborateur) = await _sEntreprise.AjouterCollaborateur(p_dto.Email, ObtenirUtilisateurId());
@@ -46,7 +49,9 @@ public class C_Entreprise : ControllerBase
         return Ok(_collaborateur);
     }
 
+    // Dirigeant OU Responsable Admin (contrôle fin dans le service)
     [HttpPost("creer-collaborateur")]
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
     public async Task<IActionResult> CreerCollaborateur([FromBody] DTO_CreerCollaborateur p_dto)
     {
         var (_succes, _message) = await _sEntreprise.CreerCollaborateur(p_dto, ObtenirUtilisateurId());
@@ -55,6 +60,7 @@ public class C_Entreprise : ControllerBase
     }
 
     [HttpGet("collaborateurs")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> ObtenirCollaborateurs()
     {
         var _collaborateurs = await _sEntreprise.ObtenirCollaborateurs(ObtenirUtilisateurId());
@@ -62,6 +68,7 @@ public class C_Entreprise : ControllerBase
     }
 
     [HttpDelete("retirer-collaborateur/{p_id}")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> RetirerCollaborateur(int p_id)
     {
         var (_succes, _message) = await _sEntreprise.RetirerCollaborateur(p_id, ObtenirUtilisateurId());
@@ -70,6 +77,7 @@ public class C_Entreprise : ControllerBase
     }
 
     [HttpPost("changer-role/{p_collaborateurId}")]
+    [Authorize(Roles = "Dirigeant")]
     public async Task<IActionResult> ChangerRole(int p_collaborateurId, [FromBody] DTO_ChangerRole p_dto)
     {
         var (_succes, _message) = await _sEntreprise.ChangerRole(p_collaborateurId, p_dto.RoleEntreprise, ObtenirUtilisateurId());

@@ -54,16 +54,32 @@ public class S_Entreprise
         return (true, "Rôle mis à jour.");
     }
 
-    public async Task<(bool Succes, string Message)> CreerCollaborateur(DTO_CreerCollaborateur p_dto, int p_dirigeantId)
+    public async Task<(bool Succes, string Message)> CreerCollaborateur(DTO_CreerCollaborateur p_dto, int p_callerId)
     {
         if (string.IsNullOrWhiteSpace(p_dto.Email))
             return (false, "L'email est obligatoire.");
         if (string.IsNullOrWhiteSpace(p_dto.Nom) || string.IsNullOrWhiteSpace(p_dto.Prenom))
             return (false, "Le nom et le prénom sont obligatoires.");
 
-        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
+        // Autorisé : le Dirigeant de l'entreprise OU un Responsable Admin de celle-ci
+        var _estDirigeant = false;
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_callerId);
+        if (_entreprise != null)
+        {
+            _estDirigeant = true;
+        }
+        else
+        {
+            var _lienRa = await _daoEntreprise.ObtenirPremierLienResponsableAdmin(p_callerId);
+            if (_lienRa != null)
+                _entreprise = _lienRa.Entreprise;
+        }
         if (_entreprise == null)
-            return (false, "Vous n'avez pas encore d'entreprise.");
+            return (false, "Vous n'êtes pas autorisé à créer un collaborateur.");
+
+        // Anti-escalade : un Responsable Admin ne peut pas créer un autre Responsable Admin
+        if (!_estDirigeant && p_dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+            return (false, "Seul le dirigeant peut créer un Responsable Admin.");
 
         if (await _daoUtilisateur.EmailExiste(p_dto.Email))
             return (false, "Un compte avec cet email existe déjà.");
@@ -104,8 +120,8 @@ public class S_Entreprise
             await _sCode.CreerCodePermanent(_collaborateur.Id, _entreprise);
         }
 
-        _logger.LogInformation("Collaborateur {Email} créé par dirigeant {DirigeantId} pour entreprise {EntrepriseId}",
-            _collaborateur.Email, p_dirigeantId, _entreprise.Id);
+        _logger.LogInformation("Collaborateur {Email} créé par {CallerId} pour entreprise {EntrepriseId}",
+            _collaborateur.Email, p_callerId, _entreprise.Id);
 
         var _emailCopie = _collaborateur.Email;
         var _prenomCopie = _collaborateur.Prenom;
