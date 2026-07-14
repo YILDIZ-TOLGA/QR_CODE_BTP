@@ -582,8 +582,20 @@ public class S_Code
             TypeCode = c.TypeCode,
             AchatsSupplementaires = c.AchatsSupplementaires,
             EstPrete = c.EstPrete,
-            DatePrete = c.DatePrete
+            DatePrete = c.DatePrete,
+            EstTiers = c.EmailTiers != null,
+            Destinataire = ObtenirLibelleDestinataire(c)
         }).ToList();
+    }
+
+    // Libellé du destinataire d'un code, pour l'affichage côté fournisseur
+    private static string ObtenirLibelleDestinataire(E_Code p_code)
+    {
+        if (p_code.EmailTiers != null)
+            return p_code.EmailTiers;
+        if (p_code.Collaborateur != null)
+            return $"{p_code.Collaborateur.Prenom} {p_code.Collaborateur.Nom}";
+        return "";
     }
 
     public async Task<(bool Succes, string Message)> MarquerPrete(int p_codeId, int p_fournisseurId)

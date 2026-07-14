@@ -47,6 +47,25 @@ else
                                      Text="@Services.H_TypeCode.Libelle(_cmd.TypeCode)" IsPill="true" />
                     </RadzenStack>
 
+                    @if (_cmd.EstTiers)
+                    {
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+                            <RadzenIcon Icon="person_pin" Style="font-size: 1rem; color: var(--rz-warning);" />
+                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="Client externe (personne tierce)" IsPill="true" />
+                            @if (!string.IsNullOrEmpty(_cmd.Destinataire))
+                            {
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@_cmd.Destinataire</RadzenText>
+                            }
+                        </RadzenStack>
+                    }
+                    else if (!string.IsNullOrEmpty(_cmd.Destinataire))
+                    {
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="badge" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Destinataire : @_cmd.Destinataire</RadzenText>
+                        </RadzenStack>
+                    }
+
                     <RadzenStack Gap="0.25rem">
                         <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Référence</RadzenText>
                         <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace; font-weight: 600;">@_cmd.Reference</RadzenText>

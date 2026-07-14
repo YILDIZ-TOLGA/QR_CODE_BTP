@@ -106,6 +106,7 @@ public class DAO_Code
         var _codes = await _context.Codes
             .Include(c => c.FournisseurContact)
             .Include(c => c.Dirigeant)
+            .Include(c => c.Collaborateur)
             .Where(c => c.FournisseurContact != null
                 && c.Statut == Enum_StatutCode.Actif
                 && c.FournisseurContact!.Siret == p_siret

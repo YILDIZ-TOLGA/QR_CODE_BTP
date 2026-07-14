@@ -16,4 +16,7 @@ public class DTO_CommandeAVenir
     public int AchatsSupplementaires { get; set; }
     public bool EstPrete { get; set; }
     public DateTime? DatePrete { get; set; }
+    // Destinataire du code : collaborateur interne OU personne tierce externe
+    public bool EstTiers { get; set; }
+    public string Destinataire { get; set; } = string.Empty;
 }
