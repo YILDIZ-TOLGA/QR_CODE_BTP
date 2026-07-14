@@ -1,6 +1,5 @@
 @page "/dirigeant"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant,Collaborateur")]
-@implements IDisposable
 @inject Services.S_Entreprise SEntreprise
 @inject Services.S_Code SCode
 @inject Services.S_FournisseurContact SFournisseur
@@ -81,6 +80,10 @@ else if (_estDirigeantSansEntreprise)
 else
 {
     <RadzenStack Gap="1.5rem">
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+            <Comp_AutoRefresh OnRefresh="RafraichirUi" />
+        </RadzenStack>
+
         @if (_estProprietaire && _nbNotifications > 0)
         {
             <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-success); color: white; cursor: pointer;"
@@ -507,7 +510,6 @@ else
         _filtreDateFin = null;
     }
 
-    private System.Timers.Timer? _timer;
     private int _userId = 0;
 
     // Un Responsable Admin ne peut pas révoquer son propre code ni celui d'un autre Responsable Admin
@@ -550,27 +552,16 @@ else
         {
             _chargement = false;
         }
-
-        _timer = new System.Timers.Timer(15000);
-        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
-        _timer.AutoReset = true;
-        _timer.Start();
     }
 
-    private async Task RafraichirSilencieux()
+    private async Task RafraichirUi()
     {
         try
         {
             await ChargerDonnees();
-            await InvokeAsync(StateHasChanged);
+            StateHasChanged();
         }
         catch { }
-    }
-
-    public void Dispose()
-    {
-        _timer?.Stop();
-        _timer?.Dispose();
     }
 
     private async Task ChargerDonnees()

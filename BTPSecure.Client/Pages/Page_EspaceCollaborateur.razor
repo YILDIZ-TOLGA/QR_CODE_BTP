@@ -1,6 +1,5 @@
 @page "/collaborateur"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Collaborateur")]
-@implements IDisposable
 @inject Services.S_Code SCode
 @inject Services.S_Invitation SInvitation
 @inject NotificationService Notification
@@ -15,6 +14,10 @@
 else
 {
     <RadzenStack Gap="1.5rem">
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+            <Comp_AutoRefresh OnRefresh="RafraichirUi" />
+        </RadzenStack>
 
         @* ===== INVITATIONS EN ATTENTE ===== *@
         @if (_invitationsEnAttente.Count > 0)
@@ -209,33 +212,16 @@ else
     private List<DTO_CodeAffichage> _codes = new();
     private bool _chargement = true;
 
-    private System.Timers.Timer? _timer;
-
     protected override async Task OnInitializedAsync()
     {
         await ChargerDonnees();
         _chargement = false;
-
-        _timer = new System.Timers.Timer(15000);
-        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
-        _timer.AutoReset = true;
-        _timer.Start();
     }
 
-    private async Task RafraichirSilencieux()
+    private async Task RafraichirUi()
     {
-        try
-        {
-            await ChargerDonnees();
-            await InvokeAsync(StateHasChanged);
-        }
-        catch { }
-    }
-
-    public void Dispose()
-    {
-        _timer?.Stop();
-        _timer?.Dispose();
+        await ChargerDonnees();
+        StateHasChanged();
     }
 
     private async Task ChargerDonnees()

@@ -1,13 +1,15 @@
 @page "/admin"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
-@implements IDisposable
 @inject Services.S_Admin SAdmin
 @inject NotificationService Notification
 @inject DialogService Dialog
 
-<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
-    <RadzenIcon Icon="admin_panel_settings" Style="font-size: 2rem; color: var(--rz-primary);" />
-    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Administration</RadzenText>
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1.5rem;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenIcon Icon="admin_panel_settings" Style="font-size: 2rem; color: var(--rz-primary);" />
+        <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Administration</RadzenText>
+    </RadzenStack>
+    <Comp_AutoRefresh OnRefresh="RafraichirUi" />
 </RadzenStack>
 
 @if (_chargement)
@@ -238,29 +240,18 @@ else
     private List<DTO_FournisseurAdmin> _fournisseurs = new();
     private bool _chargement = true;
 
-    private System.Timers.Timer? _timer;
-
     protected override async Task OnInitializedAsync()
     {
         _entreprises = await SAdmin.ObtenirEntreprises();
         _fournisseurs = await SAdmin.ObtenirFournisseurs();
         _chargement = false;
-
-        _timer = new System.Timers.Timer(15000);
-        _timer.Elapsed += async (_, _) => await RafraichirSilencieux();
-        _timer.AutoReset = true;
-        _timer.Start();
     }
 
-    private async Task RafraichirSilencieux()
+    private async Task RafraichirUi()
     {
-        try
-        {
-            _entreprises = await SAdmin.ObtenirEntreprises();
-            _fournisseurs = await SAdmin.ObtenirFournisseurs();
-            await InvokeAsync(StateHasChanged);
-        }
-        catch { }
+        _entreprises = await SAdmin.ObtenirEntreprises();
+        _fournisseurs = await SAdmin.ObtenirFournisseurs();
+        StateHasChanged();
     }
 
     private async Task ValiderFournisseur(DTO_FournisseurAdmin p_f)
@@ -301,12 +292,6 @@ else
             else
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
-    }
-
-    public void Dispose()
-    {
-        _timer?.Stop();
-        _timer?.Dispose();
     }
 
     private async Task Basculer(DTO_EntrepriseAdmin p_entreprise)
