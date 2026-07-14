@@ -213,14 +213,14 @@ public class S_Ticket
 
     public async Task<List<DTO_Ticket>> ObtenirRecus(int p_userId)
     {
-        var _tickets = await _daoTicket.ObtenirRecus(p_userId);
-        return _tickets.Select(t => VersDTO(t, p_userId)).ToList();
+        var _apercus = await _daoTicket.ObtenirRecus(p_userId);
+        return _apercus.Select(a => VersDTO(a, p_userId)).ToList();
     }
 
     public async Task<List<DTO_Ticket>> ObtenirEnvoyes(int p_userId)
     {
-        var _tickets = await _daoTicket.ObtenirEnvoyes(p_userId);
-        return _tickets.Select(t => VersDTO(t, p_userId)).ToList();
+        var _apercus = await _daoTicket.ObtenirEnvoyes(p_userId);
+        return _apercus.Select(a => VersDTO(a, p_userId)).ToList();
     }
 
     public async Task<int> CompterNonLus(int p_userId)
@@ -231,12 +231,12 @@ public class S_Ticket
     // Liste des conversations internes (regroupées par interlocuteur)
     public async Task<List<DTO_Conversation>> ObtenirConversations(int p_userId)
     {
-        var _tous = new List<E_Ticket>();
+        var _tous = new List<TicketApercu>();
         _tous.AddRange(await _daoTicket.ObtenirRecus(p_userId));
         _tous.AddRange(await _daoTicket.ObtenirEnvoyes(p_userId));
 
         // Regrouper par interlocuteur (on ignore les tickets externes sans compte)
-        var _map = new Dictionary<int, List<E_Ticket>>();
+        var _map = new Dictionary<int, List<TicketApercu>>();
         foreach (var _t in _tous)
         {
             int? _autreId = null;
@@ -249,7 +249,7 @@ public class S_Ticket
                 continue;
 
             if (!_map.ContainsKey(_autreId.Value))
-                _map[_autreId.Value] = new List<E_Ticket>();
+                _map[_autreId.Value] = new List<TicketApercu>();
             _map[_autreId.Value].Add(_t);
         }
 
@@ -267,18 +267,18 @@ public class S_Ticket
             }
 
             // L'interlocuteur : selon qui a envoyé le dernier message
-            E_Utilisateur? _autre = null;
-            if (_dernier.ExpediteurId == _paire.Key)
-                _autre = _dernier.Expediteur;
-            else
-                _autre = _dernier.Destinataire;
-
             var _nom = "";
             var _email = "";
-            if (_autre != null)
+            if (_dernier.ExpediteurId == _paire.Key)
             {
-                _nom = $"{_autre.Prenom} {_autre.Nom}";
-                _email = _autre.Email;
+                _nom = $"{_dernier.ExpediteurPrenom} {_dernier.ExpediteurNom}";
+                _email = _dernier.ExpediteurEmail;
+            }
+            else
+            {
+                _nom = $"{_dernier.DestinatairePrenom} {_dernier.DestinataireNom}";
+                if (_dernier.DestinataireEmail != null)
+                    _email = _dernier.DestinataireEmail;
             }
 
             _resultat.Add(new DTO_Conversation
@@ -298,36 +298,15 @@ public class S_Ticket
     // Fil complet avec un interlocuteur ; marque au passage les messages reçus comme lus
     public async Task<List<DTO_Ticket>> ObtenirConversation(int p_userId, int p_autreId)
     {
-        var _tickets = await _daoTicket.ObtenirConversation(p_userId, p_autreId);
-
-        var _modifie = false;
-        foreach (var _t in _tickets)
-        {
-            if (_t.DestinataireId.HasValue && _t.DestinataireId.Value == p_userId && !_t.EstLu)
-            {
-                _t.EstLu = true;
-                _modifie = true;
-            }
-        }
-        if (_modifie)
-            await _daoTicket.Sauvegarder();
-
-        return _tickets.Select(t => VersDTO(t, p_userId)).ToList();
+        await _daoTicket.MarquerLusConversation(p_userId, p_autreId);
+        var _apercus = await _daoTicket.ObtenirConversation(p_userId, p_autreId);
+        return _apercus.Select(a => VersDTO(a, p_userId)).ToList();
     }
 
     public async Task<(bool Succes, string Message)> MarquerLu(int p_ticketId, int p_userId)
     {
-        var _ticket = await _daoTicket.ObtenirParId(p_ticketId);
-        if (_ticket == null)
-            return (false, "Ticket introuvable.");
-        if (_ticket.DestinataireId != p_userId)
-            return (false, "Action non autorisée.");
-
-        if (!_ticket.EstLu)
-        {
-            _ticket.EstLu = true;
-            await _daoTicket.Sauvegarder();
-        }
+        // Le filtre inclut DestinataireId == userId → seul le destinataire peut marquer lu
+        await _daoTicket.MarquerLu(p_ticketId, p_userId);
         return (true, "Ticket marqué comme lu.");
     }
 
@@ -364,38 +343,34 @@ public class S_Ticket
         };
     }
 
-    private static DTO_Ticket VersDTO(E_Ticket p_t, int p_userId)
+    private static DTO_Ticket VersDTO(TicketApercu p_a, int p_userId)
     {
         var _dto = new DTO_Ticket
         {
-            Id = p_t.Id,
-            ExpediteurId = p_t.ExpediteurId,
-            Sujet = p_t.Sujet,
-            Message = p_t.Message,
-            DateCreation = p_t.DateCreation,
-            EstLu = p_t.EstLu,
-            NomPieceJointe = p_t.NomPieceJointe,
-            TypePieceJointe = p_t.TypePieceJointe
+            Id = p_a.Id,
+            ExpediteurId = p_a.ExpediteurId,
+            NomExpediteur = $"{p_a.ExpediteurPrenom} {p_a.ExpediteurNom}",
+            EmailExpediteur = p_a.ExpediteurEmail,
+            DestinataireId = p_a.DestinataireId,
+            Sujet = p_a.Sujet,
+            Message = p_a.Message,
+            ADocumentJoint = p_a.ADocumentJoint,
+            NomPieceJointe = p_a.NomPieceJointe,
+            TypePieceJointe = p_a.TypePieceJointe,
+            DateCreation = p_a.DateCreation,
+            EstLu = p_a.EstLu,
+            EstEnvoyeParMoi = p_a.ExpediteurId == p_userId
         };
 
-        _dto.ADocumentJoint = p_t.PieceJointe != null && p_t.PieceJointe.Length > 0;
-        _dto.EstEnvoyeParMoi = p_t.ExpediteurId == p_userId;
-
-        if (p_t.Expediteur != null)
+        if (p_a.DestinataireId.HasValue)
         {
-            _dto.NomExpediteur = $"{p_t.Expediteur.Prenom} {p_t.Expediteur.Nom}";
-            _dto.EmailExpediteur = p_t.Expediteur.Email;
+            _dto.NomDestinataire = $"{p_a.DestinatairePrenom} {p_a.DestinataireNom}";
+            if (p_a.DestinataireEmail != null)
+                _dto.EmailDestinataire = p_a.DestinataireEmail;
         }
-
-        _dto.DestinataireId = p_t.DestinataireId;
-        if (p_t.Destinataire != null)
+        else if (!string.IsNullOrEmpty(p_a.EmailDestinataireExterne))
         {
-            _dto.NomDestinataire = $"{p_t.Destinataire.Prenom} {p_t.Destinataire.Nom}";
-            _dto.EmailDestinataire = p_t.Destinataire.Email;
-        }
-        else if (!string.IsNullOrEmpty(p_t.EmailDestinataire))
-        {
-            _dto.EmailDestinataire = p_t.EmailDestinataire;
+            _dto.EmailDestinataire = p_a.EmailDestinataireExterne;
         }
 
         return _dto;

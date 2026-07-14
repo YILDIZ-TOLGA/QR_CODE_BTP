@@ -276,7 +276,9 @@ else
     {
         _recus = await STicket.ObtenirRecus();
         _envoyes = await STicket.ObtenirEnvoyes();
-        _conversations = await STicket.ObtenirConversations();
+        // Les conversations ne sont chargées que lorsqu'on est sur cette vue
+        if (_vue == 4)
+            _conversations = await STicket.ObtenirConversations();
     }
 
     private async Task RafraichirUi()
@@ -285,10 +287,12 @@ else
         StateHasChanged();
     }
 
-    private void AllerVue(int p_v)
+    private async Task AllerVue(int p_v)
     {
         _vue = p_v;
         _conversationOuverte = null;
+        if (_vue == 4)
+            _conversations = await STicket.ObtenirConversations();
     }
 
     private void OuvrirConversation(DTO_Conversation p_c)
