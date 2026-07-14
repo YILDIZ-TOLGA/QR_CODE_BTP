@@ -32,6 +32,16 @@ public class DAO_FournisseurContact
             .FirstOrDefaultAsync(f => f.DirigeantId == p_dirigeantId && f.Siret == p_siret);
     }
 
+    // Dirigeants qui ont désigné ce fournisseur (recherche par email) — pour l'annuaire
+    public async Task<List<E_FournisseurContact>> ObtenirParEmail(string p_email)
+    {
+        var _email = p_email.ToLower();
+        return await _context.FournisseursContacts
+            .Include(f => f.Dirigeant)
+            .Where(f => f.Email.ToLower() == _email)
+            .ToListAsync();
+    }
+
     public async Task<E_FournisseurContact> Creer(E_FournisseurContact p_contact)
     {
         p_contact.DateCreation = DateTime.UtcNow;

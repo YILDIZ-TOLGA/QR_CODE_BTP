@@ -486,6 +486,116 @@ public class S_Email
         }
     }
 
+    public async Task<bool> EnvoyerTicketExterne(string p_emailDestinataire, string p_nomExpediteur,
+        string p_sujet, string p_message, byte[]? p_pieceJointe, string? p_nomPieceJointe)
+    {
+        var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
+        var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "BTPSecure";
+
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            _logger.LogWarning("BREVO_API_KEY manquante, ticket externe non envoyé à {Email}", p_emailDestinataire);
+            return false;
+        }
+
+        // Le message est saisi par l'utilisateur : on préserve les sauts de ligne à l'affichage
+        var _messageHtml = System.Net.WebUtility.HtmlEncode(p_message).Replace("\n", "<br>");
+        var _expediteurHtml = System.Net.WebUtility.HtmlEncode(p_nomExpediteur);
+        var _sujetHtml = System.Net.WebUtility.HtmlEncode(p_sujet);
+
+        var _corpsHtml = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset=""utf-8""></head>
+<body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
+    <div style=""background: #1565C0; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ BTPSecure</h1>
+        <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Nouveau message</p>
+    </div>
+
+    <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
+        <p><strong>{_expediteurHtml}</strong> vous a envoyé un message via BTPSecure.</p>
+
+        <p style=""margin: 0.25rem 0;""><strong>Objet :</strong> {_sujetHtml}</p>
+
+        <div style=""background: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0;"">
+            {_messageHtml}
+        </div>
+
+        <p style=""color: #666; font-size: 14px;"">
+            Ce message a été envoyé depuis BTPSecure. Pour répondre, contactez directement l'expéditeur.
+        </p>
+
+        <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
+
+        <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
+            Cet email est envoyé automatiquement par BTPSecure. Ne pas répondre directement.
+        </p>
+    </div>
+</body>
+</html>";
+
+        object _payload;
+        if (p_pieceJointe != null && p_pieceJointe.Length > 0)
+        {
+            var _nomFichier = "piece-jointe";
+            if (!string.IsNullOrEmpty(p_nomPieceJointe))
+                _nomFichier = p_nomPieceJointe;
+
+            _payload = new
+            {
+                sender = new { name = _fromName, email = _fromEmail },
+                to = new[] { new { email = p_emailDestinataire } },
+                subject = $"BTPSecure — {p_sujet}",
+                htmlContent = _corpsHtml,
+                attachment = new[]
+                {
+                    new { name = _nomFichier, content = Convert.ToBase64String(p_pieceJointe) }
+                }
+            };
+        }
+        else
+        {
+            _payload = new
+            {
+                sender = new { name = _fromName, email = _fromEmail },
+                to = new[] { new { email = p_emailDestinataire } },
+                subject = $"BTPSecure — {p_sujet}",
+                htmlContent = _corpsHtml
+            };
+        }
+
+        try
+        {
+            var _request = new HttpRequestMessage(HttpMethod.Post, "v3/smtp/email")
+            {
+                Content = JsonContent.Create(_payload)
+            };
+            _request.Headers.Add("api-key", _apiKey);
+            _request.Headers.Add("accept", "application/json");
+
+            var _reponse = await _http.SendAsync(_request);
+
+            if (_reponse.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Ticket externe envoyé à {Email}", p_emailDestinataire);
+                return true;
+            }
+            else
+            {
+                var _body = await _reponse.Content.ReadAsStringAsync();
+                _logger.LogError("Erreur Brevo ticket externe {Status} pour {Email} : {Body}", _reponse.StatusCode, p_emailDestinataire, _body);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception envoi ticket externe à {Email}", p_emailDestinataire);
+            return false;
+        }
+    }
+
     public async Task<bool> EnvoyerInvitationFournisseur(string p_emailDestinataire, string p_nomEntrepriseDirigeant,
         string p_nomEntrepriseFournisseur, string p_siret, string? p_siren, string p_emailFournisseurAssocie)
     {

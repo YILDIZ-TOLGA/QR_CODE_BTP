@@ -1,0 +1,40 @@
+@inject IJSRuntime JS
+
+<RadzenStack Gap="1rem" AlignItems="AlignItems.Center" Style="padding: 0.5rem;">
+    @if (_estImage)
+    {
+        <RadzenImage Path="@_source" Style="max-width: 100%; max-height: 60vh; border-radius: 8px; border: 1px solid var(--rz-border);" />
+    }
+    else
+    {
+        <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 1.5rem 0;">
+            <RadzenIcon Icon="picture_as_pdf" Style="font-size: 3.5rem; color: #d32f2f;" />
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); text-align: center;">
+                @Nom
+            </RadzenText>
+        </RadzenStack>
+    }
+
+    <RadzenButton Text="Télécharger" Icon="download" ButtonStyle="ButtonStyle.Primary"
+                  Style="width: 100%;" Click="Telecharger" />
+</RadzenStack>
+
+@code {
+    [Parameter] public string Nom { get; set; } = string.Empty;
+    [Parameter] public string Type { get; set; } = string.Empty;
+    [Parameter] public string Base64 { get; set; } = string.Empty;
+
+    private bool _estImage = false;
+    private string _source = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _estImage = Type.ToLower().StartsWith("image");
+        _source = $"data:{Type};base64,{Base64}";
+    }
+
+    private async Task Telecharger()
+    {
+        await JS.InvokeVoidAsync("btpTelechargerFichier", Base64, Nom, Type);
+    }
+}

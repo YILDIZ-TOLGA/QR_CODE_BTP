@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<E_FournisseurContact> FournisseursContacts => Set<E_FournisseurContact>();
     public DbSet<E_ResetMotDePasse> ResetsMotDePasse => Set<E_ResetMotDePasse>();
     public DbSet<E_Blacklist> Blacklists => Set<E_Blacklist>();
+    public DbSet<E_Ticket> Tickets => Set<E_Ticket>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -162,6 +163,30 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(r => r.UtilisateurId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // E_Ticket (messagerie / tickets avec pièce jointe, TTL 24 h)
+        p_modelBuilder.Entity<E_Ticket>(e =>
+        {
+            e.ToTable("tickets");
+            e.HasKey(t => t.Id);
+            e.Property(t => t.Sujet).IsRequired().HasMaxLength(200);
+            e.Property(t => t.Message).IsRequired().HasMaxLength(5000);
+            e.Property(t => t.EmailDestinataire).HasMaxLength(256);
+            e.Property(t => t.NomPieceJointe).HasMaxLength(256);
+            e.Property(t => t.TypePieceJointe).HasMaxLength(100);
+            e.Property(t => t.EstLu).HasDefaultValue(false);
+            e.HasIndex(t => t.DestinataireId);
+            e.HasIndex(t => t.ExpediteurId);
+            e.HasIndex(t => t.DateCreation);
+            e.HasOne(t => t.Expediteur)
+                .WithMany()
+                .HasForeignKey(t => t.ExpediteurId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(t => t.Destinataire)
+                .WithMany()
+                .HasForeignKey(t => t.DestinataireId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

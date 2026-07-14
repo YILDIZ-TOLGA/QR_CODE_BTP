@@ -1,0 +1,448 @@
+@page "/messagerie"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject Services.S_Ticket STicket
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1.5rem;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenIcon Icon="forum" Style="font-size: 2rem; color: var(--rz-primary);" />
+        <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Messagerie</RadzenText>
+    </RadzenStack>
+    <Comp_AutoRefresh OnRefresh="RafraichirUi" />
+</RadzenStack>
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else
+{
+    <RadzenTabs @bind-SelectedIndex="_tabIndex">
+        <Tabs>
+            <RadzenTabsItem Text="@TitreRecus()">
+                @if (_recus.Count == 0)
+                {
+                    <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 3rem 0;">
+                        <RadzenIcon Icon="inbox" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+                        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun message reçu</RadzenText>
+                    </RadzenStack>
+                }
+                else
+                {
+                    <RadzenStack Gap="1rem">
+                        @foreach (var _t in _recus)
+                        {
+                            <RadzenCard Variant="Variant.Outlined">
+                                <RadzenStack Gap="0.6rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                                            @if (!_t.EstLu)
+                                            {
+                                                <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Nouveau" IsPill="true" />
+                                            }
+                                            <RadzenText Style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_t.Sujet</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); white-space: nowrap;">
+                                            @_t.DateCreation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </RadzenText>
+                                    </RadzenStack>
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                        <RadzenText TextStyle="TextStyle.Body2">De : @_t.NomExpediteur</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@_t.EmailExpediteur)</RadzenText>
+                                    </RadzenStack>
+
+                                    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_t.Message</RadzenText>
+                                    </RadzenCard>
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                        @if (_t.ADocumentJoint)
+                                        {
+                                            <RadzenButton Text="Pièce jointe" Icon="attach_file" ButtonStyle="ButtonStyle.Base"
+                                                          Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                                          Click="@(() => VoirPieceJointe(_t.Id))" />
+                                        }
+                                        @if (!_t.EstLu)
+                                        {
+                                            <RadzenButton Text="Marquer comme lu" Icon="done" ButtonStyle="ButtonStyle.Success"
+                                                          Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                                          Click="@(() => MarquerLu(_t.Id))" />
+                                        }
+                                    </RadzenStack>
+                                </RadzenStack>
+                            </RadzenCard>
+                        }
+                    </RadzenStack>
+                }
+            </RadzenTabsItem>
+
+            <RadzenTabsItem Text="Envoyés">
+                @if (_envoyes.Count == 0)
+                {
+                    <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 3rem 0;">
+                        <RadzenIcon Icon="send" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+                        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun message envoyé</RadzenText>
+                    </RadzenStack>
+                }
+                else
+                {
+                    <RadzenStack Gap="1rem">
+                        @foreach (var _t in _envoyes)
+                        {
+                            <RadzenCard Variant="Variant.Outlined">
+                                <RadzenStack Gap="0.6rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                                        <RadzenText Style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;">@_t.Sujet</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); white-space: nowrap;">
+                                            @_t.DateCreation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </RadzenText>
+                                    </RadzenStack>
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenIcon Icon="person_outline" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                        <RadzenText TextStyle="TextStyle.Body2">À : @NomOuEmailDestinataire(_t)</RadzenText>
+                                    </RadzenStack>
+
+                                    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_t.Message</RadzenText>
+                                    </RadzenCard>
+
+                                    @if (_t.ADocumentJoint)
+                                    {
+                                        <RadzenButton Text="Pièce jointe" Icon="attach_file" ButtonStyle="ButtonStyle.Base"
+                                                      Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                                      Click="@(() => VoirPieceJointe(_t.Id))" />
+                                    }
+                                </RadzenStack>
+                            </RadzenCard>
+                        }
+                    </RadzenStack>
+                }
+            </RadzenTabsItem>
+
+            <RadzenTabsItem Text="Nouveau message">
+                <RadzenRow JustifyContent="JustifyContent.Center">
+                    <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
+                        <RadzenCard Variant="Variant.Outlined">
+                            <RadzenStack Gap="1rem">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                    <RadzenCheckBox @bind-Value="_externe" Name="externe" TriState="false" />
+                                    <RadzenLabel Text="Envoyer à un email externe (hors BTPSecure)" Component="externe" Style="cursor: pointer;" />
+                                </RadzenStack>
+
+                                @if (_externe)
+                                {
+                                    <RadzenFormField Text="Email du destinataire" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <Start><RadzenIcon Icon="mail" /></Start>
+                                        <ChildContent>
+                                            <RadzenTextBox Value="@_emailExterne" @oninput="MajEmailExterne" Style="width: 100%;" Placeholder="destinataire@exemple.fr" />
+                                        </ChildContent>
+                                    </RadzenFormField>
+                                }
+                                else
+                                {
+                                    @if (_contactsVue.Count == 0)
+                                    {
+                                        <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+                                            Aucun contact interne disponible. Cochez « email externe » pour écrire à quelqu'un hors de votre écosystème.
+                                        </RadzenAlert>
+                                    }
+                                    else
+                                    {
+                                        <RadzenFormField Text="Destinataire" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <Start><RadzenIcon Icon="group" /></Start>
+                                            <ChildContent>
+                                                <RadzenDropDown @bind-Value="_destinataireId" Data="_contactsVue" TextProperty="Libelle" ValueProperty="Id"
+                                                                AllowClear="true" AllowFiltering="true" Placeholder="Choisir un contact"
+                                                                Style="width: 100%;" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    }
+                                }
+
+                                <RadzenFormField Text="Sujet" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="subject" /></Start>
+                                    <ChildContent>
+                                        <RadzenTextBox Value="@_sujet" @oninput="MajSujet" Style="width: 100%;" MaxLength="200" Placeholder="Objet du message" />
+                                    </ChildContent>
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Message" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <ChildContent>
+                                        <RadzenTextArea Value="@_message" @oninput="MajMessage" Rows="6" Style="width: 100%;" MaxLength="5000" Placeholder="Votre message..." />
+                                    </ChildContent>
+                                </RadzenFormField>
+
+                                <RadzenStack Gap="0.5rem">
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                        Pièce jointe (JPG, PNG ou PDF — 5 Mo maximum)
+                                    </RadzenText>
+                                    <InputFile OnChange="FichierChoisi" accept=".jpg,.jpeg,.png,.pdf" />
+                                    @if (_pieceJointe != null)
+                                    {
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                            <RadzenIcon Icon="attach_file" Style="color: var(--rz-success);" />
+                                            <RadzenText TextStyle="TextStyle.Body2">@_nomPieceJointe</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@TailleLisible())</RadzenText>
+                                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.Small" Click="RetirerPieceJointe" />
+                                        </RadzenStack>
+                                    }
+                                </RadzenStack>
+
+                                <RadzenButton Text="Envoyer" Icon="send" ButtonStyle="ButtonStyle.Primary"
+                                              Style="width: 100%;" Click="Envoyer" Disabled="_envoiEnCours" />
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+}
+
+@code {
+    private List<DTO_Ticket> _recus = new();
+    private List<DTO_Ticket> _envoyes = new();
+    private int _nonLus = 0;
+    private bool _chargement = true;
+    private int _tabIndex = 0;
+
+    private List<ContactVue> _contactsVue = new();
+
+    // Formulaire nouveau message
+    private int? _destinataireId;
+    private bool _externe = false;
+    private string _emailExterne = string.Empty;
+    private string _sujet = string.Empty;
+    private string _message = string.Empty;
+    private bool _envoiEnCours = false;
+
+    // Pièce jointe
+    private byte[]? _pieceJointe;
+    private string _nomPieceJointe = string.Empty;
+    private string _typePieceJointe = string.Empty;
+
+    private const long _tailleMax = 5 * 1024 * 1024;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var _annuaire = await STicket.ObtenirAnnuaire();
+        _contactsVue = _annuaire.Select(c => new ContactVue
+        {
+            Id = c.UtilisateurId,
+            Libelle = $"{c.Prenom} {c.Nom} — {c.Relation}"
+        }).ToList();
+
+        await Recharger();
+        _chargement = false;
+    }
+
+    private async Task Recharger()
+    {
+        _recus = await STicket.ObtenirRecus();
+        _envoyes = await STicket.ObtenirEnvoyes();
+        _nonLus = await STicket.CompterNonLus();
+    }
+
+    private async Task RafraichirUi()
+    {
+        await Recharger();
+        StateHasChanged();
+    }
+
+    private string TitreRecus()
+    {
+        if (_nonLus > 0)
+            return $"Boîte de réception ({_nonLus})";
+        return "Boîte de réception";
+    }
+
+    private static string NomOuEmailDestinataire(DTO_Ticket p_t)
+    {
+        if (!string.IsNullOrEmpty(p_t.NomDestinataire))
+            return $"{p_t.NomDestinataire} ({p_t.EmailDestinataire})";
+        return p_t.EmailDestinataire;
+    }
+
+    private void MajSujet(ChangeEventArgs p_e)
+    {
+        _sujet = ObtenirTexte(p_e);
+    }
+
+    private void MajMessage(ChangeEventArgs p_e)
+    {
+        _message = ObtenirTexte(p_e);
+    }
+
+    private void MajEmailExterne(ChangeEventArgs p_e)
+    {
+        _emailExterne = ObtenirTexte(p_e);
+    }
+
+    private static string ObtenirTexte(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+            return string.Empty;
+        var _s = p_e.Value.ToString();
+        if (_s == null)
+            return string.Empty;
+        return _s;
+    }
+
+    private string TailleLisible()
+    {
+        if (_pieceJointe == null)
+            return "";
+        double _ko = _pieceJointe.Length / 1024.0;
+        if (_ko < 1024)
+            return $"{Math.Round(_ko)} Ko";
+        double _mo = _ko / 1024.0;
+        return $"{Math.Round(_mo, 1)} Mo";
+    }
+
+    private async Task FichierChoisi(InputFileChangeEventArgs p_e)
+    {
+        var _fichier = p_e.File;
+        if (_fichier == null)
+            return;
+
+        var _type = _fichier.ContentType.ToLower();
+        if (_type != "image/jpeg" && _type != "image/jpg" && _type != "image/png" && _type != "application/pdf")
+        {
+            Notification.Notify(NotificationSeverity.Error, "Format non supporté", "JPG, PNG ou PDF uniquement.");
+            return;
+        }
+        if (_fichier.Size > _tailleMax)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Fichier trop volumineux", "5 Mo maximum.");
+            return;
+        }
+
+        try
+        {
+            using var _flux = _fichier.OpenReadStream(_tailleMax);
+            using var _ms = new MemoryStream();
+            await _flux.CopyToAsync(_ms);
+            _pieceJointe = _ms.ToArray();
+            _nomPieceJointe = _fichier.Name;
+            _typePieceJointe = _fichier.ContentType;
+        }
+        catch
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", "Lecture du fichier impossible.");
+        }
+    }
+
+    private void RetirerPieceJointe()
+    {
+        _pieceJointe = null;
+        _nomPieceJointe = string.Empty;
+        _typePieceJointe = string.Empty;
+    }
+
+    private async Task Envoyer()
+    {
+        if (string.IsNullOrWhiteSpace(_sujet))
+        {
+            Notification.Notify(NotificationSeverity.Error, "Sujet manquant", "Indiquez un sujet.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_message))
+        {
+            Notification.Notify(NotificationSeverity.Error, "Message vide", "Écrivez un message.");
+            return;
+        }
+
+        var _dto = new DTO_EnvoyerTicket
+        {
+            Sujet = _sujet.Trim(),
+            Message = _message.Trim(),
+            PieceJointe = _pieceJointe,
+            NomPieceJointe = _nomPieceJointe,
+            TypePieceJointe = _typePieceJointe
+        };
+
+        if (_externe)
+        {
+            if (string.IsNullOrWhiteSpace(_emailExterne))
+            {
+                Notification.Notify(NotificationSeverity.Error, "Email manquant", "Indiquez l'email du destinataire.");
+                return;
+            }
+            _dto.EmailDestinataire = _emailExterne.Trim();
+        }
+        else
+        {
+            if (!_destinataireId.HasValue)
+            {
+                Notification.Notify(NotificationSeverity.Error, "Destinataire manquant", "Choisissez un contact.");
+                return;
+            }
+            _dto.DestinataireId = _destinataireId.Value;
+        }
+
+        _envoiEnCours = true;
+        var (_succes, _msg) = await STicket.Envoyer(_dto);
+        _envoiEnCours = false;
+
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Message envoyé", _msg);
+            _destinataireId = null;
+            _externe = false;
+            _emailExterne = string.Empty;
+            _sujet = string.Empty;
+            _message = string.Empty;
+            RetirerPieceJointe();
+            await Recharger();
+            _tabIndex = 1;
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _msg);
+        }
+    }
+
+    private async Task VoirPieceJointe(int p_ticketId)
+    {
+        var _pj = await STicket.ObtenirPieceJointe(p_ticketId);
+        if (_pj == null)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Indisponible", "Pièce jointe introuvable.");
+            return;
+        }
+
+        await Dialog.OpenAsync<Comp_PieceJointe>(_pj.Nom,
+            new Dictionary<string, object?>
+            {
+                ["Nom"] = _pj.Nom,
+                ["Type"] = _pj.Type,
+                ["Base64"] = _pj.Base64
+            },
+            new DialogOptions { Width = "620px", CloseDialogOnOverlayClick = true });
+    }
+
+    private async Task MarquerLu(int p_ticketId)
+    {
+        var (_succes, _msg) = await STicket.MarquerLu(p_ticketId);
+        if (_succes)
+        {
+            await Recharger();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _msg);
+        }
+    }
+
+    private class ContactVue
+    {
+        public int Id { get; set; }
+        public string Libelle { get; set; } = string.Empty;
+    }
+}

@@ -87,6 +87,7 @@ builder.Services.AddScoped<DAO_Entreprise>();
 builder.Services.AddScoped<DAO_Admin>();
 builder.Services.AddScoped<DAO_FournisseurContact>();
 builder.Services.AddScoped<DAO_Blacklist>();
+builder.Services.AddScoped<DAO_Ticket>();
 
 // Services
 builder.Services.AddScoped<S_Auth>();
@@ -97,8 +98,12 @@ builder.Services.AddScoped<S_Invitation>();
 builder.Services.AddScoped<S_FournisseurContact>();
 builder.Services.AddScoped<S_SousCompte>();
 builder.Services.AddScoped<S_Blacklist>();
+builder.Services.AddScoped<S_Ticket>();
 builder.Services.AddSingleton<S_Pdf>();
 builder.Services.AddSingleton<S_Email>();
+
+// Nettoyage automatique des tickets expirés (TTL 24 h)
+builder.Services.AddHostedService<S_NettoyageTickets>();
 
 var app = builder.Build();
 

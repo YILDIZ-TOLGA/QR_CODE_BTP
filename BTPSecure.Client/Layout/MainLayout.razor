@@ -4,6 +4,7 @@
 @inject S_Auth SAuth
 @inject Services.S_Code SCode
 @inject Services.S_SousCompte SSousCompte
+@inject Services.S_Ticket STicket
 @inject AuthenticationStateProvider AuthStateProvider
 
 <RadzenLayout>
@@ -79,6 +80,10 @@
                             <RadzenPanelMenuItem Text="Historique" Icon="history" Path="fournisseur/historique" Match="NavLinkMatch.All" />
                         }
                     }
+                    @if (_role != "Admin")
+                    {
+                        <RadzenPanelMenuItem Text="@LibelleMessagerie()" Icon="forum" Path="messagerie" Match="NavLinkMatch.All" />
+                    }
                     <RadzenPanelMenuItem Text="Mon profil" Icon="account_circle" Path="profil" Match="NavLinkMatch.All" />
                 </RadzenPanelMenu>
             </div>
@@ -114,11 +119,36 @@
     private string _role = "";
     private bool _peutCreerCodes = false;
     private bool _estFournisseurPrincipal = false;
+    private int _messagesNonLus = 0;
 
     protected override async Task OnInitializedAsync()
     {
         AuthStateProvider.AuthenticationStateChanged += OnAuthStateChanged;
+        Navigation.LocationChanged += OnLocationChanged;
         await MettreAJourEtat();
+    }
+
+    // Le compteur de messages non lus est rafraîchi à chaque navigation
+    private async void OnLocationChanged(object? p_sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs p_e)
+    {
+        await MettreAJourCompteurMessages();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task MettreAJourCompteurMessages()
+    {
+        _messagesNonLus = 0;
+        if (_estConnecte && _role != "Admin")
+        {
+            _messagesNonLus = await STicket.CompterNonLus();
+        }
+    }
+
+    private string LibelleMessagerie()
+    {
+        if (_messagesNonLus > 0)
+            return $"Messagerie ({_messagesNonLus})";
+        return "Messagerie";
     }
 
     private async void OnAuthStateChanged(Task<AuthenticationState> p_tache)
@@ -167,11 +197,14 @@
         {
             _estFournisseurPrincipal = await SSousCompte.EstPrincipal();
         }
+
+        await MettreAJourCompteurMessages();
     }
 
     public void Dispose()
     {
         AuthStateProvider.AuthenticationStateChanged -= OnAuthStateChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
     }
 
     private async Task Deconnecter()
