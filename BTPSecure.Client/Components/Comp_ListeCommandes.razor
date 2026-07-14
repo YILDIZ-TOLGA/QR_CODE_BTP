@@ -2,12 +2,27 @@
 @inject NotificationService Notification
 @inject DialogService Dialog
 
-<RadzenFormField Text="Rechercher (entreprise, référence, commande)" Variant="Variant.Outlined" Style="width: 100%; margin-bottom: 1rem;">
+<RadzenFormField Text="Rechercher (entreprise, référence, commande)" Variant="Variant.Outlined" Style="width: 100%; margin-bottom: 0.75rem;">
     <Start><RadzenIcon Icon="search" /></Start>
     <ChildContent>
-        <RadzenTextBox @bind-Value="_recherche" @bind-Value:event="oninput" Style="width: 100%;" Placeholder="Filtrer..." />
+        <RadzenTextBox Value="@_recherche" @oninput="@(e => _recherche = e.Value?.ToString() ?? string.Empty)"
+                       Style="width: 100%;" Placeholder="Filtrer..." />
     </ChildContent>
 </RadzenFormField>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="0.5rem" Style="margin-bottom: 1rem;">
+    <RadzenFormField Text="Expire au plus tard le" Variant="Variant.Outlined" Style="flex: 1;">
+        <Start><RadzenIcon Icon="event" /></Start>
+        <ChildContent>
+            <RadzenDatePicker @bind-Value="_filtreDate" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+        </ChildContent>
+    </RadzenFormField>
+    @if (_filtreDate.HasValue)
+    {
+        <RadzenButton Icon="clear" ButtonStyle="ButtonStyle.Base" Variant="Variant.Outlined"
+                      Click="@(() => _filtreDate = null)" />
+    }
+</RadzenStack>
 
 @if (_commandesFiltrees.Count == 0)
 {
@@ -99,7 +114,8 @@ else
                         <RadzenFormField Text="Code à saisir" Variant="Variant.Outlined" Style="flex: 1;">
                             <Start><RadzenIcon Icon="key" /></Start>
                             <ChildContent>
-                                <RadzenTextBox @bind-Value="_codesSaisis[_cmd.CodeId]"
+                                <RadzenTextBox Value="@ObtenirCodeSaisi(_cmd.CodeId)"
+                                               @oninput="@(e => _codesSaisis[_cmd.CodeId] = e.Value?.ToString() ?? string.Empty)"
                                                Style="width: 100%; font-family: monospace; text-transform: uppercase; letter-spacing: 2px;"
                                                Placeholder="XXXX-XXXX" MaxLength="9" />
                             </ChildContent>
@@ -119,6 +135,7 @@ else
     [Parameter] public EventCallback OnAction { get; set; }
 
     private string _recherche = string.Empty;
+    private DateTime? _filtreDate;
     private Dictionary<int, string> _codesSaisis = new();
 
     private const int SEUIL_TRONCATURE = 140;
@@ -127,15 +144,25 @@ else
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(_recherche))
+            IEnumerable<DTO_CommandeAVenir> _q = Commandes;
+
+            if (!string.IsNullOrWhiteSpace(_recherche))
             {
-                return Commandes;
+                var _r = _recherche.Trim().ToLower();
+                _q = _q.Where(c =>
+                    c.NomEntrepriseDirigeant.ToLower().Contains(_r)
+                    || (c.Reference != null && c.Reference.ToLower().Contains(_r))
+                    || c.NumeroCommande.ToLower().Contains(_r));
             }
-            var _r = _recherche.Trim().ToLower();
-            return Commandes.Where(c =>
-                c.NomEntrepriseDirigeant.ToLower().Contains(_r)
-                || (c.Reference != null && c.Reference.ToLower().Contains(_r))
-                || c.NumeroCommande.ToLower().Contains(_r)).ToList();
+
+            if (_filtreDate.HasValue)
+            {
+                var _limite = _filtreDate.Value.Date;
+                _q = _q.Where(c => c.DateExpiration.HasValue
+                    && c.DateExpiration.Value.ToLocalTime().Date <= _limite);
+            }
+
+            return _q.ToList();
         }
     }
 
