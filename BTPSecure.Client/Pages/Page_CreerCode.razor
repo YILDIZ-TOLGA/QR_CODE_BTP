@@ -3,6 +3,8 @@
 @inject Services.S_Code SCode
 @inject NavigationManager Navigation
 @inject NotificationService Notification
+@inject DialogService Dialog
+@inject AuthenticationStateProvider AuthState
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
     <RadzenButton Icon="arrow_back" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Size="ButtonSize.Large"
@@ -130,6 +132,12 @@
                                     <RadzenRequiredValidator Component="Collaborateur" Text="Le collaborateur est obligatoire." DefaultValue="0" />
                                 </Helper>
                             </RadzenFormField>
+                            @if (_estDirigeant)
+                            {
+                                <RadzenButton Text="Créer un collaborateur" Icon="person_add" ButtonStyle="ButtonStyle.Base"
+                                              Variant="Variant.Text" Size="ButtonSize.Small" Click="OuvrirCreationCollaborateur"
+                                              Style="align-self: flex-start;" />
+                            }
                         }
                         else
                         {
@@ -310,6 +318,7 @@
     private List<CollaborateurItem> _collaborateurs = new();
     private int _entrepriseId;
     private bool _peutCreer = true;
+    private bool _estDirigeant = false;
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private string _modeFournisseur = "existant";
 
@@ -323,6 +332,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Seul un Dirigeant peut créer un compte collaborateur (le RA en est empêché côté serveur)
+        var _etat = await AuthState.GetAuthenticationStateAsync();
+        var _claimRole = _etat.User.FindFirst(System.Security.Claims.ClaimTypes.Role);
+        if (_claimRole != null && _claimRole.Value == "Dirigeant")
+            _estDirigeant = true;
+
         var _ctx = await SCode.ObtenirContexteCreation();
         _peutCreer = _ctx.PeutCreer;
         if (_peutCreer)
@@ -380,6 +395,31 @@
         }
         else
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+    }
+
+    // Crée un collaborateur à la volée (pop-up) puis le sélectionne dans la liste
+    private async Task OuvrirCreationCollaborateur()
+    {
+        var _resultat = await Dialog.OpenAsync<Comp_DialogCreerCollaborateur>("Créer un collaborateur",
+            options: new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
+
+        if (_resultat is string email && !string.IsNullOrWhiteSpace(email))
+        {
+            var _emailNorm = email.Trim().ToLower();
+
+            // Recharger le contexte pour récupérer le nouveau collaborateur (déjà Accepté)
+            var _ctx = await SCode.ObtenirContexteCreation();
+            _collaborateurs = _ctx.Collaborateurs.Select(s => new CollaborateurItem
+            {
+                CollaborateurId = s.CollaborateurId,
+                Label = $"{s.Prenom} {s.Nom} ({s.Email})"
+            }).ToList();
+
+            // Le pré-sélectionner directement
+            var _nouveau = _ctx.Collaborateurs.FirstOrDefault(s => s.Email.ToLower() == _emailNorm);
+            if (_nouveau != null)
+                _dto.CollaborateurId = _nouveau.CollaborateurId;
+        }
     }
 
     private void Reinitialiser()
