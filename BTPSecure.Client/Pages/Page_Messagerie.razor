@@ -21,14 +21,16 @@
 else
 {
     <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="0.5rem" Style="margin-bottom: 1.25rem;">
+        <RadzenButton Text="Conversations" Icon="chat" ButtonStyle="@StyleVue(4)" Variant="@VariantVue(4)"
+                      Size="ButtonSize.Small" Click="@(() => AllerVue(4))" />
         <RadzenButton Text="@LibelleNonLus()" Icon="mark_email_unread" ButtonStyle="@StyleVue(0)" Variant="@VariantVue(0)"
-                      Size="ButtonSize.Small" Click="@(() => _vue = 0)" />
+                      Size="ButtonSize.Small" Click="@(() => AllerVue(0))" />
         <RadzenButton Text="Lus" Icon="mark_email_read" ButtonStyle="@StyleVue(1)" Variant="@VariantVue(1)"
-                      Size="ButtonSize.Small" Click="@(() => _vue = 1)" />
+                      Size="ButtonSize.Small" Click="@(() => AllerVue(1))" />
         <RadzenButton Text="Envoyés" Icon="send" ButtonStyle="@StyleVue(2)" Variant="@VariantVue(2)"
-                      Size="ButtonSize.Small" Click="@(() => _vue = 2)" />
+                      Size="ButtonSize.Small" Click="@(() => AllerVue(2))" />
         <RadzenButton Text="Nouveau message" Icon="edit" ButtonStyle="@StyleVue(3)" Variant="@VariantVue(3)"
-                      Size="ButtonSize.Small" Click="@(() => _vue = 3)" />
+                      Size="ButtonSize.Small" Click="@(() => AllerVue(3))" />
     </RadzenStack>
 
     @if (_vue == 0 || _vue == 1 || _vue == 2)
@@ -98,6 +100,52 @@ else
                     @CarteEnvoyee(_t)
                 }
             </RadzenStack>
+        }
+    }
+    else if (_vue == 4)
+    {
+        @if (_conversationOuverte.HasValue)
+        {
+            <RadzenButton Text="Retour aux conversations" Icon="arrow_back" ButtonStyle="ButtonStyle.Base"
+                          Variant="Variant.Text" Size="ButtonSize.Small" Click="FermerConversation" Style="margin-bottom: 0.75rem;" />
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 0.75rem;">
+                <RadzenIcon Icon="account_circle" Style="color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">@_nomConversation</RadzenText>
+            </RadzenStack>
+            <Comp_Conversation AutreId="@(_conversationOuverte.Value)" NomAutre="@_nomConversation" OnChangement="RafraichirApresConversation" />
+        }
+        else
+        {
+            @if (_conversations.Count == 0)
+            {
+                @EtatVide("chat", "Aucune conversation. Démarrez-en une depuis « Nouveau message ».")
+            }
+            else
+            {
+                <RadzenStack Gap="0.75rem">
+                    @foreach (var _c in _conversations)
+                    {
+                        <RadzenCard Variant="Variant.Outlined" Style="cursor: pointer;" @onclick="@(() => OuvrirConversation(_c))">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+                                <RadzenStack Gap="0.2rem" Style="min-width: 0; flex: 1;">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                        <RadzenIcon Icon="account_circle" Style="color: var(--rz-text-secondary-color);" />
+                                        <RadzenText Style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_c.NomAutre</RadzenText>
+                                        @if (_c.NonLus > 0)
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="@_c.NonLus.ToString()" IsPill="true" />
+                                        }
+                                    </RadzenStack>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@Apercu(_c.DernierMessage)</RadzenText>
+                                </RadzenStack>
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); white-space: nowrap;">
+                                    @_c.DateDernier.ToLocalTime().ToString("dd/MM HH:mm")
+                                </RadzenText>
+                            </RadzenStack>
+                        </RadzenCard>
+                    }
+                </RadzenStack>
+            }
         }
     }
     else
@@ -183,7 +231,12 @@ else
     private List<DTO_Ticket> _recus = new();
     private List<DTO_Ticket> _envoyes = new();
     private bool _chargement = true;
-    private int _vue = 0; // 0 = Non lus, 1 = Lus, 2 = Envoyés, 3 = Nouveau message
+    private int _vue = 0; // 0 = Non lus, 1 = Lus, 2 = Envoyés, 3 = Nouveau message, 4 = Conversations
+
+    // Conversations (fil)
+    private List<DTO_Conversation> _conversations = new();
+    private int? _conversationOuverte;
+    private string _nomConversation = string.Empty;
 
     // Filtres
     private string _recherche = string.Empty;
@@ -223,12 +276,46 @@ else
     {
         _recus = await STicket.ObtenirRecus();
         _envoyes = await STicket.ObtenirEnvoyes();
+        _conversations = await STicket.ObtenirConversations();
     }
 
     private async Task RafraichirUi()
     {
         await Recharger();
         StateHasChanged();
+    }
+
+    private void AllerVue(int p_v)
+    {
+        _vue = p_v;
+        _conversationOuverte = null;
+    }
+
+    private void OuvrirConversation(DTO_Conversation p_c)
+    {
+        _conversationOuverte = p_c.AutreUtilisateurId;
+        _nomConversation = p_c.NomAutre;
+    }
+
+    private void FermerConversation()
+    {
+        _conversationOuverte = null;
+    }
+
+    private async Task RafraichirApresConversation()
+    {
+        await Recharger();
+        StateHasChanged();
+    }
+
+    private static string Apercu(string p_texte)
+    {
+        if (string.IsNullOrEmpty(p_texte))
+            return "";
+        var _t = p_texte.Replace("\n", " ");
+        if (_t.Length <= 60)
+            return _t;
+        return _t.Substring(0, 60) + "…";
     }
 
     // ── Vues ────────────────────────────────────────────────────────────────

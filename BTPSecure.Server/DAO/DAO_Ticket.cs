@@ -49,6 +49,18 @@ public class DAO_Ticket
             .CountAsync(t => t.DestinataireId == p_userId && !t.EstLu);
     }
 
+    // Fil de conversation entre deux utilisateurs (les deux sens), du plus ancien au plus récent
+    public async Task<List<E_Ticket>> ObtenirConversation(int p_a, int p_b)
+    {
+        return await _context.Tickets
+            .Include(t => t.Expediteur)
+            .Include(t => t.Destinataire)
+            .Where(t => (t.ExpediteurId == p_a && t.DestinataireId == p_b)
+                     || (t.ExpediteurId == p_b && t.DestinataireId == p_a))
+            .OrderBy(t => t.DateCreation)
+            .ToListAsync();
+    }
+
     public async Task<E_Ticket?> ObtenirParId(int p_id)
     {
         return await _context.Tickets

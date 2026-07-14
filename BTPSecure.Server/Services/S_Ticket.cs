@@ -228,6 +228,93 @@ public class S_Ticket
         return await _daoTicket.CompterNonLus(p_userId);
     }
 
+    // Liste des conversations internes (regroupées par interlocuteur)
+    public async Task<List<DTO_Conversation>> ObtenirConversations(int p_userId)
+    {
+        var _tous = new List<E_Ticket>();
+        _tous.AddRange(await _daoTicket.ObtenirRecus(p_userId));
+        _tous.AddRange(await _daoTicket.ObtenirEnvoyes(p_userId));
+
+        // Regrouper par interlocuteur (on ignore les tickets externes sans compte)
+        var _map = new Dictionary<int, List<E_Ticket>>();
+        foreach (var _t in _tous)
+        {
+            int? _autreId = null;
+            if (_t.ExpediteurId == p_userId && _t.DestinataireId.HasValue)
+                _autreId = _t.DestinataireId.Value;
+            else if (_t.DestinataireId.HasValue && _t.DestinataireId.Value == p_userId)
+                _autreId = _t.ExpediteurId;
+
+            if (!_autreId.HasValue)
+                continue;
+
+            if (!_map.ContainsKey(_autreId.Value))
+                _map[_autreId.Value] = new List<E_Ticket>();
+            _map[_autreId.Value].Add(_t);
+        }
+
+        var _resultat = new List<DTO_Conversation>();
+        foreach (var _paire in _map)
+        {
+            var _liste = _paire.Value.OrderBy(t => t.DateCreation).ToList();
+            var _dernier = _liste[_liste.Count - 1];
+
+            var _nonLus = 0;
+            foreach (var _t in _liste)
+            {
+                if (_t.DestinataireId.HasValue && _t.DestinataireId.Value == p_userId && !_t.EstLu)
+                    _nonLus++;
+            }
+
+            // L'interlocuteur : selon qui a envoyé le dernier message
+            E_Utilisateur? _autre = null;
+            if (_dernier.ExpediteurId == _paire.Key)
+                _autre = _dernier.Expediteur;
+            else
+                _autre = _dernier.Destinataire;
+
+            var _nom = "";
+            var _email = "";
+            if (_autre != null)
+            {
+                _nom = $"{_autre.Prenom} {_autre.Nom}";
+                _email = _autre.Email;
+            }
+
+            _resultat.Add(new DTO_Conversation
+            {
+                AutreUtilisateurId = _paire.Key,
+                NomAutre = _nom,
+                EmailAutre = _email,
+                DernierMessage = _dernier.Message,
+                DateDernier = _dernier.DateCreation,
+                NonLus = _nonLus
+            });
+        }
+
+        return _resultat.OrderByDescending(c => c.DateDernier).ToList();
+    }
+
+    // Fil complet avec un interlocuteur ; marque au passage les messages reçus comme lus
+    public async Task<List<DTO_Ticket>> ObtenirConversation(int p_userId, int p_autreId)
+    {
+        var _tickets = await _daoTicket.ObtenirConversation(p_userId, p_autreId);
+
+        var _modifie = false;
+        foreach (var _t in _tickets)
+        {
+            if (_t.DestinataireId.HasValue && _t.DestinataireId.Value == p_userId && !_t.EstLu)
+            {
+                _t.EstLu = true;
+                _modifie = true;
+            }
+        }
+        if (_modifie)
+            await _daoTicket.Sauvegarder();
+
+        return _tickets.Select(t => VersDTO(t, p_userId)).ToList();
+    }
+
     public async Task<(bool Succes, string Message)> MarquerLu(int p_ticketId, int p_userId)
     {
         var _ticket = await _daoTicket.ObtenirParId(p_ticketId);

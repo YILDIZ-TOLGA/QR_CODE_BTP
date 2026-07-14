@@ -1,0 +1,243 @@
+@inject Services.S_Ticket STicket
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin: 2rem 0;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+    </RadzenRow>
+}
+else
+{
+    <RadzenStack Gap="0.75rem" Style="margin-bottom: 1rem;">
+        @if (_fil.Count == 0)
+        {
+            <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+                <RadzenIcon Icon="chat" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">Aucun message pour l'instant. Écrivez le premier !</RadzenText>
+            </RadzenStack>
+        }
+        else
+        {
+            @foreach (var _t in _fil)
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="@AlignementBulle(_t)" Style="width: 100%;">
+                    <RadzenCard Variant="Variant.Filled" Style="@StyleBulle(_t)">
+                        <RadzenStack Gap="0.35rem">
+                            <RadzenText TextStyle="TextStyle.Body2" Style="@StyleTexteBulle(_t)">@_t.Message</RadzenText>
+                            @if (_t.ADocumentJoint)
+                            {
+                                <RadzenButton Text="Pièce jointe" Icon="attach_file" ButtonStyle="ButtonStyle.Light"
+                                              Variant="Variant.Flat" Size="ButtonSize.ExtraSmall"
+                                              Click="@(() => VoirPieceJointe(_t.Id))" />
+                            }
+                            <RadzenText TextStyle="TextStyle.Caption" Style="@StyleHeureBulle(_t)">
+                                @_t.DateCreation.ToLocalTime().ToString("dd/MM HH:mm")
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenStack>
+            }
+        }
+    </RadzenStack>
+
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack Gap="0.6rem">
+            <RadzenTextArea Value="@_repMessage" @oninput="MajReponse" Rows="2" Style="width: 100%;" MaxLength="5000" Placeholder="Votre réponse..." />
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                    <InputFile OnChange="FichierChoisi" accept=".jpg,.jpeg,.png,.pdf" />
+                    @if (_repPieceJointe != null)
+                    {
+                        <RadzenIcon Icon="attach_file" Style="color: var(--rz-success);" />
+                        <RadzenText TextStyle="TextStyle.Caption">@_repNomPieceJointe</RadzenText>
+                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.ExtraSmall" Click="RetirerPieceJointe" />
+                    }
+                </RadzenStack>
+                <RadzenButton Text="Envoyer" Icon="send" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
+                              Click="Repondre" Disabled="_envoiEnCours" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+}
+
+@code {
+    [Parameter] public int AutreId { get; set; }
+    [Parameter] public string NomAutre { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnChangement { get; set; }
+
+    private List<DTO_Ticket> _fil = new();
+    private bool _chargement = true;
+    private int _autreCharge = 0;
+    private string _sujetFil = string.Empty;
+
+    // Réponse
+    private string _repMessage = string.Empty;
+    private bool _envoiEnCours = false;
+    private byte[]? _repPieceJointe;
+    private string _repNomPieceJointe = string.Empty;
+    private string _repTypePieceJointe = string.Empty;
+
+    private const long _tailleMax = 5 * 1024 * 1024;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AutreId != _autreCharge)
+        {
+            _autreCharge = AutreId;
+            await Charger();
+        }
+    }
+
+    private async Task Charger()
+    {
+        _chargement = true;
+        _fil = await STicket.ObtenirConversation(AutreId);
+        if (_fil.Count > 0)
+            _sujetFil = _fil[0].Sujet;
+        _chargement = false;
+        // Les messages viennent d'être marqués lus → prévenir le parent (liste + badge)
+        await OnChangement.InvokeAsync();
+    }
+
+    private JustifyContent AlignementBulle(DTO_Ticket p_t)
+    {
+        if (p_t.EstEnvoyeParMoi)
+            return JustifyContent.End;
+        return JustifyContent.Start;
+    }
+
+    private string StyleBulle(DTO_Ticket p_t)
+    {
+        if (p_t.EstEnvoyeParMoi)
+            return "background: var(--rz-primary); border-radius: 14px 14px 3px 14px; padding: 0.6rem 0.85rem; max-width: 82%;";
+        return "background: var(--rz-base-200); border-radius: 14px 14px 14px 3px; padding: 0.6rem 0.85rem; max-width: 82%;";
+    }
+
+    private string StyleTexteBulle(DTO_Ticket p_t)
+    {
+        if (p_t.EstEnvoyeParMoi)
+            return "white-space: pre-wrap; color: #fff;";
+        return "white-space: pre-wrap;";
+    }
+
+    private string StyleHeureBulle(DTO_Ticket p_t)
+    {
+        if (p_t.EstEnvoyeParMoi)
+            return "color: rgba(255,255,255,0.8); text-align: right;";
+        return "color: var(--rz-text-secondary-color);";
+    }
+
+    private void MajReponse(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+        {
+            _repMessage = string.Empty;
+            return;
+        }
+        var _s = p_e.Value.ToString();
+        if (_s == null)
+            _repMessage = string.Empty;
+        else
+            _repMessage = _s;
+    }
+
+    private async Task FichierChoisi(InputFileChangeEventArgs p_e)
+    {
+        var _fichier = p_e.File;
+        if (_fichier == null)
+            return;
+
+        var _type = _fichier.ContentType.ToLower();
+        if (_type != "image/jpeg" && _type != "image/jpg" && _type != "image/png" && _type != "application/pdf")
+        {
+            Notification.Notify(NotificationSeverity.Error, "Format non supporté", "JPG, PNG ou PDF uniquement.");
+            return;
+        }
+        if (_fichier.Size > _tailleMax)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Fichier trop volumineux", "5 Mo maximum.");
+            return;
+        }
+
+        try
+        {
+            using var _flux = _fichier.OpenReadStream(_tailleMax);
+            using var _ms = new MemoryStream();
+            await _flux.CopyToAsync(_ms);
+            _repPieceJointe = _ms.ToArray();
+            _repNomPieceJointe = _fichier.Name;
+            _repTypePieceJointe = _fichier.ContentType;
+        }
+        catch
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", "Lecture du fichier impossible.");
+        }
+    }
+
+    private void RetirerPieceJointe()
+    {
+        _repPieceJointe = null;
+        _repNomPieceJointe = string.Empty;
+        _repTypePieceJointe = string.Empty;
+    }
+
+    private async Task Repondre()
+    {
+        if (string.IsNullOrWhiteSpace(_repMessage))
+        {
+            Notification.Notify(NotificationSeverity.Error, "Message vide", "Écrivez une réponse.");
+            return;
+        }
+
+        var _sujet = _sujetFil;
+        if (string.IsNullOrWhiteSpace(_sujet))
+            _sujet = "Message";
+
+        var _dto = new DTO_EnvoyerTicket
+        {
+            DestinataireId = AutreId,
+            Sujet = _sujet,
+            Message = _repMessage.Trim(),
+            PieceJointe = _repPieceJointe,
+            NomPieceJointe = _repNomPieceJointe,
+            TypePieceJointe = _repTypePieceJointe
+        };
+
+        _envoiEnCours = true;
+        var (_succes, _msg) = await STicket.Envoyer(_dto);
+        _envoiEnCours = false;
+
+        if (_succes)
+        {
+            _repMessage = string.Empty;
+            RetirerPieceJointe();
+            _fil = await STicket.ObtenirConversation(AutreId);
+            await OnChangement.InvokeAsync();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _msg);
+        }
+    }
+
+    private async Task VoirPieceJointe(int p_ticketId)
+    {
+        var _pj = await STicket.ObtenirPieceJointe(p_ticketId);
+        if (_pj == null)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Indisponible", "Pièce jointe introuvable.");
+            return;
+        }
+
+        await Dialog.OpenAsync<Comp_PieceJointe>(_pj.Nom,
+            new Dictionary<string, object?>
+            {
+                ["Nom"] = _pj.Nom,
+                ["Type"] = _pj.Type,
+                ["Base64"] = _pj.Base64
+            },
+            new DialogOptions { Width = "620px", CloseDialogOnOverlayClick = true });
+    }
+}

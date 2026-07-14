@@ -59,6 +59,20 @@ public class C_Ticket : ControllerBase
         return Ok(new { count = _nombre });
     }
 
+    [HttpGet("conversations")]
+    public async Task<IActionResult> Conversations()
+    {
+        var _liste = await _service.ObtenirConversations(ObtenirUtilisateurId());
+        return Ok(_liste);
+    }
+
+    [HttpGet("conversation/{p_autreId}")]
+    public async Task<IActionResult> Conversation(int p_autreId)
+    {
+        var _fil = await _service.ObtenirConversation(ObtenirUtilisateurId(), p_autreId);
+        return Ok(_fil);
+    }
+
     [HttpPost("marquer-lu/{p_id}")]
     public async Task<IActionResult> MarquerLu(int p_id)
     {

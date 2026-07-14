@@ -46,6 +46,17 @@ public class DTO_ContactAnnuaire
     public string Relation { get; set; } = string.Empty;
 }
 
+// Résumé d'une conversation (fil d'échanges avec un autre utilisateur)
+public class DTO_Conversation
+{
+    public int AutreUtilisateurId { get; set; }
+    public string NomAutre { get; set; } = string.Empty;
+    public string EmailAutre { get; set; } = string.Empty;
+    public string DernierMessage { get; set; } = string.Empty;
+    public DateTime DateDernier { get; set; }
+    public int NonLus { get; set; }
+}
+
 // Contenu d'une pièce jointe pour affichage/téléchargement côté client
 public class DTO_PieceJointe
 {

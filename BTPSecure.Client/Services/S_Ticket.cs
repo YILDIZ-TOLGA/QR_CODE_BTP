@@ -65,6 +65,36 @@ public class S_Ticket
         }
     }
 
+    public async Task<List<DTO_Conversation>> ObtenirConversations()
+    {
+        try
+        {
+            var _result = await _http.GetFromJsonAsync<List<DTO_Conversation>>("api/tickets/conversations");
+            if (_result == null)
+                return new List<DTO_Conversation>();
+            return _result;
+        }
+        catch
+        {
+            return new List<DTO_Conversation>();
+        }
+    }
+
+    public async Task<List<DTO_Ticket>> ObtenirConversation(int p_autreId)
+    {
+        try
+        {
+            var _result = await _http.GetFromJsonAsync<List<DTO_Ticket>>($"api/tickets/conversation/{p_autreId}");
+            if (_result == null)
+                return new List<DTO_Ticket>();
+            return _result;
+        }
+        catch
+        {
+            return new List<DTO_Ticket>();
+        }
+    }
+
     public async Task<int> CompterNonLus()
     {
         try
