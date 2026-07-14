@@ -42,8 +42,21 @@ Dans ton service Railway, va dans l'onglet **Variables** et ajoute :
 | `JWT_EMETTEUR` | `BTPSecure` |
 | `JWT_AUDIENCE` | `BTPSecure` |
 | `JWT_DUREE_HEURES` | `24` |
+| `BREVO_API_KEY` | Cle API Brevo (envoi des emails) |
+| `SMTP_FROM` | `contact@codebtpsecure.cloud` (email expediteur verifie chez Brevo) |
+| `SMTP_FROM_NAME` | `BTPSecure` |
+| `SITE_URL` | `https://www.codebtpsecure.cloud` (liens dans les emails) |
 
 > `DATABASE_URL` et `PORT` sont injectes automatiquement par Railway.
+
+**Emails (Brevo) :** on utilise l'**API HTTP** de Brevo (`api.brevo.com/v3/smtp/email`), pas le SMTP — Railway bloque les ports SMTP sortants. Brevo exige que l'**IP de sortie Railway** soit whitelistee (ou desactive la restriction IP dans les parametres Brevo). Quota gratuit : 300 emails/jour.
+
+### Domaine personnalise (OVH → Railway)
+
+1. Service Railway > **Settings** > **Networking** > **Custom Domain** > ajoute `www.codebtpsecure.cloud`
+2. Chez OVH : un enregistrement **CNAME** `www` vers la cible fournie par Railway
+3. Apex (`codebtpsecure.cloud`) : redirection vers `www` (les CNAME sur l'apex sont interdits)
+4. Verification TXT si demandee : enregistrement `_railway-verify.www`
 
 ### Etape 5 : Generer un domaine
 
@@ -70,6 +83,10 @@ Dans Railway, clique sur ton service puis sur l'onglet **Logs** pour voir les lo
 | `JWT_EMETTEUR` | Manuelle | Emetteur du token JWT |
 | `JWT_AUDIENCE` | Manuelle | Audience du token JWT |
 | `JWT_DUREE_HEURES` | Manuelle | Duree de validite du token (heures) |
+| `BREVO_API_KEY` | Manuelle | Cle API Brevo pour l'envoi des emails |
+| `SMTP_FROM` | Manuelle | Email expediteur verifie chez Brevo |
+| `SMTP_FROM_NAME` | Manuelle | Nom affiche de l'expediteur |
+| `SITE_URL` | Manuelle | URL publique du site (liens dans les emails) |
 
 ## 6. Developpement local
 
