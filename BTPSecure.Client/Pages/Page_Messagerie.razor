@@ -20,197 +20,174 @@
 }
 else
 {
-    <RadzenTabs @bind-SelectedIndex="_tabIndex">
-        <Tabs>
-            <RadzenTabsItem Text="@TitreRecus()">
-                @if (_recus.Count == 0)
+    <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="0.5rem" Style="margin-bottom: 1.25rem;">
+        <RadzenButton Text="@LibelleNonLus()" Icon="mark_email_unread" ButtonStyle="@StyleVue(0)" Variant="@VariantVue(0)"
+                      Size="ButtonSize.Small" Click="@(() => _vue = 0)" />
+        <RadzenButton Text="Lus" Icon="mark_email_read" ButtonStyle="@StyleVue(1)" Variant="@VariantVue(1)"
+                      Size="ButtonSize.Small" Click="@(() => _vue = 1)" />
+        <RadzenButton Text="Envoyés" Icon="send" ButtonStyle="@StyleVue(2)" Variant="@VariantVue(2)"
+                      Size="ButtonSize.Small" Click="@(() => _vue = 2)" />
+        <RadzenButton Text="Nouveau message" Icon="edit" ButtonStyle="@StyleVue(3)" Variant="@VariantVue(3)"
+                      Size="ButtonSize.Small" Click="@(() => _vue = 3)" />
+    </RadzenStack>
+
+    @if (_vue == 0 || _vue == 1 || _vue == 2)
+    {
+        <RadzenStack Gap="0.75rem" Style="margin-bottom: 1rem;">
+            <RadzenFormField Text="Rechercher (sujet, contact, contenu)" Variant="Variant.Outlined" Style="width: 100%;">
+                <Start><RadzenIcon Icon="search" /></Start>
+                <ChildContent>
+                    <RadzenTextBox Value="@_recherche" @oninput="MajRecherche" Style="width: 100%;" Placeholder="Filtrer les messages..." />
+                </ChildContent>
+            </RadzenFormField>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="_piecesJointesSeules" Name="pjSeules" TriState="false" />
+                <RadzenLabel Text="Avec pièce jointe uniquement" Component="pjSeules" Style="cursor: pointer;" />
+                @if (!string.IsNullOrWhiteSpace(_recherche) || _piecesJointesSeules)
                 {
-                    <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 3rem 0;">
-                        <RadzenIcon Icon="inbox" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
-                        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun message reçu</RadzenText>
-                    </RadzenStack>
+                    <RadzenButton Text="Réinitialiser" Icon="clear" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text"
+                                  Size="ButtonSize.Small" Click="ReinitialiserFiltres" />
                 }
-                else
+            </RadzenStack>
+        </RadzenStack>
+    }
+
+    @if (_vue == 0)
+    {
+        @if (FiltrerRecus(false).Count == 0)
+        {
+            @EtatVide("inbox", "Aucun message non lu")
+        }
+        else
+        {
+            <RadzenStack Gap="1rem">
+                @foreach (var _t in FiltrerRecus(false))
                 {
+                    @CarteRecue(_t)
+                }
+            </RadzenStack>
+        }
+    }
+    else if (_vue == 1)
+    {
+        @if (FiltrerRecus(true).Count == 0)
+        {
+            @EtatVide("mark_email_read", "Aucun message lu")
+        }
+        else
+        {
+            <RadzenStack Gap="1rem">
+                @foreach (var _t in FiltrerRecus(true))
+                {
+                    @CarteRecue(_t)
+                }
+            </RadzenStack>
+        }
+    }
+    else if (_vue == 2)
+    {
+        @if (FiltrerEnvoyes().Count == 0)
+        {
+            @EtatVide("send", "Aucun message envoyé")
+        }
+        else
+        {
+            <RadzenStack Gap="1rem">
+                @foreach (var _t in FiltrerEnvoyes())
+                {
+                    @CarteEnvoyee(_t)
+                }
+            </RadzenStack>
+        }
+    }
+    else
+    {
+        <RadzenRow JustifyContent="JustifyContent.Center">
+            <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
+                <RadzenCard Variant="Variant.Outlined">
                     <RadzenStack Gap="1rem">
-                        @foreach (var _t in _recus)
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenCheckBox @bind-Value="_externe" Name="externe" TriState="false" />
+                            <RadzenLabel Text="Envoyer à un email externe (hors BTPSecure)" Component="externe" Style="cursor: pointer;" />
+                        </RadzenStack>
+
+                        @if (_externe)
                         {
-                            <RadzenCard Variant="Variant.Outlined">
-                                <RadzenStack Gap="0.6rem">
-                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
-                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
-                                            @if (!_t.EstLu)
-                                            {
-                                                <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Nouveau" IsPill="true" />
-                                            }
-                                            <RadzenText Style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_t.Sujet</RadzenText>
-                                        </RadzenStack>
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); white-space: nowrap;">
-                                            @_t.DateCreation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                        </RadzenText>
-                                    </RadzenStack>
-
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                        <RadzenText TextStyle="TextStyle.Body2">De : @_t.NomExpediteur</RadzenText>
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@_t.EmailExpediteur)</RadzenText>
-                                    </RadzenStack>
-
-                                    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
-                                        <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_t.Message</RadzenText>
-                                    </RadzenCard>
-
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
-                                        @if (_t.ADocumentJoint)
-                                        {
-                                            <RadzenButton Text="Pièce jointe" Icon="attach_file" ButtonStyle="ButtonStyle.Base"
-                                                          Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                                          Click="@(() => VoirPieceJointe(_t.Id))" />
-                                        }
-                                        @if (!_t.EstLu)
-                                        {
-                                            <RadzenButton Text="Marquer comme lu" Icon="done" ButtonStyle="ButtonStyle.Success"
-                                                          Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                                          Click="@(() => MarquerLu(_t.Id))" />
-                                        }
-                                    </RadzenStack>
-                                </RadzenStack>
-                            </RadzenCard>
+                            <RadzenFormField Text="Email du destinataire" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="mail" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox Value="@_emailExterne" @oninput="MajEmailExterne" Style="width: 100%;" Placeholder="destinataire@exemple.fr" />
+                                </ChildContent>
+                            </RadzenFormField>
                         }
-                    </RadzenStack>
-                }
-            </RadzenTabsItem>
-
-            <RadzenTabsItem Text="Envoyés">
-                @if (_envoyes.Count == 0)
-                {
-                    <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 3rem 0;">
-                        <RadzenIcon Icon="send" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
-                        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucun message envoyé</RadzenText>
-                    </RadzenStack>
-                }
-                else
-                {
-                    <RadzenStack Gap="1rem">
-                        @foreach (var _t in _envoyes)
+                        else
                         {
-                            <RadzenCard Variant="Variant.Outlined">
-                                <RadzenStack Gap="0.6rem">
-                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
-                                        <RadzenText Style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;">@_t.Sujet</RadzenText>
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); white-space: nowrap;">
-                                            @_t.DateCreation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                        </RadzenText>
-                                    </RadzenStack>
-
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
-                                        <RadzenIcon Icon="person_outline" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                        <RadzenText TextStyle="TextStyle.Body2">À : @NomOuEmailDestinataire(_t)</RadzenText>
-                                    </RadzenStack>
-
-                                    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
-                                        <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_t.Message</RadzenText>
-                                    </RadzenCard>
-
-                                    @if (_t.ADocumentJoint)
-                                    {
-                                        <RadzenButton Text="Pièce jointe" Icon="attach_file" ButtonStyle="ButtonStyle.Base"
-                                                      Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                                      Click="@(() => VoirPieceJointe(_t.Id))" />
-                                    }
-                                </RadzenStack>
-                            </RadzenCard>
+                            @if (_contactsVue.Count == 0)
+                            {
+                                <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+                                    Aucun contact interne disponible. Cochez « email externe » pour écrire à quelqu'un hors de votre écosystème.
+                                </RadzenAlert>
+                            }
+                            else
+                            {
+                                <RadzenFormField Text="Destinataire" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="group" /></Start>
+                                    <ChildContent>
+                                        <RadzenDropDown @bind-Value="_destinataireId" Data="_contactsVue" TextProperty="Libelle" ValueProperty="Id"
+                                                        AllowClear="true" AllowFiltering="true" Placeholder="Choisir un contact"
+                                                        Style="width: 100%;" />
+                                    </ChildContent>
+                                </RadzenFormField>
+                            }
                         }
-                    </RadzenStack>
-                }
-            </RadzenTabsItem>
 
-            <RadzenTabsItem Text="Nouveau message">
-                <RadzenRow JustifyContent="JustifyContent.Center">
-                    <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
-                        <RadzenCard Variant="Variant.Outlined">
-                            <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="Sujet" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="subject" /></Start>
+                            <ChildContent>
+                                <RadzenTextBox Value="@_sujet" @oninput="MajSujet" Style="width: 100%;" MaxLength="200" Placeholder="Objet du message" />
+                            </ChildContent>
+                        </RadzenFormField>
+
+                        <RadzenFormField Text="Message" Variant="Variant.Outlined" Style="width: 100%;">
+                            <ChildContent>
+                                <RadzenTextArea Value="@_message" @oninput="MajMessage" Rows="6" Style="width: 100%;" MaxLength="5000" Placeholder="Votre message..." />
+                            </ChildContent>
+                        </RadzenFormField>
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                Pièce jointe (JPG, PNG ou PDF — 5 Mo maximum)
+                            </RadzenText>
+                            <InputFile OnChange="FichierChoisi" accept=".jpg,.jpeg,.png,.pdf" />
+                            @if (_pieceJointe != null)
+                            {
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                    <RadzenCheckBox @bind-Value="_externe" Name="externe" TriState="false" />
-                                    <RadzenLabel Text="Envoyer à un email externe (hors BTPSecure)" Component="externe" Style="cursor: pointer;" />
+                                    <RadzenIcon Icon="attach_file" Style="color: var(--rz-success);" />
+                                    <RadzenText TextStyle="TextStyle.Body2">@_nomPieceJointe</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@TailleLisible())</RadzenText>
+                                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.Small" Click="RetirerPieceJointe" />
                                 </RadzenStack>
+                            }
+                        </RadzenStack>
 
-                                @if (_externe)
-                                {
-                                    <RadzenFormField Text="Email du destinataire" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <Start><RadzenIcon Icon="mail" /></Start>
-                                        <ChildContent>
-                                            <RadzenTextBox Value="@_emailExterne" @oninput="MajEmailExterne" Style="width: 100%;" Placeholder="destinataire@exemple.fr" />
-                                        </ChildContent>
-                                    </RadzenFormField>
-                                }
-                                else
-                                {
-                                    @if (_contactsVue.Count == 0)
-                                    {
-                                        <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
-                                            Aucun contact interne disponible. Cochez « email externe » pour écrire à quelqu'un hors de votre écosystème.
-                                        </RadzenAlert>
-                                    }
-                                    else
-                                    {
-                                        <RadzenFormField Text="Destinataire" Variant="Variant.Outlined" Style="width: 100%;">
-                                            <Start><RadzenIcon Icon="group" /></Start>
-                                            <ChildContent>
-                                                <RadzenDropDown @bind-Value="_destinataireId" Data="_contactsVue" TextProperty="Libelle" ValueProperty="Id"
-                                                                AllowClear="true" AllowFiltering="true" Placeholder="Choisir un contact"
-                                                                Style="width: 100%;" />
-                                            </ChildContent>
-                                        </RadzenFormField>
-                                    }
-                                }
-
-                                <RadzenFormField Text="Sujet" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <Start><RadzenIcon Icon="subject" /></Start>
-                                    <ChildContent>
-                                        <RadzenTextBox Value="@_sujet" @oninput="MajSujet" Style="width: 100%;" MaxLength="200" Placeholder="Objet du message" />
-                                    </ChildContent>
-                                </RadzenFormField>
-
-                                <RadzenFormField Text="Message" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <ChildContent>
-                                        <RadzenTextArea Value="@_message" @oninput="MajMessage" Rows="6" Style="width: 100%;" MaxLength="5000" Placeholder="Votre message..." />
-                                    </ChildContent>
-                                </RadzenFormField>
-
-                                <RadzenStack Gap="0.5rem">
-                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
-                                        Pièce jointe (JPG, PNG ou PDF — 5 Mo maximum)
-                                    </RadzenText>
-                                    <InputFile OnChange="FichierChoisi" accept=".jpg,.jpeg,.png,.pdf" />
-                                    @if (_pieceJointe != null)
-                                    {
-                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                            <RadzenIcon Icon="attach_file" Style="color: var(--rz-success);" />
-                                            <RadzenText TextStyle="TextStyle.Body2">@_nomPieceJointe</RadzenText>
-                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@TailleLisible())</RadzenText>
-                                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.Small" Click="RetirerPieceJointe" />
-                                        </RadzenStack>
-                                    }
-                                </RadzenStack>
-
-                                <RadzenButton Text="Envoyer" Icon="send" ButtonStyle="ButtonStyle.Primary"
-                                              Style="width: 100%;" Click="Envoyer" Disabled="_envoiEnCours" />
-                            </RadzenStack>
-                        </RadzenCard>
-                    </RadzenColumn>
-                </RadzenRow>
-            </RadzenTabsItem>
-        </Tabs>
-    </RadzenTabs>
+                        <RadzenButton Text="Envoyer" Icon="send" ButtonStyle="ButtonStyle.Primary"
+                                      Style="width: 100%;" Click="Envoyer" Disabled="_envoiEnCours" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    }
 }
 
 @code {
     private List<DTO_Ticket> _recus = new();
     private List<DTO_Ticket> _envoyes = new();
-    private int _nonLus = 0;
     private bool _chargement = true;
-    private int _tabIndex = 0;
+    private int _vue = 0; // 0 = Non lus, 1 = Lus, 2 = Envoyés, 3 = Nouveau message
+
+    // Filtres
+    private string _recherche = string.Empty;
+    private bool _piecesJointesSeules = false;
 
     private List<ContactVue> _contactsVue = new();
 
@@ -246,7 +223,6 @@ else
     {
         _recus = await STicket.ObtenirRecus();
         _envoyes = await STicket.ObtenirEnvoyes();
-        _nonLus = await STicket.CompterNonLus();
     }
 
     private async Task RafraichirUi()
@@ -255,12 +231,155 @@ else
         StateHasChanged();
     }
 
-    private string TitreRecus()
+    // ── Vues ────────────────────────────────────────────────────────────────
+    private ButtonStyle StyleVue(int p_v)
     {
-        if (_nonLus > 0)
-            return $"Boîte de réception ({_nonLus})";
-        return "Boîte de réception";
+        if (_vue == p_v)
+            return ButtonStyle.Primary;
+        return ButtonStyle.Base;
     }
+
+    private Variant VariantVue(int p_v)
+    {
+        if (_vue == p_v)
+            return Variant.Filled;
+        return Variant.Outlined;
+    }
+
+    private int NombreNonLus()
+    {
+        return _recus.Count(t => !t.EstLu);
+    }
+
+    private string LibelleNonLus()
+    {
+        var _n = NombreNonLus();
+        if (_n > 0)
+            return $"Non lus ({_n})";
+        return "Non lus";
+    }
+
+    // ── Filtres ─────────────────────────────────────────────────────────────
+    private List<DTO_Ticket> FiltrerRecus(bool p_lus)
+    {
+        IEnumerable<DTO_Ticket> _q = _recus.Where(t => t.EstLu == p_lus);
+        _q = AppliquerFiltres(_q);
+        return _q.ToList();
+    }
+
+    private List<DTO_Ticket> FiltrerEnvoyes()
+    {
+        return AppliquerFiltres(_envoyes).ToList();
+    }
+
+    private IEnumerable<DTO_Ticket> AppliquerFiltres(IEnumerable<DTO_Ticket> p_q)
+    {
+        if (!string.IsNullOrWhiteSpace(_recherche))
+        {
+            var _r = _recherche.Trim().ToLower();
+            p_q = p_q.Where(t =>
+                t.Sujet.ToLower().Contains(_r)
+                || t.Message.ToLower().Contains(_r)
+                || t.NomExpediteur.ToLower().Contains(_r)
+                || t.EmailExpediteur.ToLower().Contains(_r)
+                || t.NomDestinataire.ToLower().Contains(_r)
+                || t.EmailDestinataire.ToLower().Contains(_r));
+        }
+        if (_piecesJointesSeules)
+        {
+            p_q = p_q.Where(t => t.ADocumentJoint);
+        }
+        return p_q;
+    }
+
+    private void MajRecherche(ChangeEventArgs p_e)
+    {
+        _recherche = ObtenirTexte(p_e);
+    }
+
+    private void ReinitialiserFiltres()
+    {
+        _recherche = string.Empty;
+        _piecesJointesSeules = false;
+    }
+
+    // ── Cartes (fragments réutilisés) ───────────────────────────────────────
+    private RenderFragment<DTO_Ticket> CarteRecue => (_t) =>
+    @<RadzenCard Variant="Variant.Outlined">
+        <RadzenStack Gap="0.6rem">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                    @if (!_t.EstLu)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Nouveau" IsPill="true" />
+                    }
+                    <RadzenText Style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_t.Sujet</RadzenText>
+                </RadzenStack>
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); white-space: nowrap;">
+                    @_t.DateCreation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                </RadzenText>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+                <RadzenIcon Icon="person" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                <RadzenText TextStyle="TextStyle.Body2">De : @_t.NomExpediteur</RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@_t.EmailExpediteur)</RadzenText>
+            </RadzenStack>
+
+            <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
+                <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_t.Message</RadzenText>
+            </RadzenCard>
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                @if (_t.ADocumentJoint)
+                {
+                    <RadzenButton Text="Pièce jointe" Icon="attach_file" ButtonStyle="ButtonStyle.Base"
+                                  Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                  Click="@(() => VoirPieceJointe(_t.Id))" />
+                }
+                @if (!_t.EstLu)
+                {
+                    <RadzenButton Text="Marquer comme lu" Icon="done" ButtonStyle="ButtonStyle.Success"
+                                  Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                  Click="@(() => MarquerLu(_t.Id))" />
+                }
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>;
+
+    private RenderFragment<DTO_Ticket> CarteEnvoyee => (_t) =>
+    @<RadzenCard Variant="Variant.Outlined">
+        <RadzenStack Gap="0.6rem">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                <RadzenText Style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;">@_t.Sujet</RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); white-space: nowrap;">
+                    @_t.DateCreation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                </RadzenText>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+                <RadzenIcon Icon="person_outline" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                <RadzenText TextStyle="TextStyle.Body2">À : @NomOuEmailDestinataire(_t)</RadzenText>
+            </RadzenStack>
+
+            <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
+                <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_t.Message</RadzenText>
+            </RadzenCard>
+
+            @if (_t.ADocumentJoint)
+            {
+                <RadzenButton Text="Pièce jointe" Icon="attach_file" ButtonStyle="ButtonStyle.Base"
+                              Variant="Variant.Outlined" Size="ButtonSize.Small"
+                              Click="@(() => VoirPieceJointe(_t.Id))" />
+            }
+        </RadzenStack>
+    </RadzenCard>;
+
+    private RenderFragment EtatVide(string p_icone, string p_texte) =>
+    @<RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 3rem 0;">
+        <RadzenIcon Icon="@p_icone" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">@p_texte</RadzenText>
+    </RadzenStack>;
 
     private static string NomOuEmailDestinataire(DTO_Ticket p_t)
     {
@@ -269,6 +388,7 @@ else
         return p_t.EmailDestinataire;
     }
 
+    // ── Saisie ──────────────────────────────────────────────────────────────
     private void MajSujet(ChangeEventArgs p_e)
     {
         _sujet = ObtenirTexte(p_e);
@@ -400,7 +520,7 @@ else
             _message = string.Empty;
             RetirerPieceJointe();
             await Recharger();
-            _tabIndex = 1;
+            _vue = 2;
         }
         else
         {
