@@ -142,11 +142,10 @@ public class S_Ticket
         int? _destinataireId = null;
         string? _emailDestinataire = null;
         bool _estExterne = false;
-        string _nomDestinataireEmail = "";
 
         if (p_dto.DestinataireId.HasValue)
         {
-            // Destinataire interne : doit appartenir à l'annuaire de l'expéditeur (sécurité serveur)
+            // Destinataire interne : autorisé s'il est dans l'annuaire de l'expéditeur (sécurité serveur)
             var _annuaire = await ObtenirAnnuaire(p_expediteurId);
             var _autorise = false;
             foreach (var _contact in _annuaire)
@@ -157,6 +156,12 @@ public class S_Ticket
                     break;
                 }
             }
+
+            // Sinon, autorisé si une conversation existe déjà avec cette personne
+            // (permet de répondre à un fil même si la relation a été retirée depuis)
+            if (!_autorise)
+                _autorise = await _daoTicket.ConversationExiste(p_expediteurId, p_dto.DestinataireId.Value);
+
             if (!_autorise)
                 return (false, "Destinataire non autorisé.");
 
@@ -169,7 +174,6 @@ public class S_Ticket
                 return (false, "Email du destinataire invalide.");
             _emailDestinataire = _email;
             _estExterne = true;
-            _nomDestinataireEmail = _email;
         }
         else
         {

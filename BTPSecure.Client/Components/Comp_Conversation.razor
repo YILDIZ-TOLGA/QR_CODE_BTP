@@ -66,10 +66,13 @@ else
     [Parameter] public int AutreId { get; set; }
     [Parameter] public string NomAutre { get; set; } = string.Empty;
     [Parameter] public EventCallback OnChangement { get; set; }
+    // Change à chaque rafraîchissement auto du parent → recharge silencieuse du fil
+    [Parameter] public int RefreshTick { get; set; }
 
     private List<DTO_Ticket> _fil = new();
     private bool _chargement = true;
     private int _autreCharge = 0;
+    private int _tickCharge = -1;
     private string _sujetFil = string.Empty;
 
     // Réponse
@@ -85,20 +88,30 @@ else
     {
         if (AutreId != _autreCharge)
         {
+            // Ouverture d'un fil : chargement complet avec spinner + on prévient le parent (badge)
             _autreCharge = AutreId;
-            await Charger();
+            _tickCharge = RefreshTick;
+            await Charger(true, true);
+        }
+        else if (RefreshTick != _tickCharge)
+        {
+            // Rafraîchissement auto du parent : rechargement silencieux (pas de spinner, pas de notif)
+            _tickCharge = RefreshTick;
+            await Charger(false, false);
         }
     }
 
-    private async Task Charger()
+    private async Task Charger(bool p_avecSpinner, bool p_notifier)
     {
-        _chargement = true;
+        if (p_avecSpinner)
+            _chargement = true;
         _fil = await STicket.ObtenirConversation(AutreId);
         if (_fil.Count > 0)
             _sujetFil = _fil[0].Sujet;
         _chargement = false;
-        // Les messages viennent d'être marqués lus → prévenir le parent (liste + badge)
-        await OnChangement.InvokeAsync();
+        // À l'ouverture, les messages viennent d'être marqués lus → prévenir le parent (liste + badge)
+        if (p_notifier)
+            await OnChangement.InvokeAsync();
     }
 
     private JustifyContent AlignementBulle(DTO_Ticket p_t)

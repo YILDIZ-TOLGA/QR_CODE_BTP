@@ -112,7 +112,7 @@ else
                 <RadzenIcon Icon="account_circle" Style="color: var(--rz-primary);" />
                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">@_nomConversation</RadzenText>
             </RadzenStack>
-            <Comp_Conversation AutreId="@(_conversationOuverte.Value)" NomAutre="@_nomConversation" OnChangement="RafraichirApresConversation" />
+            <Comp_Conversation AutreId="@(_conversationOuverte.Value)" NomAutre="@_nomConversation" RefreshTick="@_refreshTick" OnChangement="RafraichirApresConversation" />
         }
         else
         {
@@ -237,6 +237,7 @@ else
     private List<DTO_Conversation> _conversations = new();
     private int? _conversationOuverte;
     private string _nomConversation = string.Empty;
+    private int _refreshTick = 0;
 
     // Filtres
     private string _recherche = string.Empty;
@@ -283,6 +284,8 @@ else
 
     private async Task RafraichirUi()
     {
+        // Signale aux fils ouverts qu'ils doivent se recharger silencieusement
+        _refreshTick++;
         await Recharger();
         StateHasChanged();
     }

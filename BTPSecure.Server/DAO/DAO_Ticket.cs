@@ -93,6 +93,14 @@ public class DAO_Ticket
             .CountAsync(t => t.DestinataireId == p_userId && !t.EstLu);
     }
 
+    // Une conversation existe-t-elle déjà entre ces deux utilisateurs ?
+    public async Task<bool> ConversationExiste(int p_a, int p_b)
+    {
+        return await _context.Tickets
+            .AnyAsync(t => (t.ExpediteurId == p_a && t.DestinataireId == p_b)
+                        || (t.ExpediteurId == p_b && t.DestinataireId == p_a));
+    }
+
     // Fil de conversation entre deux utilisateurs (sans bytea), du plus ancien au plus récent
     public async Task<List<TicketApercu>> ObtenirConversation(int p_a, int p_b)
     {
