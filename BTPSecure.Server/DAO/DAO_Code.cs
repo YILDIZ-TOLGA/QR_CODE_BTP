@@ -103,16 +103,27 @@ public class DAO_Code
     public async Task<List<E_Code>> ObtenirCommandesPourFournisseur(string p_siret, string? p_siren)
     {
         var _maintenant = DateTime.UtcNow;
-        var _codes = await _context.Codes
+
+        // Le SIRET identifie l'établissement (le SIREN en est les 9 premiers chiffres) :
+        // un SIRET identique suffit donc à reconnaître le fournisseur.
+        var _requete = _context.Codes
             .Include(c => c.FournisseurContact)
             .Include(c => c.Dirigeant)
             .Include(c => c.Collaborateur)
             .Where(c => c.FournisseurContact != null
                 && c.Statut == Enum_StatutCode.Actif
                 && c.FournisseurContact!.Siret == p_siret
-                && ((c.FournisseurContact.Siren == null && p_siren == null)
-                    || (c.FournisseurContact.Siren != null && p_siren != null && c.FournisseurContact.Siren == p_siren))
-                && (c.DateExpiration == null || c.DateExpiration > _maintenant))
+                && (c.DateExpiration == null || c.DateExpiration > _maintenant));
+
+        // Le SIREN est optionnel des deux côtés : on ne l'utilise que s'il est renseigné
+        // partout, sinon on masquerait des commandes dont le SIRET correspond pourtant.
+        if (p_siren != null)
+        {
+            _requete = _requete.Where(c => c.FournisseurContact!.Siren == null
+                                        || c.FournisseurContact.Siren == p_siren);
+        }
+
+        var _codes = await _requete
             .OrderBy(c => c.DateExpiration)
             .ThenByDescending(c => c.DateCreation)
             .ToListAsync();

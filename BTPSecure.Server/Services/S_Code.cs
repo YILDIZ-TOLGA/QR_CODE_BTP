@@ -621,10 +621,10 @@ public class S_Code
         if (_contact.Siret != _utilisateur.Siret)
             return (false, "Vous n'êtes pas le fournisseur de cette commande.");
 
+        // Le SIRET identifie déjà l'établissement : on ne compare le SIREN que s'il est
+        // renseigné des deux côtés (il est optionnel), sinon on refuserait à tort.
         bool _sirenContactPresent = !string.IsNullOrEmpty(_contact.Siren);
         bool _sirenUserPresent = !string.IsNullOrEmpty(_utilisateur.Siren);
-        if (_sirenContactPresent != _sirenUserPresent)
-            return (false, "Vous n'êtes pas le fournisseur de cette commande.");
         if (_sirenContactPresent && _sirenUserPresent && _contact.Siren != _utilisateur.Siren)
             return (false, "Vous n'êtes pas le fournisseur de cette commande.");
 
