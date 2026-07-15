@@ -90,9 +90,9 @@ else
                     {
                         <RadzenStack Gap="0.25rem">
                             <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Matériaux</RadzenText>
-                            <RadzenText TextStyle="TextStyle.Body2" Style="@StyleTexteLibre(_cmd.ListeMateriaux)"
-                                        @onclick="@(() => VoirDetailSiTronque(_cmd.ListeMateriaux, "Détail des matériaux"))">@Tronquer(_cmd.ListeMateriaux)</RadzenText>
-                            @if (_cmd.ListeMateriaux.Length > SEUIL_TRONCATURE)
+                            <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_cmd.ListeMateriaux)"
+                                        @onclick="@(() => VoirDetailSiTronque(_cmd.ListeMateriaux, "Détail des matériaux"))">@Services.H_TexteLibre.Tronquer(_cmd.ListeMateriaux)</RadzenText>
+                            @if (Services.H_TexteLibre.EstTronque(_cmd.ListeMateriaux))
                             {
                                 <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
                                               Variant="Variant.Text" Size="ButtonSize.Small"
@@ -110,9 +110,9 @@ else
                     {
                         <RadzenStack Gap="0.25rem">
                             <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Info</RadzenText>
-                            <RadzenText TextStyle="TextStyle.Body2" Style="@StyleTexteLibre(_cmd.Info)"
-                                        @onclick="@(() => VoirDetailSiTronque(_cmd.Info, "Informations complémentaires"))">@Tronquer(_cmd.Info)</RadzenText>
-                            @if (_cmd.Info.Length > SEUIL_TRONCATURE)
+                            <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_cmd.Info)"
+                                        @onclick="@(() => VoirDetailSiTronque(_cmd.Info, "Informations complémentaires"))">@Services.H_TexteLibre.Tronquer(_cmd.Info)</RadzenText>
+                            @if (Services.H_TexteLibre.EstTronque(_cmd.Info))
                             {
                                 <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
                                               Variant="Variant.Text" Size="ButtonSize.Small"
@@ -165,7 +165,6 @@ else
     private DateTime? _filtreDate;
     private Dictionary<int, string> _codesSaisis = new();
 
-    private const int SEUIL_TRONCATURE = 140;
 
     private List<DTO_CommandeAVenir> _commandesFiltrees
     {
@@ -193,32 +192,10 @@ else
         }
     }
 
-    // Texte saisi par l'utilisateur : on garde les sauts de ligne ET on coupe les
-    // suites de caractères sans espace, sinon la carte déborde horizontalement.
-    private const string STYLE_TEXTE_LIBRE = "white-space: pre-wrap; overflow-wrap: anywhere;";
-
-    private static string Tronquer(string p_texte)
-    {
-        if (p_texte.Length <= SEUIL_TRONCATURE)
-        {
-            return p_texte;
-        }
-        return p_texte.Substring(0, SEUIL_TRONCATURE) + "…";
-    }
-
     // Le texte tronqué est cliquable pour ouvrir le détail complet
-    private static string StyleTexteLibre(string p_texte)
-    {
-        if (p_texte.Length > SEUIL_TRONCATURE)
-        {
-            return STYLE_TEXTE_LIBRE + " cursor: pointer;";
-        }
-        return STYLE_TEXTE_LIBRE;
-    }
-
     private async Task VoirDetailSiTronque(string p_texte, string p_titre)
     {
-        if (p_texte.Length > SEUIL_TRONCATURE)
+        if (Services.H_TexteLibre.EstTronque(p_texte))
         {
             await VoirDetail(p_texte, p_titre);
         }

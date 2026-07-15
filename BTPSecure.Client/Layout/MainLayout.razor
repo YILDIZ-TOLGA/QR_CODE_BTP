@@ -103,7 +103,9 @@
 
     <RadzenBody>
         <RadzenRow Style="padding: 1.5rem;">
-            <RadzenColumn>
+            @* Sécurité : un élément flex a min-width:auto et refuse donc de rétrécir sous la
+               largeur de son contenu. min-width:0 évite qu'un contenu large fasse déborder la page. *@
+            <RadzenColumn Style="min-width: 0;">
                 @Body
             </RadzenColumn>
         </RadzenRow>

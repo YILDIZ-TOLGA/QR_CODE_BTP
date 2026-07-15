@@ -1,6 +1,7 @@
 @page "/dirigeant/notifications"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
 @inject Services.S_Code SCode
+@inject DialogService Dialog
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1.5rem;">
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -90,8 +91,15 @@ else
                             <RadzenStack Gap="0.25rem" Style="margin-top: 0.5rem;">
                                 <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Matériaux</RadzenText>
                                 <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.75rem;">
-                                    <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap; overflow-wrap: anywhere;">@_n.ListeMateriaux</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_n.ListeMateriaux)"
+                                                @onclick="@(() => VoirDetailSiTronque(_n.ListeMateriaux, "Détail des matériaux"))">@Services.H_TexteLibre.Tronquer(_n.ListeMateriaux)</RadzenText>
                                 </RadzenCard>
+                                @if (Services.H_TexteLibre.EstTronque(_n.ListeMateriaux))
+                                {
+                                    <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
+                                                  Variant="Variant.Text" Size="ButtonSize.Small" Style="align-self: flex-start;"
+                                                  Click="@(() => VoirDetail(_n.ListeMateriaux!, "Détail des matériaux"))" />
+                                }
                             </RadzenStack>
                         }
 
@@ -100,8 +108,15 @@ else
                             <RadzenStack Gap="0.25rem" Style="margin-top: 0.5rem;">
                                 <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Info</RadzenText>
                                 <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.75rem;">
-                                    <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap; overflow-wrap: anywhere;">@_n.Info</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_n.Info)"
+                                                @onclick="@(() => VoirDetailSiTronque(_n.Info, "Informations complémentaires"))">@Services.H_TexteLibre.Tronquer(_n.Info)</RadzenText>
                                 </RadzenCard>
+                                @if (Services.H_TexteLibre.EstTronque(_n.Info))
+                                {
+                                    <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
+                                                  Variant="Variant.Text" Size="ButtonSize.Small" Style="align-self: flex-start;"
+                                                  Click="@(() => VoirDetail(_n.Info!, "Informations complémentaires"))" />
+                                }
                             </RadzenStack>
                         }
                     </RadzenStack>
@@ -125,5 +140,21 @@ else
     {
         _notifications = await SCode.ObtenirNotificationsDirigeant();
         StateHasChanged();
+    }
+
+    // Le texte tronqué est cliquable pour ouvrir le détail complet
+    private async Task VoirDetailSiTronque(string? p_texte, string p_titre)
+    {
+        if (Services.H_TexteLibre.EstTronque(p_texte))
+        {
+            await VoirDetail(p_texte!, p_titre);
+        }
+    }
+
+    private async Task VoirDetail(string p_texte, string p_titre)
+    {
+        await Dialog.OpenAsync<Comp_DialogTexte>(p_titre,
+            new Dictionary<string, object?> { ["Contenu"] = p_texte },
+            new DialogOptions { Width = "520px", CloseDialogOnOverlayClick = true });
     }
 }
