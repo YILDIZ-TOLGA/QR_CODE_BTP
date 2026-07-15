@@ -131,8 +131,8 @@ else
     private string StyleTexteBulle(DTO_Ticket p_t)
     {
         if (p_t.EstEnvoyeParMoi)
-            return "white-space: pre-wrap; color: #fff;";
-        return "white-space: pre-wrap;";
+            return "white-space: pre-wrap; overflow-wrap: anywhere; color: #fff;";
+        return "white-space: pre-wrap; overflow-wrap: anywhere;";
     }
 
     private string StyleHeureBulle(DTO_Ticket p_t)

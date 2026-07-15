@@ -176,14 +176,14 @@ else
                                     {
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
                                             <RadzenIcon Icon="inventory" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_code.ListeMateriaux</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap; overflow-wrap: anywhere;">@_code.ListeMateriaux</RadzenText>
                                         </RadzenStack>
                                     }
                                     @if (!string.IsNullOrEmpty(_code.Info))
                                     {
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
                                             <RadzenIcon Icon="info" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap;">@_code.Info</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap; overflow-wrap: anywhere;">@_code.Info</RadzenText>
                                         </RadzenStack>
                                     }
                                     @if (_code.DateExpiration.HasValue)
