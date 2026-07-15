@@ -174,16 +174,34 @@ else
                                     </RadzenStack>
                                     @if (!string.IsNullOrEmpty(_code.ListeMateriaux))
                                     {
-                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
-                                            <RadzenIcon Icon="inventory" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap; overflow-wrap: anywhere;">@_code.ListeMateriaux</RadzenText>
+                                        <RadzenStack Gap="0.25rem">
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
+                                                <RadzenIcon Icon="inventory" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                                <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_code.ListeMateriaux)"
+                                                            @onclick="@(() => VoirDetailSiTronque(_code.ListeMateriaux, "Détail des matériaux"))">@Services.H_TexteLibre.Tronquer(_code.ListeMateriaux)</RadzenText>
+                                            </RadzenStack>
+                                            @if (Services.H_TexteLibre.EstTronque(_code.ListeMateriaux))
+                                            {
+                                                <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
+                                                              Variant="Variant.Text" Size="ButtonSize.Small" Style="align-self: flex-start;"
+                                                              Click="@(() => VoirDetail(_code.ListeMateriaux!, "Détail des matériaux"))" />
+                                            }
                                         </RadzenStack>
                                     }
                                     @if (!string.IsNullOrEmpty(_code.Info))
                                     {
-                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
-                                            <RadzenIcon Icon="info" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
-                                            <RadzenText TextStyle="TextStyle.Body2" Style="white-space: pre-wrap; overflow-wrap: anywhere;">@_code.Info</RadzenText>
+                                        <RadzenStack Gap="0.25rem">
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Start">
+                                                <RadzenIcon Icon="info" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                                <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_code.Info)"
+                                                            @onclick="@(() => VoirDetailSiTronque(_code.Info, "Informations complémentaires"))">@Services.H_TexteLibre.Tronquer(_code.Info)</RadzenText>
+                                            </RadzenStack>
+                                            @if (Services.H_TexteLibre.EstTronque(_code.Info))
+                                            {
+                                                <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
+                                                              Variant="Variant.Text" Size="ButtonSize.Small" Style="align-self: flex-start;"
+                                                              Click="@(() => VoirDetail(_code.Info!, "Informations complémentaires"))" />
+                                            }
                                         </RadzenStack>
                                     }
                                     @if (_code.DateExpiration.HasValue)
@@ -280,5 +298,21 @@ else
             else
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
+    }
+
+    // Le texte tronqué est cliquable pour ouvrir le détail complet
+    private async Task VoirDetailSiTronque(string? p_texte, string p_titre)
+    {
+        if (Services.H_TexteLibre.EstTronque(p_texte))
+        {
+            await VoirDetail(p_texte!, p_titre);
+        }
+    }
+
+    private async Task VoirDetail(string p_texte, string p_titre)
+    {
+        await Dialog.OpenAsync<Comp_DialogTexte>(p_titre,
+            new Dictionary<string, object?> { ["Contenu"] = p_texte },
+            new DialogOptions { Width = "520px", CloseDialogOnOverlayClick = true });
     }
 }
