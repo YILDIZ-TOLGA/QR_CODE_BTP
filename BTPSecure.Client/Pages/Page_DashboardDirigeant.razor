@@ -225,6 +225,13 @@ else
                                                     <RadzenText TextStyle="TextStyle.Body2" Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_sal.Email</RadzenText>
                                                 </RadzenStack>
 
+                                                @if (_sal.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
+                                                {
+                                                    <RadzenButton Text="Envoyer un message" Icon="forum" ButtonStyle="ButtonStyle.Base"
+                                                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                                                  Click="@(() => EnvoyerMessageA($"{_sal.Prenom} {_sal.Nom}", _sal.CollaborateurId, _sal.Email))" />
+                                                }
+
                                                 @if (_estProprietaire && _sal.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee)
                                                 {
                                                     <RadzenFormField Text="Rôle dans l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
@@ -732,6 +739,20 @@ else
             else
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
+    }
+
+    // Message rapide vers un utilisateur depuis sa fiche
+    private async Task EnvoyerMessageA(string p_nom, int? p_destinataireId, string? p_email)
+    {
+        var _params = new Dictionary<string, object?>
+        {
+            ["NomDestinataire"] = p_nom,
+            ["DestinataireId"] = p_destinataireId,
+            ["EmailDestinataire"] = p_email
+        };
+
+        await Dialog.OpenAsync<Comp_DialogEnvoyerMessage>($"Message à {p_nom}", _params,
+            new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
     }
 
     // Réattribue un code à un autre destinataire et/ou un autre fournisseur

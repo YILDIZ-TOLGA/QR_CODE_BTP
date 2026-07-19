@@ -142,7 +142,7 @@ else
                             <Start><RadzenIcon Icon="key" /></Start>
                             <ChildContent>
                                 <RadzenTextBox Value="@ObtenirCodeSaisi(_cmd.CodeId)"
-                                               @oninput="@(e => _codesSaisis[_cmd.CodeId] = e.Value?.ToString() ?? string.Empty)"
+                                               @oninput="@(e => MajCodeSaisi(_cmd.CodeId, e))"
                                                Style="width: 100%; font-family: monospace; text-transform: uppercase; letter-spacing: 2px;"
                                                Placeholder="XXXX-XXXX" MaxLength="9" />
                             </ChildContent>
@@ -199,6 +199,19 @@ else
         {
             await VoirDetail(p_texte, p_titre);
         }
+    }
+
+    // Le « - » du format XXXX-XXXX est inséré automatiquement pendant la frappe
+    private void MajCodeSaisi(int p_codeId, ChangeEventArgs p_e)
+    {
+        var _saisie = "";
+        if (p_e.Value != null)
+        {
+            var _s = p_e.Value.ToString();
+            if (_s != null)
+                _saisie = _s;
+        }
+        _codesSaisis[p_codeId] = Services.H_Code.Formater(_saisie);
     }
 
     private string ObtenirCodeSaisi(int p_codeId)

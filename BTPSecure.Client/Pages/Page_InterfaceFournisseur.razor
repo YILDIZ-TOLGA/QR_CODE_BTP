@@ -22,7 +22,7 @@
                 <RadzenFormField Text="Code d'autorisation" Variant="Variant.Outlined" Style="width: 100%;">
                     <Start><RadzenIcon Icon="key" /></Start>
                     <ChildContent>
-                        <RadzenTextBox @bind-Value="_valeurCode"
+                        <RadzenTextBox Value="@_valeurCode" @oninput="MajValeurCode"
                                        Style="width: 100%; font-family: monospace; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 2px;"
                                        Placeholder="XXXX-XXXX" MaxLength="9" />
                     </ChildContent>
@@ -158,6 +158,19 @@
             a.click();
             document.body.removeChild(a);
         ");
+    }
+
+    // Le « - » du format XXXX-XXXX est inséré automatiquement pendant la frappe
+    private void MajValeurCode(ChangeEventArgs p_e)
+    {
+        var _saisie = "";
+        if (p_e.Value != null)
+        {
+            var _s = p_e.Value.ToString();
+            if (_s != null)
+                _saisie = _s;
+        }
+        _valeurCode = Services.H_Code.Formater(_saisie);
     }
 
     // Le texte tronqué est cliquable pour ouvrir le détail complet

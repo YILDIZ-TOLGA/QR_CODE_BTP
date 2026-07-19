@@ -1,0 +1,150 @@
+@inject Services.S_Ticket STicket
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+@* Envoi rapide d'un message depuis n'importe quelle fiche utilisateur (collaborateur, fournisseur...) *@
+
+<RadzenStack Gap="1rem" Style="min-width: 320px;">
+
+    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+            <RadzenIcon Icon="person" Style="color: var(--rz-primary);" />
+            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">@NomDestinataire</RadzenText>
+            @if (!_estInterne)
+            {
+                <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="par email" IsPill="true" />
+            }
+        </RadzenStack>
+        @if (!_estInterne && !string.IsNullOrEmpty(EmailDestinataire))
+        {
+            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                Ce destinataire n'a pas de compte BTPSecure : le message lui sera envoyé par email à @EmailDestinataire.
+            </RadzenText>
+        }
+    </RadzenCard>
+
+    <RadzenFormField Text="Sujet" Variant="Variant.Outlined" Style="width: 100%;">
+        <Start><RadzenIcon Icon="subject" /></Start>
+        <ChildContent>
+            <RadzenTextBox Value="@_sujet" @oninput="MajSujet" Style="width: 100%;" MaxLength="200" Placeholder="Objet du message" />
+        </ChildContent>
+    </RadzenFormField>
+
+    <RadzenFormField Text="Message" Variant="Variant.Outlined" Style="width: 100%;">
+        <ChildContent>
+            <RadzenTextArea Value="@_message" @oninput="MajMessage" Rows="5" Style="width: 100%;" MaxLength="5000" Placeholder="Votre message..." />
+        </ChildContent>
+    </RadzenFormField>
+
+    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+        Pour joindre une photo ou un PDF, passez par la Messagerie.
+    </RadzenText>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.75rem">
+        <RadzenButton Text="Annuler" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Click="@(() => Dialog.Close(false))" />
+        <RadzenButton Text="Envoyer" Icon="send" ButtonStyle="ButtonStyle.Primary" Click="Envoyer" Disabled="_envoiEnCours" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public string NomDestinataire { get; set; } = string.Empty;
+    // Destinataire interne si connu ; sinon on tente de le résoudre via l'annuaire
+    [Parameter] public int? DestinataireId { get; set; }
+    [Parameter] public string? EmailDestinataire { get; set; }
+
+    private string _sujet = string.Empty;
+    private string _message = string.Empty;
+    private bool _envoiEnCours = false;
+    private int? _destinataireResolu;
+    private bool _estInterne = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _destinataireResolu = DestinataireId;
+
+        // Pas d'identifiant fourni : on cherche un compte correspondant à l'email dans l'annuaire
+        if (!_destinataireResolu.HasValue && !string.IsNullOrEmpty(EmailDestinataire))
+        {
+            var _email = EmailDestinataire.Trim().ToLower();
+            var _annuaire = await STicket.ObtenirAnnuaire();
+            foreach (var _contact in _annuaire)
+            {
+                if (_contact.Email.ToLower() == _email)
+                {
+                    _destinataireResolu = _contact.UtilisateurId;
+                    break;
+                }
+            }
+        }
+
+        _estInterne = _destinataireResolu.HasValue;
+    }
+
+    private void MajSujet(ChangeEventArgs p_e)
+    {
+        _sujet = ObtenirTexte(p_e);
+    }
+
+    private void MajMessage(ChangeEventArgs p_e)
+    {
+        _message = ObtenirTexte(p_e);
+    }
+
+    private static string ObtenirTexte(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+            return string.Empty;
+        var _s = p_e.Value.ToString();
+        if (_s == null)
+            return string.Empty;
+        return _s;
+    }
+
+    private async Task Envoyer()
+    {
+        if (string.IsNullOrWhiteSpace(_sujet))
+        {
+            Notification.Notify(NotificationSeverity.Error, "Sujet manquant", "Indiquez un sujet.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_message))
+        {
+            Notification.Notify(NotificationSeverity.Error, "Message vide", "Écrivez un message.");
+            return;
+        }
+
+        var _dto = new DTO_EnvoyerTicket
+        {
+            Sujet = _sujet.Trim(),
+            Message = _message.Trim()
+        };
+
+        if (_destinataireResolu.HasValue)
+        {
+            _dto.DestinataireId = _destinataireResolu.Value;
+        }
+        else if (!string.IsNullOrEmpty(EmailDestinataire))
+        {
+            _dto.EmailDestinataire = EmailDestinataire.Trim();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Destinataire inconnu", "Impossible de déterminer le destinataire.");
+            return;
+        }
+
+        _envoiEnCours = true;
+        var (_succes, _msg) = await STicket.Envoyer(_dto);
+        _envoiEnCours = false;
+
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Message envoyé", _msg);
+            Dialog.Close(true);
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _msg);
+        }
+    }
+}

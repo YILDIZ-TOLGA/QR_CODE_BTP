@@ -65,6 +65,10 @@ else
                             }
                         </RadzenStack>
 
+                        <RadzenButton Text="Envoyer un message" Icon="forum" ButtonStyle="ButtonStyle.Base"
+                                      Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                      Click="() => EnvoyerMessageA(_f)" />
+
                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                             <RadzenButton Text="Modifier" Icon="edit" ButtonStyle="ButtonStyle.Primary"
                                           Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
@@ -132,6 +136,19 @@ else
             else
                 Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
+    }
+
+    // Message rapide au fournisseur (en interne s'il a un compte, sinon par email)
+    private async Task EnvoyerMessageA(DTO_FournisseurContact p_f)
+    {
+        var _params = new Dictionary<string, object?>
+        {
+            ["NomDestinataire"] = p_f.NomEntreprise,
+            ["EmailDestinataire"] = p_f.Email
+        };
+
+        await Dialog.OpenAsync<Comp_DialogEnvoyerMessage>($"Message à {p_f.NomEntreprise}", _params,
+            new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
     }
 
     private async Task Supprimer(DTO_FournisseurContact p_f)
