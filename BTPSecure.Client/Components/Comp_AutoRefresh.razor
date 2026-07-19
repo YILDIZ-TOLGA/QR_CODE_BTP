@@ -1,14 +1,19 @@
 @implements IDisposable
 @inject IJSRuntime JS
 
-<RadzenButton Icon="refresh" Text="Rafraîchir" ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined"
-              Size="ButtonSize.Small" IsBusy="_enCours" Click="Rafraichir" />
+@if (AfficherBouton)
+{
+    <RadzenButton Icon="refresh" Text="Rafraîchir" ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined"
+                  Size="ButtonSize.Small" IsBusy="_enCours" Click="Rafraichir" />
+}
 
 @code {
     // Rafraîchit automatiquement toutes les IntervalSeconds, sauf si l'onglet est en arrière-plan.
     // Fournit aussi un bouton manuel de rafraîchissement.
     [Parameter] public EventCallback OnRefresh { get; set; }
     [Parameter] public int IntervalSeconds { get; set; } = 60;
+    // À false : rafraîchissement purement automatique, sans bouton (ex. badges de la sidebar)
+    [Parameter] public bool AfficherBouton { get; set; } = true;
 
     private System.Timers.Timer? _timer;
     private bool _enCours;
