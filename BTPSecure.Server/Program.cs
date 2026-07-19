@@ -88,6 +88,7 @@ builder.Services.AddScoped<DAO_Admin>();
 builder.Services.AddScoped<DAO_FournisseurContact>();
 builder.Services.AddScoped<DAO_Blacklist>();
 builder.Services.AddScoped<DAO_Ticket>();
+builder.Services.AddScoped<DAO_Memo>();
 
 // Services
 builder.Services.AddScoped<S_Auth>();
@@ -99,6 +100,7 @@ builder.Services.AddScoped<S_FournisseurContact>();
 builder.Services.AddScoped<S_SousCompte>();
 builder.Services.AddScoped<S_Blacklist>();
 builder.Services.AddScoped<S_Ticket>();
+builder.Services.AddScoped<S_Memo>();
 builder.Services.AddSingleton<S_Pdf>();
 builder.Services.AddSingleton<S_Email>();
 

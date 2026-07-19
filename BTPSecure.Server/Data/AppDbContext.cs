@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<E_ResetMotDePasse> ResetsMotDePasse => Set<E_ResetMotDePasse>();
     public DbSet<E_Blacklist> Blacklists => Set<E_Blacklist>();
     public DbSet<E_Ticket> Tickets => Set<E_Ticket>();
+    public DbSet<E_Memo> Memos => Set<E_Memo>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -162,6 +163,20 @@ public class AppDbContext : DbContext
             e.HasOne(r => r.Utilisateur)
                 .WithMany()
                 .HasForeignKey(r => r.UtilisateurId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // E_Memo (pense-bête personnel)
+        p_modelBuilder.Entity<E_Memo>(e =>
+        {
+            e.ToTable("memos");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Titre).IsRequired().HasMaxLength(200);
+            e.Property(m => m.Contenu).IsRequired().HasMaxLength(10000);
+            e.HasIndex(m => m.UtilisateurId);
+            e.HasOne(m => m.Utilisateur)
+                .WithMany()
+                .HasForeignKey(m => m.UtilisateurId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

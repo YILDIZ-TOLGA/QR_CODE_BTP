@@ -1,0 +1,188 @@
+@page "/memo"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject Services.S_Memo SMemo
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenIcon Icon="sticky_note_2" Style="font-size: 2rem; color: var(--rz-primary);" />
+        <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Mémo</RadzenText>
+        @if (_memos.Count > 0)
+        {
+            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_memos.Count.ToString()" IsPill="true" />
+        }
+    </RadzenStack>
+    <RadzenButton Text="Nouvelle note" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
+                  Click="CreerMemo" />
+</RadzenStack>
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else
+{
+    @if (_memos.Count > 0)
+    {
+        <RadzenFormField Text="Rechercher (titre, contenu)" Variant="Variant.Outlined" Style="width: 100%; margin-bottom: 1rem;">
+            <Start><RadzenIcon Icon="search" /></Start>
+            <ChildContent>
+                <RadzenTextBox Value="@_recherche" @oninput="MajRecherche" Style="width: 100%;" Placeholder="Filtrer les notes..." />
+            </ChildContent>
+        </RadzenFormField>
+    }
+
+    @if (_memos.Count == 0)
+    {
+        <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 3rem 0;">
+            <RadzenIcon Icon="sticky_note_2" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+            <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucune note pour le moment</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); text-align: center;">
+                Notez ici vos pense-bêtes : rappels, numéros de commande, consignes...
+            </RadzenText>
+            <RadzenButton Text="Créer ma première note" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="CreerMemo" />
+        </RadzenStack>
+    }
+    else if (MemosFiltres().Count == 0)
+    {
+        <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+            <RadzenIcon Icon="search_off" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
+            <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Aucune note ne correspond</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenRow Gap="1rem">
+            @foreach (var _m in MemosFiltres())
+            {
+                <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                    <RadzenCard Variant="Variant.Outlined" Style="height: 100%; border-left: 4px solid var(--rz-warning);">
+                        <RadzenStack Gap="0.6rem" Style="height: 100%;">
+                            <RadzenText Style="font-weight: 700; overflow-wrap: anywhere;">@_m.Titre</RadzenText>
+
+                            <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_m.Contenu)"
+                                        @onclick="@(() => ModifierMemo(_m))">@Services.H_TexteLibre.Tronquer(_m.Contenu)</RadzenText>
+
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); margin-top: auto;">
+                                Modifiée le @_m.DateModification.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </RadzenText>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                <RadzenButton Text="Ouvrir" Icon="edit" ButtonStyle="ButtonStyle.Primary"
+                                              Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
+                                              Click="@(() => ModifierMemo(_m))" />
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                                              Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                              Click="@(() => SupprimerMemo(_m))" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            }
+        </RadzenRow>
+    }
+}
+
+@code {
+    private List<DTO_Memo> _memos = new();
+    private bool _chargement = true;
+    private string _recherche = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Recharger();
+        _chargement = false;
+    }
+
+    private async Task Recharger()
+    {
+        _memos = await SMemo.Lister();
+    }
+
+    private void MajRecherche(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+        {
+            _recherche = string.Empty;
+            return;
+        }
+        var _s = p_e.Value.ToString();
+        if (_s == null)
+            _recherche = string.Empty;
+        else
+            _recherche = _s;
+    }
+
+    private List<DTO_Memo> MemosFiltres()
+    {
+        if (string.IsNullOrWhiteSpace(_recherche))
+            return _memos;
+
+        var _r = _recherche.Trim().ToLower();
+        return _memos
+            .Where(m => m.Titre.ToLower().Contains(_r) || m.Contenu.ToLower().Contains(_r))
+            .ToList();
+    }
+
+    private async Task CreerMemo()
+    {
+        await OuvrirDialogue(null, "", "", "Nouvelle note");
+    }
+
+    private async Task ModifierMemo(DTO_Memo p_memo)
+    {
+        await OuvrirDialogue(p_memo.Id, p_memo.Titre, p_memo.Contenu, "Modifier la note");
+    }
+
+    private async Task OuvrirDialogue(int? p_id, string p_titre, string p_contenu, string p_titreDialogue)
+    {
+        var _params = new Dictionary<string, object?>
+        {
+            ["MemoId"] = p_id,
+            ["TitreInitial"] = p_titre,
+            ["ContenuInitial"] = p_contenu
+        };
+
+        var _resultat = await Dialog.OpenAsync<Comp_DialogMemo>(p_titreDialogue, _params,
+            new DialogOptions { Width = "600px", CloseDialogOnOverlayClick = true });
+
+        if (_resultat is DTO_EnregistrerMemo _dto)
+        {
+            var (_succes, _message) = await SMemo.Enregistrer(_dto);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Enregistré", _message);
+                await Recharger();
+            }
+            else
+            {
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+            }
+        }
+    }
+
+    private async Task SupprimerMemo(DTO_Memo p_memo)
+    {
+        var _confirm = await Dialog.Confirm(
+            $"Supprimer la note « {p_memo.Titre} » ? Cette action est irréversible.",
+            "Confirmer la suppression",
+            new ConfirmOptions { OkButtonText = "Supprimer", CancelButtonText = "Annuler" });
+
+        if (_confirm == true)
+        {
+            var (_succes, _message) = await SMemo.Supprimer(p_memo.Id);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Supprimée", _message);
+                await Recharger();
+            }
+            else
+            {
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+            }
+        }
+    }
+}
