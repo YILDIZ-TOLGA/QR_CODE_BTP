@@ -150,59 +150,6 @@
                             </RadzenFormField>
                         }
 
-                        <RadzenFormField Text="Numéro de commande" Variant="Variant.Outlined" Style="width: 100%;">
-                            <Start><RadzenIcon Icon="receipt_long" /></Start>
-                            <ChildContent>
-                                <RadzenTextBox @bind-Value="_dto.NumeroCommande" Name="NumCmd" Style="width: 100%;" />
-                            </ChildContent>
-                            <Helper>
-                                <RadzenRequiredValidator Component="NumCmd" Text="Le numéro de commande est obligatoire." />
-                            </Helper>
-                        </RadzenFormField>
-
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                            <RadzenCheckBox @bind-Value="_libreService" Name="LibreServiceCb" />
-                            <RadzenLabel Text="Code libre-service (sans liste de matériaux)" Component="LibreServiceCb" />
-                        </RadzenStack>
-
-                        <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-info-light); padding: 0.75rem;">
-                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                <RadzenIcon Icon="timer" Style="color: var(--rz-info);" />
-                                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0;">
-                                    <strong>Validité : 24 heures</strong> · usage unique (le code est consommé après une validation)
-                                </RadzenText>
-                            </RadzenStack>
-                        </RadzenCard>
-
-                        @if (_dto.TypeCode == Enum_TypeCode.Liste)
-                        {
-                            <RadzenFormField Text="Liste des matériaux" Variant="Variant.Outlined" Style="width: 100%;">
-                                <Start><RadzenIcon Icon="inventory" /></Start>
-                                <ChildContent>
-                                    <RadzenTextArea @bind-Value="_dto.ListeMateriaux" Rows="4" Name="Materiaux" Style="width: 100%;"
-                                                    Placeholder="Ex: 10 sacs de ciment, 5 plaques de plâtre..." />
-                                </ChildContent>
-                                <Helper>
-                                    <RadzenRequiredValidator Component="Materiaux" Text="La liste des matériaux est obligatoire." />
-                                </Helper>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Achats supplémentaires autorisés (HT)" Variant="Variant.Outlined" Style="width: 100%;">
-                                <Start><RadzenIcon Icon="euro" /></Start>
-                                <ChildContent>
-                                    <RadzenDropDown @bind-Value="_dto.AchatsSupplementaires" Data="_optionsAchats"
-                                                    TextProperty="Text" ValueProperty="Value" Style="width: 100%;" />
-                                </ChildContent>
-                            </RadzenFormField>
-                        }
-
-                        <RadzenFormField Text="Informations complémentaires" Variant="Variant.Outlined" Style="width: 100%;">
-                            <Start><RadzenIcon Icon="info" /></Start>
-                            <ChildContent>
-                                <RadzenTextArea @bind-Value="_dto.Info" Rows="2" Style="width: 100%;" Placeholder="Optionnel" />
-                            </ChildContent>
-                        </RadzenFormField>
-
                         <RadzenStack Gap="0.5rem">
                             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                                 <RadzenCheckBox @bind-Value="_dto.UtiliserFournisseur" Name="UseFour" />
@@ -279,6 +226,60 @@
                             }
                         </RadzenStack>
 
+                        <RadzenFormField Text="Numéro de commande" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="receipt_long" /></Start>
+                            <ChildContent>
+                                <RadzenTextBox @bind-Value="_dto.NumeroCommande" Name="NumCmd" Style="width: 100%;" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="NumCmd" Text="Le numéro de commande est obligatoire." />
+                            </Helper>
+                        </RadzenFormField>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenCheckBox @bind-Value="_libreService" Name="LibreServiceCb" />
+                            <RadzenLabel Text="Code libre-service (sans liste de matériaux)" Component="LibreServiceCb" />
+                        </RadzenStack>
+
+                        <RadzenFormField Text="Validité du code (heures)" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="timer" /></Start>
+                            <ChildContent>
+                                <RadzenNumeric TValue="int?" @bind-Value="_dto.DureeValiditeHeures" Min="1" Max="168" Style="width: 100%;" />
+                            </ChildContent>
+                        </RadzenFormField>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); margin-top: -0.75rem;">
+                            24 heures par défaut · 7 jours maximum · usage unique (le code est consommé après une validation)
+                        </RadzenText>
+
+                        @if (_dto.TypeCode == Enum_TypeCode.Liste)
+                        {
+                            <RadzenFormField Text="Liste des matériaux" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="inventory" /></Start>
+                                <ChildContent>
+                                    <RadzenTextArea @bind-Value="_dto.ListeMateriaux" Rows="4" Name="Materiaux" Style="width: 100%;"
+                                                    Placeholder="Ex: 10 sacs de ciment, 5 plaques de plâtre..." />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="Materiaux" Text="La liste des matériaux est obligatoire." />
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Achats supplémentaires autorisés (HT)" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start><RadzenIcon Icon="euro" /></Start>
+                                <ChildContent>
+                                    <RadzenDropDown @bind-Value="_dto.AchatsSupplementaires" Data="_optionsAchats"
+                                                    TextProperty="Text" ValueProperty="Value" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        }
+
+                        <RadzenFormField Text="Informations complémentaires" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="info" /></Start>
+                            <ChildContent>
+                                <RadzenTextArea @bind-Value="_dto.Info" Rows="2" Style="width: 100%;" Placeholder="Optionnel" />
+                            </ChildContent>
+                        </RadzenFormField>
+
                         <RadzenButton Text="Générer le code" ButtonType="ButtonType.Submit" Icon="qr_code_2"
                                       ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large"
                                       Style="width: 100%;" IsBusy="_enChargement" />
@@ -290,7 +291,7 @@
 </RadzenRow>
 
 @code {
-    private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.Liste };
+    private DTO_CreerCode _dto = new() { TypeCode = Enum_TypeCode.Liste, DureeValiditeHeures = 24 };
 
     private bool _libreService
     {
@@ -423,7 +424,7 @@
     private void Reinitialiser()
     {
         _codeGenere = null;
-        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Liste, EntrepriseId = _entrepriseId };
+        _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Liste, EntrepriseId = _entrepriseId, DureeValiditeHeures = 24 };
         _modeFournisseur = "existant";
     }
 

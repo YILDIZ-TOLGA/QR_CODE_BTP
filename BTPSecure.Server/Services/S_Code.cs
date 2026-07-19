@@ -157,6 +157,17 @@ public class S_Code
             _reference = $"{_nomNettoye}-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
         }
 
+        // Validité : 24 h par défaut, ajustable par le créateur (bornée 1 h → 7 jours)
+        int _dureeHeures = 24;
+        if (p_dto.DureeValiditeHeures.HasValue)
+        {
+            _dureeHeures = p_dto.DureeValiditeHeures.Value;
+            if (_dureeHeures < 1)
+                _dureeHeures = 1;
+            if (_dureeHeures > 168)
+                _dureeHeures = 168;
+        }
+
         var _valeur = await GenererValeurUnique();
 
         var _code = new E_Code
@@ -167,7 +178,7 @@ public class S_Code
             NomEntreprise = _entreprise.Nom,
             Info = p_dto.Info?.Trim(),
             ListeMateriaux = p_dto.ListeMateriaux?.Trim(),
-            DureeValidite = 24,
+            DureeValidite = _dureeHeures,
             DirigeantId = _proprietaireId,
             CollaborateurId = _collaborateurId,
             EmailTiers = _emailTiers,
@@ -177,8 +188,7 @@ public class S_Code
             Reference = _reference
         };
 
-        // Validité 24 h fixe pour tout code créé
-        _code.DateExpiration = DateTime.UtcNow.AddHours(24);
+        _code.DateExpiration = DateTime.UtcNow.AddHours(_dureeHeures);
 
         await _daoCode.Creer(_code);
         _code.Collaborateur = _collaborateur;
