@@ -455,38 +455,39 @@ public class S_Code
         return (true, "Code validé.", _resultat);
     }
 
+    // Droit d'agir sur un code existant (révocation, modification) :
+    //  - le Dirigeant propriétaire agit sur tous les codes de son entreprise ;
+    //  - un Responsable Admin uniquement sur ceux dont il est l'AUTEUR.
+    // Cette règle unique remplace les anciennes exceptions (son propre code, celui
+    // d'un autre RA) : dans les deux cas il n'en est pas l'auteur, donc c'est couvert.
+    private async Task<(bool Autorise, string Message)> VerifierDroitSurCode(E_Code p_code, int p_userId, string p_action)
+    {
+        if (p_code.DirigeantId == p_userId)
+            return (true, "");
+
+        var _lien = await _daoEntreprise.ObtenirLienCollaborateur(p_userId, p_code.EntrepriseId);
+        var _estResponsableAdmin = _lien != null
+            && _lien.StatutInvitation == Enum_StatutInvitation.Acceptee
+            && _lien.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin;
+
+        if (!_estResponsableAdmin)
+            return (false, $"Vous n'êtes pas autorisé à {p_action} ce code.");
+
+        if (!p_code.CreateurId.HasValue || p_code.CreateurId.Value != p_userId)
+            return (false, $"Vous ne pouvez {p_action} que les codes que vous avez créés.");
+
+        return (true, "");
+    }
+
     public async Task<(bool Succes, string Message)> Revoquer(int p_codeId, int p_userId)
     {
         var _code = await _daoCode.ObtenirParId(p_codeId);
         if (_code == null)
             return (false, "Code non trouvé.");
 
-        // Autorisé : le Dirigeant propriétaire OU un Responsable Admin de l'entreprise du code
-        bool _estProprietaire = _code.DirigeantId == p_userId;
-        bool _estResponsableAdmin = false;
-        if (!_estProprietaire)
-        {
-            var _lien = await _daoEntreprise.ObtenirLienCollaborateur(p_userId, _code.EntrepriseId);
-            if (_lien != null
-                && _lien.StatutInvitation == Enum_StatutInvitation.Acceptee
-                && _lien.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
-            {
-                _estResponsableAdmin = true;
-            }
-        }
-        if (!_estProprietaire && !_estResponsableAdmin)
-            return (false, "Vous n'êtes pas autorisé à révoquer ce code.");
-
-        // Un Responsable Admin ne peut pas révoquer son propre code ni celui d'un autre Responsable Admin
-        if (_estResponsableAdmin && _code.CollaborateurId.HasValue)
-        {
-            if (_code.CollaborateurId.Value == p_userId)
-                return (false, "Vous ne pouvez pas révoquer votre propre code.");
-
-            var _lienCible = await _daoEntreprise.ObtenirLienCollaborateur(_code.CollaborateurId.Value, _code.EntrepriseId);
-            if (_lienCible != null && _lienCible.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
-                return (false, "Vous ne pouvez pas révoquer le code d'un autre Responsable Admin.");
-        }
+        var (_autorise, _refus) = await VerifierDroitSurCode(_code, p_userId, "révoquer");
+        if (!_autorise)
+            return (false, _refus);
 
         if (_code.Statut != Enum_StatutCode.Actif)
             return (false, "Seuls les codes actifs peuvent être révoqués.");
@@ -507,32 +508,9 @@ public class S_Code
         if (_code == null)
             return (false, "Code non trouvé.", null);
 
-        // Autorisé : le Dirigeant propriétaire OU un Responsable Admin de l'entreprise du code
-        bool _estProprietaire = _code.DirigeantId == p_userId;
-        bool _estResponsableAdmin = false;
-        if (!_estProprietaire)
-        {
-            var _lien = await _daoEntreprise.ObtenirLienCollaborateur(p_userId, _code.EntrepriseId);
-            if (_lien != null
-                && _lien.StatutInvitation == Enum_StatutInvitation.Acceptee
-                && _lien.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
-            {
-                _estResponsableAdmin = true;
-            }
-        }
-        if (!_estProprietaire && !_estResponsableAdmin)
-            return (false, "Vous n'êtes pas autorisé à modifier ce code.", null);
-
-        // Un Responsable Admin ne peut pas modifier son propre code ni celui d'un autre Responsable Admin
-        if (_estResponsableAdmin && _code.CollaborateurId.HasValue)
-        {
-            if (_code.CollaborateurId.Value == p_userId)
-                return (false, "Vous ne pouvez pas modifier votre propre code.", null);
-
-            var _lienCible = await _daoEntreprise.ObtenirLienCollaborateur(_code.CollaborateurId.Value, _code.EntrepriseId);
-            if (_lienCible != null && _lienCible.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
-                return (false, "Vous ne pouvez pas modifier le code d'un autre Responsable Admin.", null);
-        }
+        var (_autorise, _refus) = await VerifierDroitSurCode(_code, p_userId, "modifier");
+        if (!_autorise)
+            return (false, _refus, null);
 
         if (_code.Statut != Enum_StatutCode.Actif)
             return (false, "Seuls les codes actifs peuvent être modifiés.", null);

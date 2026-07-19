@@ -427,7 +427,7 @@ else
                                         }
                                     </RadzenStack>
 
-                                    @if (_c.Statut == Enum_StatutCode.Actif && PeutRevoquer(_c))
+                                    @if (_c.Statut == Enum_StatutCode.Actif && PeutAgirSurCode(_c))
                                     {
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                             @if (!_c.EstPermanent)
@@ -577,23 +577,15 @@ else
 
     private int _userId = 0;
 
-    // Un Responsable Admin ne peut pas révoquer son propre code ni celui d'un autre Responsable Admin
-    private bool PeutRevoquer(DTO_CodeAffichage p_code)
+    // Miroir de la règle serveur (S_Code.VerifierDroitSurCode) : le Dirigeant agit sur
+    // tous les codes de son entreprise, un Responsable Admin sur ceux dont il est l'auteur.
+    private bool PeutAgirSurCode(DTO_CodeAffichage p_code)
     {
         if (_estProprietaire)
         {
             return true;
         }
-        if (p_code.CollaborateurId == _userId)
-        {
-            return false;
-        }
-        var _cible = _collaborateurs.FirstOrDefault(c => c.CollaborateurId == p_code.CollaborateurId);
-        if (_cible != null && _cible.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
-        {
-            return false;
-        }
-        return true;
+        return p_code.CreateurId.HasValue && p_code.CreateurId.Value == _userId;
     }
 
     protected override async Task OnInitializedAsync()
