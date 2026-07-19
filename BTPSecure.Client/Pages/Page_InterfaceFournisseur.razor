@@ -2,8 +2,6 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Fournisseur")]
 @inject Services.S_Code SCode
 @inject NotificationService Notification
-@inject IJSRuntime JS
-@inject DialogService Dialog
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
     <RadzenIcon Icon="verified_user" Style="font-size: 2rem; color: var(--rz-primary);" />
@@ -37,90 +35,7 @@
         @if (_resultat != null)
         {
             <RadzenCard Variant="Variant.Outlined" Style="margin-top: 1.5rem;">
-                @if (_resultat.EstValide)
-                {
-                    <RadzenStack Gap="1.25rem">
-                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
-                            <RadzenIcon Icon="check_circle" Style="font-size: 2.5rem; color: var(--rz-success);" />
-                            <RadzenStack Gap="0">
-                                <RadzenText TextStyle="TextStyle.H5" Style="margin: 0; color: var(--rz-success);">Code valide</RadzenText>
-                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">La transaction est autorisée</RadzenText>
-                            </RadzenStack>
-                        </RadzenStack>
-
-                        <RadzenStack Gap="0.5rem">
-                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                <RadzenText Style="color: var(--rz-text-secondary-color);">Collaborateur</RadzenText>
-                                <RadzenText Style="font-weight: 600;">@_resultat.PrenomCollaborateur @_resultat.NomCollaborateur</RadzenText>
-                            </RadzenStack>
-                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                <RadzenText Style="color: var(--rz-text-secondary-color);">Entreprise</RadzenText>
-                                <RadzenText Style="font-weight: 600;">@_resultat.NomEntreprise</RadzenText>
-                            </RadzenStack>
-                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                <RadzenText Style="color: var(--rz-text-secondary-color);">N° Commande</RadzenText>
-                                <RadzenText Style="font-weight: 600;">@_resultat.NumeroCommande</RadzenText>
-                            </RadzenStack>
-                            @if (_resultat.AchatsSupplementaires > 0)
-                            {
-                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                    <RadzenText Style="color: var(--rz-text-secondary-color);">Achats supplémentaires</RadzenText>
-                                    <RadzenText Style="font-weight: 600; color: var(--rz-success);">@_resultat.AchatsSupplementaires € HT</RadzenText>
-                                </RadzenStack>
-                            }
-
-                            @if (!string.IsNullOrEmpty(_resultat.ListeMateriaux))
-                            {
-                                <RadzenStack Gap="0.25rem" Style="margin-top: 0.5rem;">
-                                    <RadzenText TextStyle="TextStyle.Subtitle2">Matériaux autorisés</RadzenText>
-                                    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.75rem;">
-                                        <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_resultat.ListeMateriaux)"
-                                                    @onclick="@(() => VoirDetailSiTronque(_resultat.ListeMateriaux, "Matériaux autorisés"))">@Services.H_TexteLibre.Tronquer(_resultat.ListeMateriaux)</RadzenText>
-                                    </RadzenCard>
-                                    @if (Services.H_TexteLibre.EstTronque(_resultat.ListeMateriaux))
-                                    {
-                                        <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
-                                                      Variant="Variant.Text" Size="ButtonSize.Small" Style="align-self: flex-start;"
-                                                      Click="@(() => VoirDetail(_resultat.ListeMateriaux!, "Matériaux autorisés"))" />
-                                    }
-                                </RadzenStack>
-                            }
-                            @if (!string.IsNullOrEmpty(_resultat.Info))
-                            {
-                                <RadzenStack Gap="0.25rem" Style="margin-top: 0.5rem;">
-                                    <RadzenText TextStyle="TextStyle.Subtitle2">Informations complémentaires</RadzenText>
-                                    <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.75rem;">
-                                        <RadzenText TextStyle="TextStyle.Body2" Style="@Services.H_TexteLibre.Style(_resultat.Info)"
-                                                    @onclick="@(() => VoirDetailSiTronque(_resultat.Info, "Informations complémentaires"))">@Services.H_TexteLibre.Tronquer(_resultat.Info)</RadzenText>
-                                    </RadzenCard>
-                                    @if (Services.H_TexteLibre.EstTronque(_resultat.Info))
-                                    {
-                                        <RadzenButton Text="Voir le détail" Icon="unfold_more" ButtonStyle="ButtonStyle.Base"
-                                                      Variant="Variant.Text" Size="ButtonSize.Small" Style="align-self: flex-start;"
-                                                      Click="@(() => VoirDetail(_resultat.Info!, "Informations complémentaires"))" />
-                                    }
-                                </RadzenStack>
-                            }
-                        </RadzenStack>
-
-                        @if (!string.IsNullOrEmpty(_resultat.PdfBase64))
-                        {
-                            <RadzenButton Text="Télécharger la confirmation PDF" Icon="picture_as_pdf"
-                                          ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined"
-                                          Size="ButtonSize.Medium" Style="width: 100%;" Click="TelechargerPdf" />
-                        }
-                    </RadzenStack>
-                }
-                else
-                {
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
-                        <RadzenIcon Icon="cancel" Style="font-size: 2.5rem; color: var(--rz-danger);" />
-                        <RadzenStack Gap="0">
-                            <RadzenText TextStyle="TextStyle.H5" Style="margin: 0; color: var(--rz-danger);">Code invalide</RadzenText>
-                            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">@_resultat.Message</RadzenText>
-                        </RadzenStack>
-                    </RadzenStack>
-                }
+                <Comp_ResultatValidation Resultat="_resultat" ValeurCode="@_valeurCode" />
             </RadzenCard>
         }
     </RadzenColumn>
@@ -142,22 +57,11 @@
 
         if (!_succes)
         {
-            Notification.Notify(NotificationSeverity.Error, "Erreur", _resultat?.Message ?? "Code invalide.");
+            var _message = "Code invalide.";
+            if (_resultat != null && !string.IsNullOrEmpty(_resultat.Message))
+                _message = _resultat.Message;
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
-    }
-
-    private async Task TelechargerPdf()
-    {
-        if (_resultat?.PdfBase64 == null) return;
-        var _nom = $"BTPSecure_Confirmation_{_valeurCode}.pdf";
-        await JS.InvokeVoidAsync("eval", $@"
-            var a = document.createElement('a');
-            a.href = 'data:application/pdf;base64,{_resultat.PdfBase64}';
-            a.download = '{_nom}';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        ");
     }
 
     // Le « - » du format XXXX-XXXX est inséré automatiquement pendant la frappe
@@ -171,21 +75,5 @@
                 _saisie = _s;
         }
         _valeurCode = Services.H_Code.Formater(_saisie);
-    }
-
-    // Le texte tronqué est cliquable pour ouvrir le détail complet
-    private async Task VoirDetailSiTronque(string? p_texte, string p_titre)
-    {
-        if (Services.H_TexteLibre.EstTronque(p_texte))
-        {
-            await VoirDetail(p_texte!, p_titre);
-        }
-    }
-
-    private async Task VoirDetail(string p_texte, string p_titre)
-    {
-        await Dialog.OpenAsync<Comp_DialogTexte>(p_titre,
-            new Dictionary<string, object?> { ["Contenu"] = p_texte },
-            new DialogOptions { Width = "520px", CloseDialogOnOverlayClick = true });
     }
 }

@@ -1,0 +1,15 @@
+@inject DialogService Dialog
+
+@* Affiche le résultat d'une validation faite depuis une commande (À préparer / Prêtes) *@
+
+<RadzenStack Gap="1rem" Style="min-width: 320px;">
+    <Comp_ResultatValidation Resultat="Resultat" ValeurCode="@ValeurCode" />
+
+    <RadzenButton Text="Fermer" ButtonStyle="ButtonStyle.Primary" Style="align-self: flex-end;"
+                  Click="@(() => Dialog.Close())" />
+</RadzenStack>
+
+@code {
+    [Parameter] public DTO_ResultatValidation? Resultat { get; set; }
+    [Parameter] public string ValeurCode { get; set; } = string.Empty;
+}

@@ -257,16 +257,30 @@ else
         if (string.IsNullOrWhiteSpace(_val))
             return;
 
-        var (_succes, _res) = await SCode.ValiderPourCommande(p_codeId, _val.Trim().ToUpper());
+        var _valeur = _val.Trim().ToUpper();
+        var (_succes, _res) = await SCode.ValiderPourCommande(p_codeId, _valeur);
+
         if (_succes)
         {
-            Notification.Notify(NotificationSeverity.Success, "Succès", "Code validé.");
             _codesSaisis.Remove(p_codeId);
+
+            // Même détail que sur l'Accueil (collaborateur, matériaux, PDF...)
+            await Dialog.OpenAsync<Comp_DialogResultatValidation>("Résultat de la validation",
+                new Dictionary<string, object?>
+                {
+                    ["Resultat"] = _res,
+                    ["ValeurCode"] = _valeur
+                },
+                new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
+
             await OnAction.InvokeAsync();
         }
         else
         {
-            Notification.Notify(NotificationSeverity.Error, "Erreur", _res?.Message ?? "Code invalide.");
+            var _message = "Code invalide.";
+            if (_res != null && !string.IsNullOrEmpty(_res.Message))
+                _message = _res.Message;
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
     }
 }
