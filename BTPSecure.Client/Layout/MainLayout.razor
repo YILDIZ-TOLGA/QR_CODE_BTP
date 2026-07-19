@@ -73,10 +73,10 @@
                     {
                         <RadzenPanelMenuItem Text="Accueil" Icon="home" Path="fournisseur" Match="NavLinkMatch.All" />
                         <RadzenPanelMenuItem Text="À préparer" Icon="pending_actions" Path="fournisseur/a-preparer" Match="NavLinkMatch.All">
+                            @* Le Template ne remplace QUE le texte : l'icône vient de l'attribut Icon *@
                             <Template>
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="width: 100%;">
-                                    <RadzenIcon Icon="pending_actions" />
-                                    <RadzenText Style="margin: 0; flex: 1;">À préparer</RadzenText>
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                    <RadzenText Style="margin: 0;">À préparer</RadzenText>
                                     @if (_commandesAPreparer > 0)
                                     {
                                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@_commandesAPreparer.ToString()" IsPill="true" />
