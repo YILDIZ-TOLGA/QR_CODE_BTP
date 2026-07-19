@@ -117,4 +117,14 @@ public class C_Code : ControllerBase
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(new { message = _message });
     }
+
+    // Réattribution d'un code : destinataire et/ou fournisseur
+    [HttpPost("modifier")]
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
+    public async Task<IActionResult> Modifier([FromBody] DTO_ModifierCode p_dto)
+    {
+        var (_succes, _message, _resultat) = await _sCode.Modifier(p_dto, ObtenirUtilisateurId());
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(_resultat);
+    }
 }

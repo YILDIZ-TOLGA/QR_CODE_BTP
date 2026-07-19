@@ -136,6 +136,21 @@ public class S_Code
         return (true, "Code révoqué.");
     }
 
+    public async Task<(bool Succes, string Message, DTO_ResultatModificationCode? Resultat)> Modifier(DTO_ModifierCode p_dto)
+    {
+        var _reponse = await _http.PostAsJsonAsync("api/codes/modifier", p_dto);
+        if (!_reponse.IsSuccessStatusCode)
+        {
+            var _erreur = await LireErreur(_reponse);
+            return (false, _erreur, null);
+        }
+
+        var _resultat = await _reponse.Content.ReadFromJsonAsync<DTO_ResultatModificationCode>();
+        if (_resultat == null)
+            return (true, "Code modifié.", null);
+        return (true, _resultat.Message, _resultat);
+    }
+
     private static async Task<string> LireErreur(HttpResponseMessage p_reponse)
     {
         try

@@ -412,9 +412,17 @@ else
 
                                     @if (_c.Statut == Enum_StatutCode.Actif && PeutRevoquer(_c))
                                     {
-                                        <RadzenButton Text="Révoquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
-                                                      Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
-                                                      Click="() => RevoquerCode(_c)" />
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                            @if (!_c.EstPermanent)
+                                            {
+                                                <RadzenButton Text="Modifier" Icon="edit" ButtonStyle="ButtonStyle.Base"
+                                                              Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
+                                                              Click="() => ModifierCode(_c)" />
+                                            }
+                                            <RadzenButton Text="Révoquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
+                                                          Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
+                                                          Click="() => RevoquerCode(_c)" />
+                                        </RadzenStack>
                                     }
                                 </RadzenStack>
                             </RadzenCard>
@@ -719,6 +727,52 @@ else
             if (_succes)
             {
                 Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                _codes = await SCode.ObtenirParDirigeant();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    // Réattribue un code à un autre destinataire et/ou un autre fournisseur
+    private async Task ModifierCode(DTO_CodeAffichage p_code)
+    {
+        var _options = _collaborateurs
+            .Where(c => c.StatutInvitation == Enum_StatutInvitation.Acceptee)
+            .Select(c => new Comp_DialogModifierCode.OptionCollaborateur
+            {
+                Id = c.CollaborateurId,
+                Label = $"{c.Prenom} {c.Nom} ({c.Email})"
+            })
+            .ToList();
+
+        int? _collaborateurActuel = null;
+        if (p_code.CollaborateurId > 0)
+            _collaborateurActuel = p_code.CollaborateurId;
+
+        var _params = new Dictionary<string, object?>
+        {
+            ["CodeId"] = p_code.Id,
+            ["CollaborateurIdActuel"] = _collaborateurActuel,
+            ["EmailTiersActuel"] = p_code.EmailTiers,
+            ["FournisseurContactIdActuel"] = p_code.FournisseurContactId,
+            ["Collaborateurs"] = _options,
+            ["Fournisseurs"] = _fournisseurs
+        };
+
+        var _resultat = await Dialog.OpenAsync<Comp_DialogModifierCode>($"Modifier le code {p_code.Valeur}", _params,
+            new DialogOptions { Width = "560px", CloseDialogOnOverlayClick = true });
+
+        if (_resultat is DTO_ModifierCode _dtoModif)
+        {
+            var (_succes, _message, _res) = await SCode.Modifier(_dtoModif);
+            if (_succes)
+            {
+                var _severite = NotificationSeverity.Success;
+                if (_res != null && _res.CodeRegenere)
+                    _severite = NotificationSeverity.Warning;
+
+                Notification.Notify(_severite, "Code modifié", _message, 8000);
                 _codes = await SCode.ObtenirParDirigeant();
             }
             else

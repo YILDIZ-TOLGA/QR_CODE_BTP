@@ -488,6 +488,169 @@ public class S_Code
         return (true, "Code révoqué avec succès.");
     }
 
+    // Réattribue un code déjà généré à un autre destinataire et/ou un autre fournisseur.
+    // Règle de sécurité : si le destinataire change, la valeur du code est RÉGÉNÉRÉE,
+    // car l'ancien destinataire connaît l'ancienne valeur (le code est un porteur).
+    public async Task<(bool Succes, string Message, DTO_ResultatModificationCode? Resultat)> Modifier(DTO_ModifierCode p_dto, int p_userId)
+    {
+        var _code = await _daoCode.ObtenirParId(p_dto.CodeId);
+        if (_code == null)
+            return (false, "Code non trouvé.", null);
+
+        // Autorisé : le Dirigeant propriétaire OU un Responsable Admin de l'entreprise du code
+        bool _estProprietaire = _code.DirigeantId == p_userId;
+        bool _estResponsableAdmin = false;
+        if (!_estProprietaire)
+        {
+            var _lien = await _daoEntreprise.ObtenirLienCollaborateur(p_userId, _code.EntrepriseId);
+            if (_lien != null
+                && _lien.StatutInvitation == Enum_StatutInvitation.Acceptee
+                && _lien.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+            {
+                _estResponsableAdmin = true;
+            }
+        }
+        if (!_estProprietaire && !_estResponsableAdmin)
+            return (false, "Vous n'êtes pas autorisé à modifier ce code.", null);
+
+        // Un Responsable Admin ne peut pas modifier son propre code ni celui d'un autre Responsable Admin
+        if (_estResponsableAdmin && _code.CollaborateurId.HasValue)
+        {
+            if (_code.CollaborateurId.Value == p_userId)
+                return (false, "Vous ne pouvez pas modifier votre propre code.", null);
+
+            var _lienCible = await _daoEntreprise.ObtenirLienCollaborateur(_code.CollaborateurId.Value, _code.EntrepriseId);
+            if (_lienCible != null && _lienCible.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+                return (false, "Vous ne pouvez pas modifier le code d'un autre Responsable Admin.", null);
+        }
+
+        if (_code.Statut != Enum_StatutCode.Actif)
+            return (false, "Seuls les codes actifs peuvent être modifiés.", null);
+        if (_code.EstPermanent)
+            return (false, "Un code permanent est lié à son responsable et ne peut pas être réattribué.", null);
+
+        // ── Nouveau destinataire ────────────────────────────────────────────
+        int? _nouveauCollaborateurId = null;
+        string? _nouvelEmailTiers = null;
+        if (p_dto.PourTiers)
+        {
+            if (string.IsNullOrWhiteSpace(p_dto.EmailTiers))
+                return (false, "L'email du destinataire externe est obligatoire.", null);
+            _nouvelEmailTiers = p_dto.EmailTiers.Trim().ToLower();
+        }
+        else
+        {
+            if (!await _daoEntreprise.CollaborateurEstDansEntreprise(p_dto.CollaborateurId, _code.EntrepriseId))
+                return (false, "Ce collaborateur n'appartient pas à cette entreprise.", null);
+            _nouveauCollaborateurId = p_dto.CollaborateurId;
+        }
+
+        // ── Nouveau fournisseur ─────────────────────────────────────────────
+        int? _nouveauFournisseurContactId = null;
+        if (p_dto.UtiliserFournisseur)
+        {
+            if (!p_dto.FournisseurContactId.HasValue)
+                return (false, "Sélectionnez un fournisseur.", null);
+
+            var _contact = await _daoFournisseurContact.ObtenirParId(p_dto.FournisseurContactId.Value);
+            if (_contact == null || _contact.DirigeantId != _code.DirigeantId)
+                return (false, "Fournisseur sélectionné introuvable.", null);
+            _nouveauFournisseurContactId = _contact.Id;
+        }
+
+        var _destinataireChange = _code.CollaborateurId != _nouveauCollaborateurId
+                                  || _code.EmailTiers != _nouvelEmailTiers;
+        var _fournisseurChange = _code.FournisseurContactId != _nouveauFournisseurContactId;
+
+        if (!_destinataireChange && !_fournisseurChange)
+            return (false, "Aucune modification à appliquer.", null);
+
+        _code.CollaborateurId = _nouveauCollaborateurId;
+        _code.EmailTiers = _nouvelEmailTiers;
+        _code.FournisseurContactId = _nouveauFournisseurContactId;
+
+        // Le fournisseur change : la préparation de l'ancien fournisseur n'a plus lieu d'être
+        if (_fournisseurChange)
+        {
+            _code.EstPrete = false;
+            _code.DatePrete = null;
+
+            // Un code sans fournisseur n'a pas de référence : on la génère à la volée
+            if (_nouveauFournisseurContactId.HasValue && string.IsNullOrEmpty(_code.Reference))
+            {
+                var _entrepriseCode = await _daoEntreprise.ObtenirParId(_code.EntrepriseId);
+                if (_entrepriseCode != null)
+                {
+                    var _nomNettoye = _entrepriseCode.Nom.Replace(" ", "-");
+                    _code.Reference = $"{_nomNettoye}-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
+                }
+            }
+        }
+
+        // SÉCURITÉ : l'ancien destinataire connaît l'ancienne valeur → on la régénère
+        var _valeurRegeneree = false;
+        if (_destinataireChange)
+        {
+            _code.Valeur = await GenererValeurUnique();
+            _valeurRegeneree = true;
+        }
+
+        await _daoCode.Sauvegarder();
+
+        _logger.LogInformation(
+            "Code {Id} modifié par {UserId} (destinataire changé : {DestChange}, fournisseur changé : {FourChange}, valeur régénérée : {Regen})",
+            _code.Id, p_userId, _destinataireChange, _fournisseurChange, _valeurRegeneree);
+
+        // Le nouveau destinataire externe doit recevoir la valeur courante du code
+        if (_nouvelEmailTiers != null && (_destinataireChange || _valeurRegeneree))
+        {
+            var _emailCopie = _nouvelEmailTiers;
+            var _valeurCopie = _code.Valeur;
+            var _nomEntrepriseCopie = _code.NomEntreprise;
+            var _numCmdCopie = _code.NumeroCommande;
+            _ = Task.Run(async () =>
+            {
+                await _sEmail.EnvoyerCodeTiers(_emailCopie, _valeurCopie, _nomEntrepriseCopie, _numCmdCopie);
+            });
+        }
+
+        // Invitation au nouveau fournisseur s'il n'a pas encore de compte
+        if (_fournisseurChange && _nouveauFournisseurContactId.HasValue)
+        {
+            var _contactFinal = await _daoFournisseurContact.ObtenirParId(_nouveauFournisseurContactId.Value);
+            if (_contactFinal != null)
+            {
+                bool _compteExiste = await _daoUtilisateur.FournisseurExisteAvecSiret(_contactFinal.Siret);
+                if (!_compteExiste)
+                {
+                    var _nomEntrepriseCopie = _code.NomEntreprise;
+                    _ = Task.Run(async () =>
+                    {
+                        await _sEmail.EnvoyerInvitationFournisseur(
+                            _contactFinal.Email,
+                            _nomEntrepriseCopie,
+                            _contactFinal.NomEntreprise,
+                            _contactFinal.Siret,
+                            _contactFinal.Siren,
+                            _contactFinal.Email);
+                    });
+                }
+            }
+        }
+
+        var _message = "Code modifié.";
+        if (_valeurRegeneree)
+            _message = "Code modifié et régénéré : l'ancienne valeur n'est plus valable.";
+
+        var _resultat = new DTO_ResultatModificationCode
+        {
+            Message = _message,
+            CodeRegenere = _valeurRegeneree,
+            NouvelleValeur = _code.Valeur
+        };
+        return (true, _message, _resultat);
+    }
+
     // Crée le code permanent libre-service d'un Responsable / Responsable Admin (idempotent)
     public async Task CreerCodePermanent(int p_collaborateurId, E_Entreprise p_entreprise)
     {
@@ -690,7 +853,8 @@ public class S_Code
             NomFournisseurContact = p_code.FournisseurContact?.NomEntreprise,
             FournisseurContactId = p_code.FournisseurContactId,
             EmailTiers = p_code.EmailTiers,
-            AchatsSupplementaires = p_code.AchatsSupplementaires
+            AchatsSupplementaires = p_code.AchatsSupplementaires,
+            EstPermanent = p_code.EstPermanent
         };
     }
 }

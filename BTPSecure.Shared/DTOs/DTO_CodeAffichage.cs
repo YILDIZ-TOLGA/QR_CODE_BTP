@@ -22,4 +22,6 @@ public class DTO_CodeAffichage
     public int? FournisseurContactId { get; set; }
     public string? EmailTiers { get; set; }
     public int AchatsSupplementaires { get; set; }
+    // Un code permanent est lié à son responsable : il n'est pas réattribuable
+    public bool EstPermanent { get; set; }
 }

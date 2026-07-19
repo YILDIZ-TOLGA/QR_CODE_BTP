@@ -1,0 +1,125 @@
+@inject DialogService Dialog
+
+@* Réattribution d'un code : destinataire et/ou fournisseur *@
+
+<RadzenStack Gap="1rem" Style="min-width: 320px;">
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenCheckBox @bind-Value="_dto.PourTiers" Name="ModTiers" TriState="false" />
+        <RadzenLabel Text="Destinataire externe (pas un collaborateur)" Component="ModTiers" Style="cursor: pointer;" />
+    </RadzenStack>
+
+    @if (_dto.PourTiers)
+    {
+        <RadzenFormField Text="Email du destinataire externe" Variant="Variant.Outlined" Style="width: 100%;">
+            <Start><RadzenIcon Icon="mail" /></Start>
+            <ChildContent>
+                <RadzenTextBox @bind-Value="_dto.EmailTiers" Style="width: 100%;" Placeholder="destinataire@email.com" />
+            </ChildContent>
+        </RadzenFormField>
+    }
+    else
+    {
+        <RadzenFormField Text="Collaborateur" Variant="Variant.Outlined" Style="width: 100%;">
+            <Start><RadzenIcon Icon="person" /></Start>
+            <ChildContent>
+                <RadzenDropDown @bind-Value="_dto.CollaborateurId" Data="Collaborateurs" TextProperty="Label"
+                                ValueProperty="Id" Style="width: 100%;" Placeholder="Sélectionner un collaborateur..." />
+            </ChildContent>
+        </RadzenFormField>
+    }
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenCheckBox @bind-Value="_dto.UtiliserFournisseur" Name="ModFour" TriState="false" />
+        <RadzenLabel Text="Désigner un fournisseur" Component="ModFour" Style="cursor: pointer;" />
+    </RadzenStack>
+
+    @if (_dto.UtiliserFournisseur)
+    {
+        @if (Fournisseurs.Count == 0)
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+                Aucun fournisseur dans votre carnet. Ajoutez-en un via « Mes fournisseurs ».
+            </RadzenAlert>
+        }
+        else
+        {
+            <RadzenFormField Text="Fournisseur" Variant="Variant.Outlined" Style="width: 100%;">
+                <Start><RadzenIcon Icon="business" /></Start>
+                <ChildContent>
+                    <RadzenDropDown @bind-Value="_dto.FournisseurContactId" Data="Fournisseurs"
+                                    TextProperty="NomEntreprise" ValueProperty="Id" Style="width: 100%;"
+                                    Placeholder="Sélectionner un fournisseur..." />
+                </ChildContent>
+            </RadzenFormField>
+        }
+    }
+
+    @if (DestinataireChange())
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+            Le destinataire change : <strong>le code sera régénéré</strong>. L'ancienne valeur ne fonctionnera plus
+            (l'ancien destinataire la connaissait), et un PDF déjà imprimé devient caduc.
+        </RadzenAlert>
+    }
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.75rem">
+        <RadzenButton Text="Annuler" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Click="@(() => Dialog.Close())" />
+        <RadzenButton Text="Appliquer" Icon="check" ButtonStyle="ButtonStyle.Primary" Click="Valider" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int CodeId { get; set; }
+    [Parameter] public int? CollaborateurIdActuel { get; set; }
+    [Parameter] public string? EmailTiersActuel { get; set; }
+    [Parameter] public int? FournisseurContactIdActuel { get; set; }
+    [Parameter] public List<OptionCollaborateur> Collaborateurs { get; set; } = new();
+    [Parameter] public List<DTO_FournisseurContact> Fournisseurs { get; set; } = new();
+
+    private DTO_ModifierCode _dto = new();
+
+    protected override void OnInitialized()
+    {
+        // On pré-remplit avec la situation actuelle du code
+        _dto.CodeId = CodeId;
+        _dto.PourTiers = !string.IsNullOrEmpty(EmailTiersActuel);
+        _dto.EmailTiers = EmailTiersActuel;
+        if (CollaborateurIdActuel.HasValue)
+            _dto.CollaborateurId = CollaborateurIdActuel.Value;
+        _dto.UtiliserFournisseur = FournisseurContactIdActuel.HasValue;
+        _dto.FournisseurContactId = FournisseurContactIdActuel;
+    }
+
+    // Sert à prévenir l'utilisateur avant qu'il valide
+    private bool DestinataireChange()
+    {
+        if (_dto.PourTiers)
+        {
+            var _nouvel = "";
+            if (_dto.EmailTiers != null)
+                _nouvel = _dto.EmailTiers.Trim().ToLower();
+
+            var _ancien = "";
+            if (EmailTiersActuel != null)
+                _ancien = EmailTiersActuel.Trim().ToLower();
+
+            return _nouvel != _ancien;
+        }
+
+        if (!CollaborateurIdActuel.HasValue)
+            return true;
+        return _dto.CollaborateurId != CollaborateurIdActuel.Value;
+    }
+
+    private void Valider()
+    {
+        Dialog.Close(_dto);
+    }
+
+    public class OptionCollaborateur
+    {
+        public int Id { get; set; }
+        public string Label { get; set; } = string.Empty;
+    }
+}
