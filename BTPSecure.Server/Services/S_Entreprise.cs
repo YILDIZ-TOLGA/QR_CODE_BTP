@@ -123,14 +123,17 @@ public class S_Entreprise
         _logger.LogInformation("Collaborateur {Email} créé par {CallerId} pour entreprise {EntrepriseId}",
             _collaborateur.Email, p_callerId, _entreprise.Id);
 
-        var _emailCopie = _collaborateur.Email;
-        var _prenomCopie = _collaborateur.Prenom;
-        var _mdpCopie = _motDePasseTemporaire;
-        var _nomEntrepriseCopie = _entreprise.Nom;
-        _ = Task.Run(async () =>
+        // Envoi attendu (pas en tâche de fond) : le mot de passe temporaire n'existe QUE
+        // dans cet email. Si l'envoi échoue, on doit le rendre au dirigeant, sinon le
+        // compte devient inutilisable.
+        var _emailEnvoye = await _sEmail.EnvoyerCompteCreeParDirigeant(
+            _collaborateur.Email, _collaborateur.Prenom, _motDePasseTemporaire, _entreprise.Nom);
+
+        if (!_emailEnvoye)
         {
-            await _sEmail.EnvoyerCompteCreeParDirigeant(_emailCopie, _prenomCopie, _mdpCopie, _nomEntrepriseCopie);
-        });
+            _logger.LogError("Email de création non envoyé à {Email} : mot de passe temporaire rendu au créateur.", _collaborateur.Email);
+            return (true, $"Collaborateur créé, mais l'email n'a pas pu être envoyé. Transmettez-lui son mot de passe temporaire : {_motDePasseTemporaire}");
+        }
 
         return (true, "Collaborateur créé. Il recevra ses identifiants par email.");
     }
@@ -208,7 +211,17 @@ public class S_Entreprise
         await _daoEntreprise.AjouterCollaborateur(_lien);
         _logger.LogInformation("Salarié {Email} ajouté à l'entreprise {EntrepriseId}", p_email, _entreprise.Id);
 
-        return (true, "Invitation envoyée avec succès.", new DTO_CollaborateurAffichage
+        // Le collaborateur a déjà un compte : on le prévient qu'une invitation l'attend
+        var _emailEnvoye = await _sEmail.EnvoyerInvitationCollaborateur(
+            _collaborateur.Email, _collaborateur.Prenom, _entreprise.Nom);
+
+        var _messageInvitation = "Invitation envoyée. Le collaborateur a reçu un email et doit l'accepter depuis son espace.";
+        if (!_emailEnvoye)
+        {
+            _messageInvitation = "Invitation créée, mais l'email n'a pas pu être envoyé. Prévenez le collaborateur : l'invitation l'attend dans son espace.";
+        }
+
+        return (true, _messageInvitation, new DTO_CollaborateurAffichage
         {
             Id = _lien.Id,
             CollaborateurId = _collaborateur.Id,

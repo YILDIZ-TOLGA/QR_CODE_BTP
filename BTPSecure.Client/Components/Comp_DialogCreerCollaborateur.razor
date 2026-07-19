@@ -9,8 +9,8 @@
 @code {
     [Parameter] public bool PeutCreerResponsableAdmin { get; set; } = true;
 
-    private void Ferme(string p_email)
+    private void Ferme(Comp_FormCreerCollaborateur.ResultatCreation p_resultat)
     {
-        Dialog.Close(p_email);
+        Dialog.Close(p_resultat.Email);
     }
 }

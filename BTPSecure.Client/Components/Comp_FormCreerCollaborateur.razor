@@ -85,8 +85,8 @@
 </RadzenTemplateForm>
 
 @code {
-    // Déclenché après création réussie, avec l'email du collaborateur créé
-    [Parameter] public EventCallback<string> OnCree { get; set; }
+    // Déclenché après création réussie (email créé + message réel du serveur)
+    [Parameter] public EventCallback<ResultatCreation> OnCree { get; set; }
     // Un Responsable Admin ne peut pas créer un autre Responsable Admin
     [Parameter] public bool PeutCreerResponsableAdmin { get; set; } = true;
 
@@ -116,13 +116,20 @@
 
         if (_ok)
         {
-            Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+            // Durée longue : en cas d'échec d'envoi, le message contient le mot de passe temporaire
+            Notification.Notify(NotificationSeverity.Success, "Succès", _message, 12000);
             _dto = new DTO_CreerCollaborateur();
-            await OnCree.InvokeAsync(_email);
+            await OnCree.InvokeAsync(new ResultatCreation { Email = _email, Message = _message });
         }
         else
         {
             Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
         }
+    }
+
+    public class ResultatCreation
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 }

@@ -20,7 +20,11 @@
                         Collaborateur créé avec succès
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center">
-                        Un email contenant ses identifiants (email + mot de passe temporaire) a été envoyé à <strong>@_emailEnvoye</strong>.
+                        Compte créé pour <strong>@_emailEnvoye</strong>.
+                    </RadzenText>
+                    @* Message réel du serveur : contient le mot de passe temporaire si l'email n'est pas parti *@
+                    <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Center" Style="overflow-wrap: anywhere;">
+                        @_messageServeur
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
                         Il est automatiquement rattaché à votre entreprise.
@@ -47,16 +51,19 @@
 @code {
     private bool _succes;
     private string _emailEnvoye = string.Empty;
+    private string _messageServeur = string.Empty;
 
-    private void OnCollaborateurCree(string p_email)
+    private void OnCollaborateurCree(Comp_FormCreerCollaborateur.ResultatCreation p_resultat)
     {
         _succes = true;
-        _emailEnvoye = p_email;
+        _emailEnvoye = p_resultat.Email;
+        _messageServeur = p_resultat.Message;
     }
 
     private void Reinitialiser()
     {
         _succes = false;
         _emailEnvoye = string.Empty;
+        _messageServeur = string.Empty;
     }
 }
