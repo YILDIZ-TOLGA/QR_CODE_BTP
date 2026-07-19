@@ -1,0 +1,89 @@
+@inject NotificationService Notification
+
+@* Sélection d'une pièce jointe (JPG/PNG/PDF, 5 Mo max) — source UNIQUE réutilisée
+   par la messagerie, le fil de conversation et l'envoi rapide de message. *@
+
+<RadzenStack Gap="0.5rem">
+    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+        Pièce jointe (JPG, PNG ou PDF — 5 Mo maximum)
+    </RadzenText>
+    <InputFile OnChange="FichierChoisi" accept=".jpg,.jpeg,.png,.pdf" />
+    @if (Fichier != null)
+    {
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+            <RadzenIcon Icon="attach_file" Style="color: var(--rz-success);" />
+            <RadzenText TextStyle="TextStyle.Body2">@Fichier.Nom</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@TailleLisible())</RadzenText>
+            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text"
+                          Size="ButtonSize.ExtraSmall" Click="Retirer" />
+        </RadzenStack>
+    }
+</RadzenStack>
+
+@code {
+    [Parameter] public PieceJointe? Fichier { get; set; }
+    [Parameter] public EventCallback<PieceJointe?> FichierChanged { get; set; }
+
+    private const long _tailleMax = 5 * 1024 * 1024;
+
+    private string TailleLisible()
+    {
+        if (Fichier == null)
+            return "";
+        double _ko = Fichier.Contenu.Length / 1024.0;
+        if (_ko < 1024)
+            return $"{Math.Round(_ko)} Ko";
+        double _mo = _ko / 1024.0;
+        return $"{Math.Round(_mo, 1)} Mo";
+    }
+
+    private async Task FichierChoisi(InputFileChangeEventArgs p_e)
+    {
+        var _fichier = p_e.File;
+        if (_fichier == null)
+            return;
+
+        var _type = _fichier.ContentType.ToLower();
+        if (_type != "image/jpeg" && _type != "image/jpg" && _type != "image/png" && _type != "application/pdf")
+        {
+            Notification.Notify(NotificationSeverity.Error, "Format non supporté", "JPG, PNG ou PDF uniquement.");
+            return;
+        }
+        if (_fichier.Size > _tailleMax)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Fichier trop volumineux", "5 Mo maximum.");
+            return;
+        }
+
+        try
+        {
+            using var _flux = _fichier.OpenReadStream(_tailleMax);
+            using var _ms = new MemoryStream();
+            await _flux.CopyToAsync(_ms);
+
+            var _choix = new PieceJointe
+            {
+                Contenu = _ms.ToArray(),
+                Nom = _fichier.Name,
+                Type = _fichier.ContentType
+            };
+            await FichierChanged.InvokeAsync(_choix);
+        }
+        catch
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", "Lecture du fichier impossible.");
+        }
+    }
+
+    private async Task Retirer()
+    {
+        await FichierChanged.InvokeAsync(null);
+    }
+
+    public class PieceJointe
+    {
+        public byte[] Contenu { get; set; } = Array.Empty<byte>();
+        public string Nom { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+    }
+}

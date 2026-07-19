@@ -202,21 +202,7 @@ else
                             </ChildContent>
                         </RadzenFormField>
 
-                        <RadzenStack Gap="0.5rem">
-                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
-                                Pièce jointe (JPG, PNG ou PDF — 5 Mo maximum)
-                            </RadzenText>
-                            <InputFile OnChange="FichierChoisi" accept=".jpg,.jpeg,.png,.pdf" />
-                            @if (_pieceJointe != null)
-                            {
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                    <RadzenIcon Icon="attach_file" Style="color: var(--rz-success);" />
-                                    <RadzenText TextStyle="TextStyle.Body2">@_nomPieceJointe</RadzenText>
-                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">(@TailleLisible())</RadzenText>
-                                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.Small" Click="RetirerPieceJointe" />
-                                </RadzenStack>
-                            }
-                        </RadzenStack>
+                        <Comp_SelecteurPieceJointe @bind-Fichier="_pieceJointe" />
 
                         <RadzenButton Text="Envoyer" Icon="send" ButtonStyle="ButtonStyle.Primary"
                                       Style="width: 100%;" Click="Envoyer" Disabled="_envoiEnCours" />
@@ -254,11 +240,7 @@ else
     private bool _envoiEnCours = false;
 
     // Pièce jointe
-    private byte[]? _pieceJointe;
-    private string _nomPieceJointe = string.Empty;
-    private string _typePieceJointe = string.Empty;
-
-    private const long _tailleMax = 5 * 1024 * 1024;
+    private Comp_SelecteurPieceJointe.PieceJointe? _pieceJointe;
 
     protected override async Task OnInitializedAsync()
     {
@@ -522,57 +504,6 @@ else
         return _s;
     }
 
-    private string TailleLisible()
-    {
-        if (_pieceJointe == null)
-            return "";
-        double _ko = _pieceJointe.Length / 1024.0;
-        if (_ko < 1024)
-            return $"{Math.Round(_ko)} Ko";
-        double _mo = _ko / 1024.0;
-        return $"{Math.Round(_mo, 1)} Mo";
-    }
-
-    private async Task FichierChoisi(InputFileChangeEventArgs p_e)
-    {
-        var _fichier = p_e.File;
-        if (_fichier == null)
-            return;
-
-        var _type = _fichier.ContentType.ToLower();
-        if (_type != "image/jpeg" && _type != "image/jpg" && _type != "image/png" && _type != "application/pdf")
-        {
-            Notification.Notify(NotificationSeverity.Error, "Format non supporté", "JPG, PNG ou PDF uniquement.");
-            return;
-        }
-        if (_fichier.Size > _tailleMax)
-        {
-            Notification.Notify(NotificationSeverity.Error, "Fichier trop volumineux", "5 Mo maximum.");
-            return;
-        }
-
-        try
-        {
-            using var _flux = _fichier.OpenReadStream(_tailleMax);
-            using var _ms = new MemoryStream();
-            await _flux.CopyToAsync(_ms);
-            _pieceJointe = _ms.ToArray();
-            _nomPieceJointe = _fichier.Name;
-            _typePieceJointe = _fichier.ContentType;
-        }
-        catch
-        {
-            Notification.Notify(NotificationSeverity.Error, "Erreur", "Lecture du fichier impossible.");
-        }
-    }
-
-    private void RetirerPieceJointe()
-    {
-        _pieceJointe = null;
-        _nomPieceJointe = string.Empty;
-        _typePieceJointe = string.Empty;
-    }
-
     private async Task Envoyer()
     {
         if (string.IsNullOrWhiteSpace(_sujet))
@@ -589,11 +520,15 @@ else
         var _dto = new DTO_EnvoyerTicket
         {
             Sujet = _sujet.Trim(),
-            Message = _message.Trim(),
-            PieceJointe = _pieceJointe,
-            NomPieceJointe = _nomPieceJointe,
-            TypePieceJointe = _typePieceJointe
+            Message = _message.Trim()
         };
+
+        if (_pieceJointe != null)
+        {
+            _dto.PieceJointe = _pieceJointe.Contenu;
+            _dto.NomPieceJointe = _pieceJointe.Nom;
+            _dto.TypePieceJointe = _pieceJointe.Type;
+        }
 
         if (_externe)
         {
@@ -626,7 +561,7 @@ else
             _emailExterne = string.Empty;
             _sujet = string.Empty;
             _message = string.Empty;
-            RetirerPieceJointe();
+            _pieceJointe = null;
             await Recharger();
             _vue = 2;
         }

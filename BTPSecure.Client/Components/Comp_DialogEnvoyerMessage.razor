@@ -36,9 +36,7 @@
         </ChildContent>
     </RadzenFormField>
 
-    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
-        Pour joindre une photo ou un PDF, passez par la Messagerie.
-    </RadzenText>
+    <Comp_SelecteurPieceJointe @bind-Fichier="_pieceJointe" />
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.75rem">
         <RadzenButton Text="Annuler" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Click="@(() => Dialog.Close(false))" />
@@ -54,6 +52,7 @@
 
     private string _sujet = string.Empty;
     private string _message = string.Empty;
+    private Comp_SelecteurPieceJointe.PieceJointe? _pieceJointe;
     private bool _envoiEnCours = false;
     private int? _destinataireResolu;
     private bool _estInterne = false;
@@ -118,6 +117,13 @@
             Sujet = _sujet.Trim(),
             Message = _message.Trim()
         };
+
+        if (_pieceJointe != null)
+        {
+            _dto.PieceJointe = _pieceJointe.Contenu;
+            _dto.NomPieceJointe = _pieceJointe.Nom;
+            _dto.TypePieceJointe = _pieceJointe.Type;
+        }
 
         if (_destinataireResolu.HasValue)
         {

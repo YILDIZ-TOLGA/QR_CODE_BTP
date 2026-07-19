@@ -46,15 +46,7 @@ else
         <RadzenStack Gap="0.6rem">
             <RadzenTextArea Value="@_repMessage" @oninput="MajReponse" Rows="2" Style="width: 100%;" MaxLength="5000" Placeholder="Votre réponse..." />
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
-                    <InputFile OnChange="FichierChoisi" accept=".jpg,.jpeg,.png,.pdf" />
-                    @if (_repPieceJointe != null)
-                    {
-                        <RadzenIcon Icon="attach_file" Style="color: var(--rz-success);" />
-                        <RadzenText TextStyle="TextStyle.Caption">@_repNomPieceJointe</RadzenText>
-                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.ExtraSmall" Click="RetirerPieceJointe" />
-                    }
-                </RadzenStack>
+                <Comp_SelecteurPieceJointe @bind-Fichier="_repPieceJointe" />
                 <RadzenButton Text="Envoyer" Icon="send" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
                               Click="Repondre" Disabled="_envoiEnCours" />
             </RadzenStack>
@@ -78,11 +70,7 @@ else
     // Réponse
     private string _repMessage = string.Empty;
     private bool _envoiEnCours = false;
-    private byte[]? _repPieceJointe;
-    private string _repNomPieceJointe = string.Empty;
-    private string _repTypePieceJointe = string.Empty;
-
-    private const long _tailleMax = 5 * 1024 * 1024;
+    private Comp_SelecteurPieceJointe.PieceJointe? _repPieceJointe;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -156,46 +144,6 @@ else
             _repMessage = _s;
     }
 
-    private async Task FichierChoisi(InputFileChangeEventArgs p_e)
-    {
-        var _fichier = p_e.File;
-        if (_fichier == null)
-            return;
-
-        var _type = _fichier.ContentType.ToLower();
-        if (_type != "image/jpeg" && _type != "image/jpg" && _type != "image/png" && _type != "application/pdf")
-        {
-            Notification.Notify(NotificationSeverity.Error, "Format non supporté", "JPG, PNG ou PDF uniquement.");
-            return;
-        }
-        if (_fichier.Size > _tailleMax)
-        {
-            Notification.Notify(NotificationSeverity.Error, "Fichier trop volumineux", "5 Mo maximum.");
-            return;
-        }
-
-        try
-        {
-            using var _flux = _fichier.OpenReadStream(_tailleMax);
-            using var _ms = new MemoryStream();
-            await _flux.CopyToAsync(_ms);
-            _repPieceJointe = _ms.ToArray();
-            _repNomPieceJointe = _fichier.Name;
-            _repTypePieceJointe = _fichier.ContentType;
-        }
-        catch
-        {
-            Notification.Notify(NotificationSeverity.Error, "Erreur", "Lecture du fichier impossible.");
-        }
-    }
-
-    private void RetirerPieceJointe()
-    {
-        _repPieceJointe = null;
-        _repNomPieceJointe = string.Empty;
-        _repTypePieceJointe = string.Empty;
-    }
-
     private async Task Repondre()
     {
         if (string.IsNullOrWhiteSpace(_repMessage))
@@ -212,11 +160,15 @@ else
         {
             DestinataireId = AutreId,
             Sujet = _sujet,
-            Message = _repMessage.Trim(),
-            PieceJointe = _repPieceJointe,
-            NomPieceJointe = _repNomPieceJointe,
-            TypePieceJointe = _repTypePieceJointe
+            Message = _repMessage.Trim()
         };
+
+        if (_repPieceJointe != null)
+        {
+            _dto.PieceJointe = _repPieceJointe.Contenu;
+            _dto.NomPieceJointe = _repPieceJointe.Nom;
+            _dto.TypePieceJointe = _repPieceJointe.Type;
+        }
 
         _envoiEnCours = true;
         var (_succes, _msg) = await STicket.Envoyer(_dto);
@@ -225,7 +177,7 @@ else
         if (_succes)
         {
             _repMessage = string.Empty;
-            RetirerPieceJointe();
+            _repPieceJointe = null;
             _fil = await STicket.ObtenirConversation(AutreId);
             await OnChangement.InvokeAsync();
         }
