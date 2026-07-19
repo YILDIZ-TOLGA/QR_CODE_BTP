@@ -92,6 +92,9 @@ git push   # Railway redéploie auto via webhook GitHub
 7. **Erreurs JSON vides côté client** : helper `LireMessageErreur` pour catcher les bodies vides/non-JSON.
 8. **Messagerie pièces jointes (dérogation assumée à la règle full Radzen — NE PAS « corriger »)** : `<InputFile>` (composant framework) pour lire les **octets** d'un fichier côté WASM (aucun composant Radzen ne le permet sans URL d'upload portant le JWT), et helper JS `window.btpTelechargerFichier` dans `index.html` pour télécharger (Chrome bloque la navigation vers les `data:` URI). `index.html` contient déjà du CSS/JS (loader) → c'est de l'infra, pas un composant.
 9. **Listes de tickets : jamais charger le `bytea`** → projeter sur `TicketApercu` (présence de PJ déduite du nom). Les octets ne sont lus que par `ObtenirParId` pour le **téléchargement**. Marquage lu / purge via `ExecuteUpdate` / `ExecuteDelete` (pas de chargement d'entités).
+10. 🔒 **Le code est un PORTEUR** : quiconque connaît la valeur peut dépenser l'argent. Donc si on **change le destinataire** d'un code (`S_Code.Modifier`), il faut **RÉGÉNÉRER la valeur** — l'ancien destinataire l'a vue dans son espace (ou reçue par email pour un tiers) et pourrait encore l'utiliser. Changer **seulement le fournisseur** ne régénère pas (le fournisseur ne détient pas le code) mais remet `EstPrete`/`DatePrete` à zéro. Refusé sur code non actif ou permanent.
+11. **Correspondance fournisseur : le SIRET décide, pas le SIREN.** Le SIREN est optionnel des deux côtés (carnet fournisseur ET inscription) ; exiger qu'il soit présent des deux côtés ou d'aucun **masquait silencieusement des commandes**. Le SIREN n'est comparé que **s'il est renseigné des deux côtés**. Un SIRET (14 chiffres) identique implique le même SIREN (ses 9 premiers chiffres) → aucune perte de sécurité. Règle appliquée dans `DAO_Code.ObtenirCommandesPourFournisseur` **et** `S_Code.MarquerPrete` (sinon la commande s'affiche mais « prête » est refusé).
+12. **Textes saisis par l'utilisateur** : toujours `white-space: pre-wrap` **+ `overflow-wrap: anywhere`**. Sans le second, une longue suite de caractères **sans espace** n'a aucun point de coupure et **déborde** de la carte. Utiliser `H_TexteLibre` (troncature + « … » + style + curseur).
 
 ## Endpoints diagnostiques
 - `GET /health` → `200 ok` (utilisé par Railway healthcheck)
@@ -113,18 +116,46 @@ git push   # Railway redéploie auto via webhook GitHub
 - ⚠️ **Renommage Lot 0B (2026-07)** : `Patron`→`Dirigeant`, `Salarie`→`Collaborateur`, `Confiance`→`LibreService`, `E_SalarieEntreprise`→`E_CollaborateurEntreprise`. **Colonnes/tables physiques PostgreSQL inchangées** (`PatronId`, `SalarieId`, `salaries_entreprises`) via `HasColumnName`/`ToTable` dans `AppDbContext` — ne jamais toucher ces strings de mapping. Rôles JWT écrits par `.ToString()` → tokens émis avant le renommage exigent un re-login.
 - **Rôles internes entreprise (Lot 1)** : `Enum_RoleEntreprise` {Collaborateur=1, Responsable=2, ResponsableAdmin=3} sur `E_CollaborateurEntreprise`. Responsable/RA = code permanent libre-service (`E_Code.EstPermanent`, régénéré à chaque validation, sans historique). Le RA peut créer des codes + a un tableau de bord (`Page_DashboardDirigeant`) mais **ne peut pas** révoquer son propre code ni celui d'un autre RA, ni changer les rôles.
 - **Inscription 2 étapes (Lot 2)** : cartes Dirigeant / Collaborateur / Fournisseur. Création de collaborateur par le Dirigeant (email obligatoire, mot de passe temporaire envoyé par mail).
-- **Logique codes (Lot 3)** : libre-service = **usage unique** ; validité **24 h fixe** ; type Liste avec achats supplémentaires **0/50/100/200 € HT** ; code pour un **tiers externe** (`E_Code.EmailTiers`, envoyé par mail). Type par défaut = Liste, case à cocher pour passer en Libre-service.
+- **Logique codes (Lot 3)** : libre-service = **usage unique** ; type Liste avec achats supplémentaires **0/50/100/200 € HT** ; code pour un **tiers externe** (`E_Code.EmailTiers`, envoyé par mail). Type par défaut = Liste, case à cocher pour passer en Libre-service.
+- ⚠️ **Validité : plus fixe depuis 2026-07** (la roadmap disait « 24 h uniquement, pas d'option » — décision changée par l'utilisateur). Champ `RadzenNumeric` **24 h par défaut**, borné **1 h → 168 h (7 j)** côté client **et** serveur. `DTO_CreerCode.DureeValiditeHeures` existait déjà mais était ignoré.
 - **Espace fournisseur (Lot 4)** : validation admin des fournisseurs (`E_Utilisateur.EstValide`) ; **sous-comptes** (`ParentFournisseurId`, SIRET partagé) ; **blacklist** par email (`E_Blacklist`) ; navigation Accueil / À préparer / Prêtes ; notification « commande prête ».
 - **Messagerie / tickets (Lot 5)** : `E_Ticket` (pièce jointe en `bytea`, **TTL 24 h** via `S_NettoyageTickets` BackgroundService) ; **annuaire** selon l'écosystème ; destinataire interne OU email externe (Brevo) ; **badge non-lus** sidebar. `Page_Messagerie` : vues Non lus / Lus / Envoyés / Nouveau / Conversations + recherche.
 - **Fil de conversation (Lot 6)** : `Comp_Conversation` (bulles chat), réutilise les tickets, Dirigeant ↔ Fournisseur. On peut répondre à un fil existant même si la relation a été retirée (`ConversationExiste`). Le fil ouvert se rafraîchit silencieusement (param `RefreshTick`).
 - **Fournisseur voit le destinataire** : `DTO_CommandeAVenir.EstTiers`/`Destinataire` → badge « client externe (personne tierce) » si tiers, sinon nom du collaborateur.
 - **Sécurité comptes** : reset mot de passe (`E_ResetMotDePasse`) + vérification email à l'inscription (`EmailVerifie` / `TokenVerification`) + changement de mot de passe dans « Mon profil ».
 - **Optimisation Railway** : polling centralisé 60 s (`Comp_AutoRefresh`, pause si onglet en arrière-plan + bouton manuel) ; requêtes messagerie **projetées sans `bytea`** (`TicketApercu`) ; marquage lu / purge TTL via `ExecuteUpdate` / `ExecuteDelete`.
-- ✅ **ROADMAP_V2 complète** : lots 0A → 6 tous livrés et déployés.
+- ✅ **ROADMAP_V2 complète** : lots 0A → 6 tous livrés et déployés (y compris le point différé du Lot 2, la pop-up de création de collaborateur).
+- **Création de collaborateur mutualisée** : `Comp_FormCreerCollaborateur` (formulaire unique) utilisé par la page dédiée **et** par `Comp_DialogCreerCollaborateur` (pop-up). Points d'entrée : tableau de bord (bouton **Créer**, à côté de **Inviter** = rattacher un compte existant) et **page de création de code** (création à la volée + pré-sélection automatique du nouveau collaborateur).
+- **Le Responsable Admin peut créer des collaborateurs** : `C_Entreprise` est passé en `[Authorize]` avec `[Authorize(Roles="Dirigeant")]` sur chaque action **sauf** `creer-collaborateur` (Dirigeant + Collaborateur). Le service résout l'entreprise via le Dirigeant **ou** `ObtenirPremierLienResponsableAdmin`. **Anti-escalade : un RA ne peut pas créer un autre RA** (bloqué serveur + rôle masqué via `PeutCreerResponsableAdmin`).
+- **Séparation visuelle des rôles (dashboard)** : une **section par rôle** (en-tête + compteur + rappel des droits, section vide masquée), **bordure gauche colorée** sur les cartes, **compteurs par rôle** dans l'en-tête entreprise.
+- **Réattribution d'un code généré** (`S_Code.Modifier`, `Comp_DialogModifierCode`) : change destinataire et/ou fournisseur. ⚠️ Voir la règle de sécurité « code = porteur » dans les pièges.
+- **Message contextuel** : bouton « Envoyer un message » sur les fiches collaborateur (dashboard) et fournisseur (Mes fournisseurs) → `Comp_DialogEnvoyerMessage`, qui **résout seul** le destinataire (compte interne trouvé dans l'annuaire, sinon envoi par email) et gère les pièces jointes.
+- **Emails fiabilisés** : `AjouterCollaborateur` (« Inviter ») n'envoyait **aucun** email malgré son message de succès → `EnvoyerInvitationCollaborateur` ajouté. Les envois liés à la création ne sont **plus en fire-and-forget** : en cas d'échec Brevo, le **mot de passe temporaire est rendu au créateur** (il n'existe que dans cet email, sinon le compte est inutilisable).
 - **Sidebar conditionnelle** : cachée si non connecté ; menu burger caché aussi
 - **Highlight exact** des items menu : `Match="NavLinkMatch.All"`
 - **Loader index.html** stylisé (bouclier glassmorphism, dégradé bleu)
 - **Persistance session** : `Page_Connexion.OnInitializedAsync` redirige si déjà authentifié
+
+## Sources UNIQUES à réutiliser (ne pas re-dupliquer)
+
+**Helpers** (`BTPSecure.Client/Services/`) :
+| Helper | Rôle |
+|---|---|
+| `H_RoleEntreprise` | Libellé / pluriel / couleur / icône / badge / description des droits d'un rôle |
+| `H_TexteLibre` | Seuil de troncature (140), « … », style `pre-wrap + overflow-wrap`, curseur si cliquable |
+| `H_Code` | Formatage de la saisie d'un code : majuscules, `-` auto après 4 caractères, 8 max |
+| `H_TypeCode` | Libellé du type de code (LibreService → « Libre-service ») |
+
+**Composants réutilisables** (`BTPSecure.Client/Components/`) :
+| Composant | Rôle |
+|---|---|
+| `Comp_AutoRefresh` | Polling 60 s + pause si onglet caché + bouton manuel |
+| `Comp_SelecteurPieceJointe` | Choix + validation d'une PJ (JPG/PNG/PDF, 5 Mo), `@bind-Fichier` |
+| `Comp_FormCreerCollaborateur` | Formulaire de création (page + pop-up), `OnCree` |
+| `Comp_DialogEnvoyerMessage` | Envoi rapide d'un message depuis n'importe quelle fiche |
+| `Comp_DialogTexte` | Affichage d'un texte long en dialogue |
+| `Comp_ListeCommandes` | Liste des commandes fournisseur (à préparer / prêtes) |
+| `Comp_Conversation` | Fil de discussion en bulles + réponse |
 
 ## Pattern services client (HTTP)
 ```csharp

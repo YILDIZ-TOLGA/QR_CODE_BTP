@@ -73,6 +73,21 @@ Dans ton service Railway, va dans l'onglet **Variables** et ajoute :
 
 Dans Railway, clique sur ton service puis sur l'onglet **Logs** pour voir les logs en temps reel.
 
+### Un email n'arrive pas ?
+
+Les envois sont traces dans les logs Railway. Cherche `Brevo` :
+
+| Symptome dans les logs | Cause | Correctif |
+|---|---|---|
+| `BREVO_API_KEY manquante` | Variable absente | Ajouter `BREVO_API_KEY` dans Railway |
+| `Erreur Brevo ... 401 ... unrecognised IP address` | IP de sortie Railway non autorisee | Whitelister l'IP chez Brevo, ou desactiver la restriction IP |
+| `Erreur Brevo ... 402` / quota | **300 emails/jour** (offre gratuite) depasse | Attendre le lendemain ou passer a une offre payante |
+| Rien du tout | L'action n'envoie pas d'email | Verifier le parcours concerne |
+
+L'app envoie un email pour : creation de compte, invitation de collaborateur, code envoye a un tiers, invitation fournisseur, verification d'email, reinitialisation de mot de passe, message a un destinataire externe. Le quota gratuit part vite.
+
+> A la **creation d'un collaborateur**, si l'email echoue, le **mot de passe temporaire est affiche au createur** (il n'existe que dans cet email) : transmets-le manuellement, sinon le compte est inutilisable.
+
 ## 5. Variables d'environnement (resume)
 
 | Variable | Source | Description |
