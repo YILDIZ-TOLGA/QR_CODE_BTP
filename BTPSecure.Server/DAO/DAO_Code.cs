@@ -73,6 +73,7 @@ public class DAO_Code
             .Include(c => c.Collaborateur)
             .Include(c => c.Entreprise)
             .Include(c => c.FournisseurContact)
+            .Include(c => c.Createur)
             .Where(c => c.DirigeantId == p_dirigeantId)
             .OrderByDescending(c => c.DateCreation)
             .ToListAsync();

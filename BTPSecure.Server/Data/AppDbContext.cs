@@ -104,6 +104,11 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(c => c.CollaborateurId)
                 .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(c => c.CreateurId);
+            e.HasOne(c => c.Createur)
+                .WithMany()
+                .HasForeignKey(c => c.CreateurId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(c => c.Fournisseur)
                 .WithMany()
                 .HasForeignKey(c => c.FournisseurId)

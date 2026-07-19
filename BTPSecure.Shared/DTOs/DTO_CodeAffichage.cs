@@ -24,4 +24,7 @@ public class DTO_CodeAffichage
     public int AchatsSupplementaires { get; set; }
     // Un code permanent est lié à son responsable : il n'est pas réattribuable
     public bool EstPermanent { get; set; }
+    // Auteur du code ; vide pour les codes antérieurs au suivi ou générés automatiquement
+    public int? CreateurId { get; set; }
+    public string NomCreateur { get; set; } = string.Empty;
 }

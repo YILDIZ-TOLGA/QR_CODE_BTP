@@ -180,6 +180,8 @@ public class S_Code
             ListeMateriaux = p_dto.ListeMateriaux?.Trim(),
             DureeValidite = _dureeHeures,
             DirigeantId = _proprietaireId,
+            // Auteur réel : le Dirigeant OU le Responsable Admin qui a lancé la création
+            CreateurId = p_dirigeantId,
             CollaborateurId = _collaborateurId,
             EmailTiers = _emailTiers,
             AchatsSupplementaires = _achats,
@@ -297,6 +299,14 @@ public class S_Code
         }).ToList();
 
         var _codes = await _daoCode.ObtenirParDirigeant(_entreprise.DirigeantId);
+
+        // Le Dirigeant voit tous les codes de l'entreprise ; un Responsable Admin
+        // ne voit que ceux qu'il a créés lui-même (évite le flood).
+        if (!_ctx.EstProprietaire)
+        {
+            _codes = _codes.Where(c => c.CreateurId.HasValue && c.CreateurId.Value == p_userId).ToList();
+        }
+
         _ctx.Codes = _codes.Select(VersDTO).ToList();
 
         var _fournisseurs = await _daoFournisseurContact.ObtenirParDirigeant(_entreprise.DirigeantId);
@@ -861,7 +871,16 @@ public class S_Code
             FournisseurContactId = p_code.FournisseurContactId,
             EmailTiers = p_code.EmailTiers,
             AchatsSupplementaires = p_code.AchatsSupplementaires,
-            EstPermanent = p_code.EstPermanent
+            EstPermanent = p_code.EstPermanent,
+            CreateurId = p_code.CreateurId,
+            NomCreateur = ObtenirNomCreateur(p_code)
         };
+    }
+
+    private static string ObtenirNomCreateur(E_Code p_code)
+    {
+        if (p_code.Createur == null)
+            return string.Empty;
+        return $"{p_code.Createur.Prenom} {p_code.Createur.Nom}";
     }
 }

@@ -16,8 +16,13 @@ public class E_Code
     public DateTime DateCreation { get; set; }
     public DateTime? DateExpiration { get; set; }
     public DateTime? DateValidation { get; set; }
+    // Propriétaire des ressources = le dirigeant de l'entreprise (PAS forcément l'auteur du code)
     public int DirigeantId { get; set; }
     public E_Utilisateur Dirigeant { get; set; } = null!;
+    // Auteur réel du code (Dirigeant ou Responsable Admin) ; null pour les codes
+    // créés avant l'ajout de ce suivi, ou générés automatiquement (code permanent)
+    public int? CreateurId { get; set; }
+    public E_Utilisateur? Createur { get; set; }
     public int? CollaborateurId { get; set; }
     public E_Utilisateur? Collaborateur { get; set; }
     public string? EmailTiers { get; set; }

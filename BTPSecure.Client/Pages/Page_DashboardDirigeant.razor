@@ -406,6 +406,16 @@ else
                                             <RadzenIcon Icon="receipt_long" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
                                             <RadzenText TextStyle="TextStyle.Body2">@_c.NumeroCommande</RadzenText>
                                         </RadzenStack>
+                                        @* Auteur du code : vide pour les codes antérieurs au suivi *@
+                                        @if (!string.IsNullOrEmpty(_c.NomCreateur))
+                                        {
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                                <RadzenIcon Icon="edit_note" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                                    Créé par @_c.NomCreateur
+                                                </RadzenText>
+                                            </RadzenStack>
+                                        }
                                         @if (_c.DateExpiration.HasValue)
                                         {
                                             <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
