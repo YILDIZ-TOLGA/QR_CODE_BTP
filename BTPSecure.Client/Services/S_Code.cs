@@ -125,6 +125,30 @@ public class S_Code
         return (_reponse.IsSuccessStatusCode, _resultat);
     }
 
+    // Compteur pour le badge « À préparer » de la sidebar
+    public async Task<int> CompterCommandesAPreparer()
+    {
+        try
+        {
+            var _reponse = await _http.GetAsync("api/codes/nb-a-preparer");
+            if (!_reponse.IsSuccessStatusCode)
+                return 0;
+            var _obj = await _reponse.Content.ReadFromJsonAsync<CompteurReponse>();
+            if (_obj == null)
+                return 0;
+            return _obj.Count;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private class CompteurReponse
+    {
+        public int Count { get; set; }
+    }
+
     public async Task<(bool Succes, string Message)> Revoquer(int p_id)
     {
         var _reponse = await _http.PostAsJsonAsync($"api/codes/revoquer/{p_id}", new { });

@@ -83,6 +83,15 @@ public class C_Code : ControllerBase
         return Ok(_liste);
     }
 
+    // Compteur pour le badge « À préparer » de la sidebar
+    [HttpGet("nb-a-preparer")]
+    [Authorize(Roles = "Fournisseur")]
+    public async Task<IActionResult> CompterCommandesAPreparer()
+    {
+        var _nombre = await _sCode.CompterCommandesAPreparer(ObtenirUtilisateurId());
+        return Ok(new { count = _nombre });
+    }
+
     [HttpPost("valider-pour-commande")]
     [Authorize(Roles = "Fournisseur")]
     public async Task<IActionResult> ValiderPourCommande([FromBody] DTO_ValiderPourCommande p_dto)

@@ -5,6 +5,7 @@
 @inject Services.S_Code SCode
 @inject Services.S_SousCompte SSousCompte
 @inject Services.S_Ticket STicket
+@inject Services.S_EtatUi SEtatUi
 @inject AuthenticationStateProvider AuthStateProvider
 
 <RadzenLayout>
@@ -71,7 +72,18 @@
                     @if (_role == "Fournisseur")
                     {
                         <RadzenPanelMenuItem Text="Accueil" Icon="home" Path="fournisseur" Match="NavLinkMatch.All" />
-                        <RadzenPanelMenuItem Text="À préparer" Icon="pending_actions" Path="fournisseur/a-preparer" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Text="À préparer" Icon="pending_actions" Path="fournisseur/a-preparer" Match="NavLinkMatch.All">
+                            <Template>
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="width: 100%;">
+                                    <RadzenIcon Icon="pending_actions" />
+                                    <RadzenText Style="margin: 0; flex: 1;">À préparer</RadzenText>
+                                    @if (_commandesAPreparer > 0)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@_commandesAPreparer.ToString()" IsPill="true" />
+                                    }
+                                </RadzenStack>
+                            </Template>
+                        </RadzenPanelMenuItem>
                         <RadzenPanelMenuItem Text="Prêtes" Icon="task_alt" Path="fournisseur/pretes" Match="NavLinkMatch.All" />
                         @if (_estFournisseurPrincipal)
                         {
@@ -122,27 +134,42 @@
     private bool _peutCreerCodes = false;
     private bool _estFournisseurPrincipal = false;
     private int _messagesNonLus = 0;
+    private int _commandesAPreparer = 0;
 
     protected override async Task OnInitializedAsync()
     {
         AuthStateProvider.AuthenticationStateChanged += OnAuthStateChanged;
         Navigation.LocationChanged += OnLocationChanged;
+        SEtatUi.CompteursChanges += OnCompteursChanges;
         await MettreAJourEtat();
     }
 
-    // Le compteur de messages non lus est rafraîchi à chaque navigation
-    private async void OnLocationChanged(object? p_sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs p_e)
+    // Une page signale une action (commande prête, message lu...) → on remet les badges à jour
+    private async void OnCompteursChanges()
     {
-        await MettreAJourCompteurMessages();
+        await MettreAJourCompteurs();
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task MettreAJourCompteurMessages()
+    // Les compteurs de la sidebar sont rafraîchis à chaque navigation
+    private async void OnLocationChanged(object? p_sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs p_e)
+    {
+        await MettreAJourCompteurs();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task MettreAJourCompteurs()
     {
         _messagesNonLus = 0;
         if (_estConnecte && _role != "Admin")
         {
             _messagesNonLus = await STicket.CompterNonLus();
+        }
+
+        _commandesAPreparer = 0;
+        if (_estConnecte && _role == "Fournisseur")
+        {
+            _commandesAPreparer = await SCode.CompterCommandesAPreparer();
         }
     }
 
@@ -200,13 +227,14 @@
             _estFournisseurPrincipal = await SSousCompte.EstPrincipal();
         }
 
-        await MettreAJourCompteurMessages();
+        await MettreAJourCompteurs();
     }
 
     public void Dispose()
     {
         AuthStateProvider.AuthenticationStateChanged -= OnAuthStateChanged;
         Navigation.LocationChanged -= OnLocationChanged;
+        SEtatUi.CompteursChanges -= OnCompteursChanges;
     }
 
     private async Task Deconnecter()

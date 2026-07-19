@@ -771,6 +771,13 @@ public class S_Code
         return "";
     }
 
+    // Nombre de commandes restant à préparer (pour le badge de la sidebar)
+    public async Task<int> CompterCommandesAPreparer(int p_fournisseurId)
+    {
+        var _commandes = await ObtenirCommandesAVenir(p_fournisseurId);
+        return _commandes.Count(c => !c.EstPrete);
+    }
+
     public async Task<(bool Succes, string Message)> MarquerPrete(int p_codeId, int p_fournisseurId)
     {
         var _code = await _daoCode.ObtenirParId(p_codeId);
