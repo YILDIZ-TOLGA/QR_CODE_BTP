@@ -23,7 +23,7 @@
         }
     </RadzenCard>
 
-    <RadzenFormField Text="Sujet" Variant="Variant.Outlined" Style="width: 100%;">
+    <RadzenFormField Text="Objet" Variant="Variant.Outlined" Style="width: 100%;">
         <Start><RadzenIcon Icon="subject" /></Start>
         <ChildContent>
             <RadzenTextBox Value="@_sujet" @oninput="MajSujet" Style="width: 100%;" MaxLength="200" Placeholder="Objet du message" />
@@ -103,7 +103,7 @@
     {
         if (string.IsNullOrWhiteSpace(_sujet))
         {
-            Notification.Notify(NotificationSeverity.Error, "Sujet manquant", "Indiquez un sujet.");
+            Notification.Notify(NotificationSeverity.Error, "Objet manquant", "Indiquez un objet.");
             return;
         }
         if (string.IsNullOrWhiteSpace(_message))

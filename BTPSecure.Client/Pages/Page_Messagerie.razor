@@ -36,7 +36,7 @@ else
     @if (_vue == 0 || _vue == 1 || _vue == 2)
     {
         <RadzenStack Gap="0.75rem" Style="margin-bottom: 1rem;">
-            <RadzenFormField Text="Rechercher (sujet, contact, contenu)" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenFormField Text="Rechercher (objet, contact, contenu)" Variant="Variant.Outlined" Style="width: 100%;">
                 <Start><RadzenIcon Icon="search" /></Start>
                 <ChildContent>
                     <RadzenTextBox Value="@_recherche" @oninput="MajRecherche" Style="width: 100%;" Placeholder="Filtrer les messages..." />
@@ -189,7 +189,7 @@ else
                             }
                         }
 
-                        <RadzenFormField Text="Sujet" Variant="Variant.Outlined" Style="width: 100%;">
+                        <RadzenFormField Text="Objet" Variant="Variant.Outlined" Style="width: 100%;">
                             <Start><RadzenIcon Icon="subject" /></Start>
                             <ChildContent>
                                 <RadzenTextBox Value="@_sujet" @oninput="MajSujet" Style="width: 100%;" MaxLength="200" Placeholder="Objet du message" />
@@ -508,7 +508,7 @@ else
     {
         if (string.IsNullOrWhiteSpace(_sujet))
         {
-            Notification.Notify(NotificationSeverity.Error, "Sujet manquant", "Indiquez un sujet.");
+            Notification.Notify(NotificationSeverity.Error, "Objet manquant", "Indiquez un objet.");
             return;
         }
         if (string.IsNullOrWhiteSpace(_message))

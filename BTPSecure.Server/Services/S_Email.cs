@@ -154,7 +154,7 @@ public class S_Email
         </p>
 
         <p style=""color: #666; font-size: 14px;"">
-            Une fois l'invitation acceptée, cette entreprise pourra vous transmettre des codes d'autorisation d'achat.
+            Une fois l'invitation acceptée, cette entreprise pourra vous transmettre des codes de retrait.
         </p>
 
         <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
@@ -311,13 +311,13 @@ public class S_Email
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #1565C0; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ BTPSecure</h1>
-        <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Code d'autorisation d'achat</p>
+        <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Code de retrait</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <p>Bonjour,</p>
 
-        <p>L'entreprise <strong>{p_nomEntreprise}</strong> vous a transmis un code d'autorisation d'achat.</p>
+        <p>L'entreprise <strong>{p_nomEntreprise}</strong> vous a transmis un code de retrait.</p>
 
         <p style=""margin: 0.25rem 0;""><strong>Numéro de commande :</strong> {p_numeroCommande}</p>
 
@@ -344,7 +344,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = $"Votre code d'autorisation d'achat — {p_nomEntreprise}",
+            subject = $"Votre code de retrait — {p_nomEntreprise}",
             htmlContent = _corpsHtml
         };
 
