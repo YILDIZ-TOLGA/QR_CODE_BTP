@@ -299,6 +299,14 @@ else
                                           Variant="Variant.Text" Size="ButtonSize.Small" Click="ReinitialiserFiltres" />
                         </RadzenStack>
 
+                        <RadzenFormField Text="Rechercher (référence, n° commande, code)" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start><RadzenIcon Icon="search" /></Start>
+                            <ChildContent>
+                                <RadzenTextBox Value="@_filtreRecherche" @oninput="MajRecherche" Style="width: 100%;"
+                                               Placeholder="Ex : MaConstruction-20260715-203821" />
+                            </ChildContent>
+                        </RadzenFormField>
+
                         <RadzenRow Gap="0.75rem">
                             <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
                                 <RadzenFormField Text="Type" Variant="Variant.Outlined" Style="width: 100%;">
@@ -524,6 +532,15 @@ else
         {
             IEnumerable<DTO_CodeAffichage> _q = _codes;
 
+            if (!string.IsNullOrWhiteSpace(_filtreRecherche))
+            {
+                var _r = _filtreRecherche.Trim().ToLower();
+                _q = _q.Where(c =>
+                    (c.Reference != null && c.Reference.ToLower().Contains(_r))
+                    || c.NumeroCommande.ToLower().Contains(_r)
+                    || c.Valeur.ToLower().Contains(_r));
+            }
+
             if (_filtreType == "libreservice")
                 _q = _q.Where(c => c.TypeCode == Enum_TypeCode.LibreService);
             else if (_filtreType == "liste")
@@ -565,8 +582,26 @@ else
         public string Label { get; set; } = string.Empty;
     }
 
+    private string _filtreRecherche = string.Empty;
+
+    // Liaison à la frappe : l'auto-refresh 60 s ne doit pas effacer la saisie
+    private void MajRecherche(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+        {
+            _filtreRecherche = string.Empty;
+            return;
+        }
+        var _s = p_e.Value.ToString();
+        if (_s == null)
+            _filtreRecherche = string.Empty;
+        else
+            _filtreRecherche = _s;
+    }
+
     private void ReinitialiserFiltres()
     {
+        _filtreRecherche = string.Empty;
         _filtreType = "tous";
         _filtreStatut = "tous";
         _filtreCollaborateurId = 0;
