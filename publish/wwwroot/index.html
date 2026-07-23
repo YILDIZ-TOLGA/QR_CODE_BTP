@@ -27,6 +27,14 @@
             --rz-panel-background-color: #ffffff;
         }
 
+        /* Les cartes "Outlined" sont transparentes par defaut dans Radzen : sur le fond
+           gris souris elles laisseraient voir le gris. On force leur interieur en blanc.
+           Les cartes avec un background inline (sous-panneaux gris volontaires) ne sont
+           pas touchees : le style inline reste prioritaire. */
+        .rz-card.rz-variant-outlined {
+            background-color: var(--rz-card-background-color);
+        }
+
         .btp-loader {
             position: fixed;
             inset: 0;
