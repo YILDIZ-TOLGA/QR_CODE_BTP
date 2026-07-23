@@ -6,6 +6,7 @@
 @inject Services.S_SousCompte SSousCompte
 @inject Services.S_Ticket STicket
 @inject Services.S_EtatUi SEtatUi
+@inject Services.S_Profil SProfil
 @inject AuthenticationStateProvider AuthStateProvider
 
 <RadzenLayout>
@@ -27,19 +28,6 @@
                 </RadzenStack>
             </RadzenStack>
 
-            @if (_estConnecte)
-            {
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <RadzenIcon Icon="account_circle" Style="color: rgba(255,255,255,0.8); font-size: 1.3rem;" />
-                        <RadzenText TextStyle="TextStyle.Body2" Style="color: rgba(255,255,255,0.9);">
-                            @_email
-                        </RadzenText>
-                    </RadzenStack>
-                    <RadzenButton Text="Déconnexion" Icon="logout" Variant="Variant.Text"
-                                  ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="Deconnecter" />
-                </RadzenStack>
-            }
         </RadzenStack>
     </RadzenHeader>
 
@@ -49,6 +37,23 @@
         <Comp_AutoRefresh OnRefresh="RafraichirCompteurs" AfficherBouton="false" />
 
         <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="z-index: 2; display: flex; flex-direction: column;">
+            @* Identité de l'utilisateur, tout en haut *@
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.6rem"
+                         Style="padding: 1rem; border-bottom: 1px solid var(--rz-border); background: var(--rz-base-50);">
+                <RadzenIcon Icon="account_circle" Style="color: var(--rz-primary); font-size: 2rem;" />
+                <RadzenStack Gap="0" Style="min-width: 0;">
+                    @if (!string.IsNullOrEmpty(_entrepriseAffiche))
+                    {
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-primary); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @_entrepriseAffiche
+                        </RadzenText>
+                    }
+                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @_nomAffiche
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenStack>
+
             <div style="flex: 1; overflow-y: auto;">
                 <RadzenPanelMenu>
                     @if (_role == "Admin")
@@ -105,13 +110,7 @@
                 </RadzenPanelMenu>
             </div>
 
-            <RadzenStack Gap="0.5rem" Style="padding: 1rem; border-top: 1px solid var(--rz-border); background: var(--rz-base-50);">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                    <RadzenIcon Icon="account_circle" Style="color: var(--rz-text-secondary-color); font-size: 1.3rem;" />
-                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @_email
-                    </RadzenText>
-                </RadzenStack>
+            <RadzenStack Style="padding: 1rem; border-top: 1px solid var(--rz-border); background: var(--rz-base-50);">
                 <RadzenButton Text="Déconnexion" Icon="logout" ButtonStyle="ButtonStyle.Danger"
                               Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;" Click="Deconnecter" />
             </RadzenStack>
@@ -136,6 +135,8 @@
     private bool _estConnecte = false;
     private string _email = "";
     private string _role = "";
+    private string _nomAffiche = "";
+    private string _entrepriseAffiche = "";
     private bool _peutCreerCodes = false;
     private bool _estFournisseurPrincipal = false;
     private int _messagesNonLus = 0;
@@ -207,6 +208,8 @@
             _estConnecte = false;
             _email = "";
             _role = "";
+            _nomAffiche = "";
+            _entrepriseAffiche = "";
             return;
         }
 
@@ -222,6 +225,17 @@
         if (_claimRole != null)
         {
             _role = _claimRole.Value;
+        }
+
+        // Nom/prénom + entreprise pour l'entête de la sidebar (le JWT ne les contient pas)
+        _nomAffiche = _email;
+        _entrepriseAffiche = "";
+        var _profil = await SProfil.ObtenirMoi();
+        if (_profil != null)
+        {
+            _nomAffiche = $"{_profil.Prenom} {_profil.Nom}";
+            if (_profil.Entreprises.Count > 0)
+                _entrepriseAffiche = _profil.Entreprises[0];
         }
 
         // Un Collaborateur Responsable Admin peut créer des codes → afficher le menu
