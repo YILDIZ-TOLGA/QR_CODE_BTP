@@ -28,6 +28,11 @@
                 </RadzenStack>
             </RadzenStack>
 
+            @if (_estConnecte)
+            {
+                <RadzenButton Text="Déconnexion" Icon="logout" Variant="Variant.Text"
+                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="Deconnecter" />
+            }
         </RadzenStack>
     </RadzenHeader>
 
