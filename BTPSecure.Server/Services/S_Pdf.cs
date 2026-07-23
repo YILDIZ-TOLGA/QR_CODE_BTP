@@ -21,9 +21,9 @@ public class S_Pdf
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Text("BTPSecure").Bold().FontSize(24).FontColor(Colors.Blue.Darken2);
+                    col.Item().Text("KEIRO").Bold().FontSize(24).FontColor("#0E9797");
                     col.Item().Text("Confirmation de Transaction").FontSize(16).FontColor(Colors.Grey.Darken1);
-                    col.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Blue.Darken2);
+                    col.Item().PaddingTop(10).LineHorizontal(1).LineColor("#0E9797");
                 });
 
                 page.Content().PaddingVertical(20).Column(col =>
@@ -35,7 +35,7 @@ public class S_Pdf
                     col.Item().PaddingBottom(10).Row(row =>
                     {
                         row.RelativeItem().Text("Code utilisé :").Bold();
-                        row.RelativeItem().Text(p_code.Valeur).FontSize(16).Bold().FontColor(Colors.Blue.Darken2);
+                        row.RelativeItem().Text(p_code.Valeur).FontSize(16).Bold().FontColor("#0E9797");
                     });
 
                     string _destinataire;

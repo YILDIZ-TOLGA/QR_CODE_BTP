@@ -103,7 +103,7 @@
         if (Resultat == null || string.IsNullOrEmpty(Resultat.PdfBase64))
             return;
 
-        var _nom = $"BTPSecure_Confirmation_{ValeurCode}.pdf";
+        var _nom = $"KEIRO_Confirmation_{ValeurCode}.pdf";
         await JS.InvokeVoidAsync("btpTelechargerFichier", Resultat.PdfBase64, _nom, "application/pdf");
     }
 
