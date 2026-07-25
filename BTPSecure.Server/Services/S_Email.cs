@@ -21,7 +21,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
         var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
 
         if (string.IsNullOrEmpty(_apiKey))
@@ -39,14 +39,14 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Votre compte a été créé</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <h2 style=""color: #00C9B7; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
-        <p>L'entreprise <strong>{p_nomEntrepriseDirigeant}</strong> vient de vous créer un compte collaborateur sur KEIDO.</p>
+        <p>L'entreprise <strong>{p_nomEntrepriseDirigeant}</strong> vient de vous créer un compte collaborateur sur KEYDO.</p>
 
         <p>Vous pouvez dès maintenant vous connecter avec les identifiants suivants :</p>
 
@@ -70,7 +70,7 @@ public class S_Email
         <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
 
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -80,7 +80,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = $"Votre compte KEIDO a été créé par {p_nomEntrepriseDirigeant}",
+            subject = $"Votre compte KEYDO a été créé par {p_nomEntrepriseDirigeant}",
             htmlContent = _corpsHtml
         };
 
@@ -119,7 +119,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
         var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
 
         if (string.IsNullOrEmpty(_apiKey))
@@ -136,14 +136,14 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Invitation à rejoindre une entreprise</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <h2 style=""color: #00C9B7; margin-top: 0;"">Bonjour {p_prenom},</h2>
 
-        <p>L'entreprise <strong>{p_nomEntreprise}</strong> vous invite à la rejoindre sur KEIDO.</p>
+        <p>L'entreprise <strong>{p_nomEntreprise}</strong> vous invite à la rejoindre sur KEYDO.</p>
 
         <p>Connectez-vous avec votre compte habituel : l'invitation vous attend dans votre espace, vous pourrez l'<strong>accepter ou la refuser</strong>.</p>
 
@@ -160,7 +160,7 @@ public class S_Email
         <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
 
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -170,7 +170,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = $"{p_nomEntreprise} vous invite sur KEIDO",
+            subject = $"{p_nomEntreprise} vous invite sur KEYDO",
             htmlContent = _corpsHtml
         };
 
@@ -206,7 +206,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
         var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
 
         if (string.IsNullOrEmpty(_apiKey))
@@ -224,14 +224,14 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Votre accès fournisseur</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <h2 style=""color: #00C9B7; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
-        <p><strong>{p_nomPrincipal}</strong> vient de vous créer un accès pour valider des codes sur KEIDO.</p>
+        <p><strong>{p_nomPrincipal}</strong> vient de vous créer un accès pour valider des codes sur KEYDO.</p>
 
         <div style=""background: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0;"">
             <p style=""margin: 0.25rem 0;""><strong>Email :</strong> {p_emailDestinataire}</p>
@@ -252,7 +252,7 @@ public class S_Email
 
         <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -262,7 +262,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = "Votre accès fournisseur KEIDO",
+            subject = "Votre accès fournisseur KEYDO",
             htmlContent = _corpsHtml
         };
 
@@ -296,7 +296,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
 
         if (string.IsNullOrEmpty(_apiKey))
         {
@@ -310,7 +310,7 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Code de retrait</p>
     </div>
 
@@ -334,7 +334,7 @@ public class S_Email
         <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
 
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -382,7 +382,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
         var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
 
         if (string.IsNullOrEmpty(_apiKey))
@@ -399,14 +399,14 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Vérification de votre email</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <h2 style=""color: #00C9B7; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
-        <p>Merci de vous être inscrit sur KEIDO.</p>
+        <p>Merci de vous être inscrit sur KEYDO.</p>
 
         <p>Pour activer votre compte et vous connecter, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :</p>
 
@@ -432,7 +432,7 @@ public class S_Email
         </p>
 
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 16px 0 0 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -442,7 +442,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = "Vérification de votre email KEIDO",
+            subject = "Vérification de votre email KEYDO",
             htmlContent = _corpsHtml
         };
 
@@ -480,7 +480,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
         var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
 
         if (string.IsNullOrEmpty(_apiKey))
@@ -497,14 +497,14 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Réinitialisation de mot de passe</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
         <h2 style=""color: #00C9B7; margin-top: 0;"">Bonjour {p_prenom},</h2>
 
-        <p>Vous avez demandé la réinitialisation du mot de passe de votre compte KEIDO.</p>
+        <p>Vous avez demandé la réinitialisation du mot de passe de votre compte KEYDO.</p>
 
         <p>Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
 
@@ -530,7 +530,7 @@ public class S_Email
         </p>
 
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 16px 0 0 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -540,7 +540,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = "Réinitialisation de votre mot de passe KEIDO",
+            subject = "Réinitialisation de votre mot de passe KEYDO",
             htmlContent = _corpsHtml
         };
 
@@ -579,7 +579,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
 
         if (string.IsNullOrEmpty(_apiKey))
         {
@@ -598,12 +598,12 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Nouveau message</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
-        <p><strong>{_expediteurHtml}</strong> vous a envoyé un message via KEIDO.</p>
+        <p><strong>{_expediteurHtml}</strong> vous a envoyé un message via KEYDO.</p>
 
         <p style=""margin: 0.25rem 0;""><strong>Objet :</strong> {_sujetHtml}</p>
 
@@ -612,13 +612,13 @@ public class S_Email
         </div>
 
         <p style=""color: #666; font-size: 14px;"">
-            Ce message a été envoyé depuis KEIDO. Pour répondre, contactez directement l'expéditeur.
+            Ce message a été envoyé depuis KEYDO. Pour répondre, contactez directement l'expéditeur.
         </p>
 
         <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
 
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -635,7 +635,7 @@ public class S_Email
             {
                 sender = new { name = _fromName, email = _fromEmail },
                 to = new[] { new { email = p_emailDestinataire } },
-                subject = $"KEIDO — {p_sujet}",
+                subject = $"KEYDO — {p_sujet}",
                 htmlContent = _corpsHtml,
                 attachment = new[]
                 {
@@ -649,7 +649,7 @@ public class S_Email
             {
                 sender = new { name = _fromName, email = _fromEmail },
                 to = new[] { new { email = p_emailDestinataire } },
-                subject = $"KEIDO — {p_sujet}",
+                subject = $"KEYDO — {p_sujet}",
                 htmlContent = _corpsHtml
             };
         }
@@ -689,7 +689,7 @@ public class S_Email
     {
         var _apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? _config["Brevo:ApiKey"];
         var _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM") ?? _config["Brevo:FromEmail"] ?? "contact@codebtpsecure.cloud";
-        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEIDO";
+        var _fromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? _config["Brevo:FromName"] ?? "KEYDO";
         var _siteUrl = Environment.GetEnvironmentVariable("SITE_URL") ?? _config["Site:Url"] ?? "https://www.codebtpsecure.cloud";
 
         if (string.IsNullOrEmpty(_apiKey))
@@ -710,7 +710,7 @@ public class S_Email
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
     <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
-        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEIDO</h1>
+        <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Sécurisation des achats BTP</p>
     </div>
 
@@ -719,9 +719,9 @@ public class S_Email
 
         <p>Bonjour,</p>
 
-        <p>L'entreprise <strong>{p_nomEntrepriseDirigeant}</strong> vient de créer une commande sur KEIDO et vous a désigné comme fournisseur.</p>
+        <p>L'entreprise <strong>{p_nomEntrepriseDirigeant}</strong> vient de créer une commande sur KEYDO et vous a désigné comme fournisseur.</p>
 
-        <p>Pour visualiser et gérer cette commande, vous devez créer un compte fournisseur sur KEIDO en utilisant les informations suivantes :</p>
+        <p>Pour visualiser et gérer cette commande, vous devez créer un compte fournisseur sur KEYDO en utilisant les informations suivantes :</p>
 
         <div style=""background: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0;"">
             <p style=""margin: 0.25rem 0;""><strong>Nom de l'entreprise :</strong> {p_nomEntrepriseFournisseur}</p>
@@ -732,7 +732,7 @@ public class S_Email
 
         <p style=""margin-top: 24px;"">
             <a href=""{_siteUrl}"" style=""display: inline-block; background: #00C9B7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
-                Accéder à KEIDO
+                Accéder à KEYDO
             </a>
         </p>
 
@@ -743,7 +743,7 @@ public class S_Email
         <hr style=""border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;"">
 
         <p style=""color: #999; font-size: 12px; text-align: center; margin: 0;"">
-            Cet email est envoyé automatiquement par KEIDO. Ne pas répondre directement.
+            Cet email est envoyé automatiquement par KEYDO. Ne pas répondre directement.
         </p>
     </div>
 </body>
@@ -753,7 +753,7 @@ public class S_Email
         {
             sender = new { name = _fromName, email = _fromEmail },
             to = new[] { new { email = p_emailDestinataire } },
-            subject = "Nouvelle commande pour votre entreprise sur KEIDO",
+            subject = "Nouvelle commande pour votre entreprise sur KEYDO",
             htmlContent = _corpsHtml
         };
 
