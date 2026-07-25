@@ -55,7 +55,7 @@ BTPSecure/
 
 ## Rôles & Auth
 - `Enum_Role` : `Admin=0`, `Dirigeant=1`, `Collaborateur=2`, `Fournisseur=3`
-- **Admin seed** : `admin_acc@keydopro.com` / `Aqwxcvbn$74123-Tolga` (créé au démarrage si absent)
+- **Admin seed** : créé au démarrage si aucun admin, à partir des variables d'env `ADMIN_EMAIL` (défaut `admin_acc@keydopro.com`) + `ADMIN_PASSWORD` (**obligatoire, jamais en dur**). Sans `ADMIN_PASSWORD`, l'admin n'est pas créé.
 - **Flow** : login → `S_Auth.Connecter` → JWT en localStorage (clé `"token"`) → `S_AuthStateProvider` lit + set `HttpClient.Authorization`
 - **Claims JWT** : `NameIdentifier` (Id), `Email`, `Role`
 - **Redirections post-login par rôle** : `/admin`, `/dirigeant`, `/collaborateur`, `/fournisseur`
@@ -105,6 +105,7 @@ git push   # Railway redéploie auto via webhook GitHub
 - `DATABASE_URL` (Postgres connection string)
 - `JWT_CLE`, `JWT_EMETTEUR`, `JWT_AUDIENCE`, `JWT_DUREE_HEURES`
 - **Emails Brevo (API HTTP, pas SMTP — Railway bloque le SMTP)** : `BREVO_API_KEY`, `SMTP_FROM` (contact@codebtpsecure.cloud), `SMTP_FROM_NAME`, `SITE_URL`
+- **Admin** : `ADMIN_EMAIL`, `ADMIN_PASSWORD` (seed du compte admin ; le mot de passe n'est plus dans le code)
 - `ASPNETCORE_ENVIRONMENT=Production`, `PORT` (auto-fourni)
 - `Program.cs` réinjecte les env vars dans `IConfiguration` au boot
 - ⚠️ Brevo exige que l'IP de sortie Railway soit whitelistée (ou désactiver la restriction IP côté Brevo)

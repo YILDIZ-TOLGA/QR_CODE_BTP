@@ -167,25 +167,38 @@ _ = Task.Run(async () =>
         await _db.Database.MigrateAsync();
         app.Logger.LogInformation("Migration BDD réussie.");
 
-        // Seed compte Admin s'il n'existe pas.
+        // Seed compte Admin s'il n'existe pas. Identifiants lus depuis les variables
+        // d'environnement Railway : le mot de passe n'est JAMAIS en dur dans le code.
         // EmailVerifie/EstValide à true : sinon la connexion serait bloquée (cf. S_Auth.Connecter).
         if (!await _db.Utilisateurs.AnyAsync(u => u.Role == BTPSecure.Shared.Enums.Enum_Role.Admin))
         {
-            var _sel = BCrypt.Net.BCrypt.GenerateSalt();
-            _db.Utilisateurs.Add(new BTPSecure.Shared.Entites.E_Utilisateur
+            var _adminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL");
+            if (string.IsNullOrWhiteSpace(_adminEmail))
+                _adminEmail = "admin_acc@keydopro.com";
+            var _adminMotDePasse = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+
+            if (string.IsNullOrWhiteSpace(_adminMotDePasse))
             {
-                Email = "admin_acc@keydopro.com",
-                MotDePasseHash = BCrypt.Net.BCrypt.HashPassword("Aqwxcvbn$74123-Tolga", _sel),
-                Sel = _sel,
-                Nom = "Admin",
-                Prenom = "KEYDO",
-                Role = BTPSecure.Shared.Enums.Enum_Role.Admin,
-                EstActif = true,
-                EstValide = true,
-                EmailVerifie = true
-            });
-            await _db.SaveChangesAsync();
-            app.Logger.LogInformation("Compte Admin créé : admin_acc@keydopro.com");
+                app.Logger.LogWarning("ADMIN_PASSWORD non défini : compte admin NON créé. Ajoute la variable sur Railway puis redémarre.");
+            }
+            else
+            {
+                var _sel = BCrypt.Net.BCrypt.GenerateSalt();
+                _db.Utilisateurs.Add(new BTPSecure.Shared.Entites.E_Utilisateur
+                {
+                    Email = _adminEmail.Trim().ToLower(),
+                    MotDePasseHash = BCrypt.Net.BCrypt.HashPassword(_adminMotDePasse, _sel),
+                    Sel = _sel,
+                    Nom = "Admin",
+                    Prenom = "KEYDO",
+                    Role = BTPSecure.Shared.Enums.Enum_Role.Admin,
+                    EstActif = true,
+                    EstValide = true,
+                    EmailVerifie = true
+                });
+                await _db.SaveChangesAsync();
+                app.Logger.LogInformation("Compte Admin créé : {Email}", _adminEmail);
+            }
         }
     }
     catch (Exception ex)
