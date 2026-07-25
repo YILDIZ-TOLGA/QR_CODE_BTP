@@ -21,9 +21,9 @@ public class S_Pdf
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Text("KEIRO").Bold().FontSize(24).FontColor("#0E9797");
+                    col.Item().Text("KEIDO").Bold().FontSize(24).FontColor("#00C9B7");
                     col.Item().Text("Confirmation de Transaction").FontSize(16).FontColor(Colors.Grey.Darken1);
-                    col.Item().PaddingTop(10).LineHorizontal(1).LineColor("#0E9797");
+                    col.Item().PaddingTop(10).LineHorizontal(1).LineColor("#00C9B7");
                 });
 
                 page.Content().PaddingVertical(20).Column(col =>
@@ -35,7 +35,7 @@ public class S_Pdf
                     col.Item().PaddingBottom(10).Row(row =>
                     {
                         row.RelativeItem().Text("Code utilisé :").Bold();
-                        row.RelativeItem().Text(p_code.Valeur).FontSize(16).Bold().FontColor("#0E9797");
+                        row.RelativeItem().Text(p_code.Valeur).FontSize(16).Bold().FontColor("#00C9B7");
                     });
 
                     string _destinataire;
@@ -95,7 +95,7 @@ public class S_Pdf
                 page.Footer().Column(col =>
                 {
                     col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                    col.Item().PaddingTop(5).Text("Document généré automatiquement par BTPSecure")
+                    col.Item().PaddingTop(5).Text("Document généré automatiquement par KEIDO")
                         .FontSize(9).FontColor(Colors.Grey.Medium).Italic();
                 });
             });
