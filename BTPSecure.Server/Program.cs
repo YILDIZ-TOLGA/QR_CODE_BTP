@@ -167,22 +167,25 @@ _ = Task.Run(async () =>
         await _db.Database.MigrateAsync();
         app.Logger.LogInformation("Migration BDD réussie.");
 
-        // Seed compte Admin s'il n'existe pas
+        // Seed compte Admin s'il n'existe pas.
+        // EmailVerifie/EstValide à true : sinon la connexion serait bloquée (cf. S_Auth.Connecter).
         if (!await _db.Utilisateurs.AnyAsync(u => u.Role == BTPSecure.Shared.Enums.Enum_Role.Admin))
         {
             var _sel = BCrypt.Net.BCrypt.GenerateSalt();
             _db.Utilisateurs.Add(new BTPSecure.Shared.Entites.E_Utilisateur
             {
-                Email = "admin@btpsecure.fr",
-                MotDePasseHash = BCrypt.Net.BCrypt.HashPassword("Aqwxcvbn$74123-", _sel),
+                Email = "admin_acc@keydopro.com",
+                MotDePasseHash = BCrypt.Net.BCrypt.HashPassword("Aqwxcvbn$74123-Tolga", _sel),
                 Sel = _sel,
                 Nom = "Admin",
-                Prenom = "BTPSecure",
+                Prenom = "KEYDO",
                 Role = BTPSecure.Shared.Enums.Enum_Role.Admin,
-                EstActif = true
+                EstActif = true,
+                EstValide = true,
+                EmailVerifie = true
             });
             await _db.SaveChangesAsync();
-            app.Logger.LogInformation("Compte Admin créé : admin@btpsecure.fr");
+            app.Logger.LogInformation("Compte Admin créé : admin_acc@keydopro.com");
         }
     }
     catch (Exception ex)

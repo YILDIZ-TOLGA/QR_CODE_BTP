@@ -55,7 +55,7 @@ BTPSecure/
 
 ## Rôles & Auth
 - `Enum_Role` : `Admin=0`, `Dirigeant=1`, `Collaborateur=2`, `Fournisseur=3`
-- **Admin seed** : `admin@btpsecure.fr` / `Aqwxcvbn$74123-` (créé au démarrage si absent)
+- **Admin seed** : `admin_acc@keydopro.com` / `Aqwxcvbn$74123-Tolga` (créé au démarrage si absent)
 - **Flow** : login → `S_Auth.Connecter` → JWT en localStorage (clé `"token"`) → `S_AuthStateProvider` lit + set `HttpClient.Authorization`
 - **Claims JWT** : `NameIdentifier` (Id), `Email`, `Role`
 - **Redirections post-login par rôle** : `/admin`, `/dirigeant`, `/collaborateur`, `/fournisseur`
