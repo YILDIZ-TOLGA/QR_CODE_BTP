@@ -1,0 +1,77 @@
+@inject Services.S_Acces SAcces
+@inject IJSRuntime JS
+
+@* Portail d'accès de la phase de test (beta). Affiché par MainLayout avant tout le reste tant que le code n'est pas saisi. *@
+<RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 100vh;">
+    <RadzenColumn Size="12" SizeSM="10" SizeMD="6" SizeLG="4" SizeXL="3">
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="1.5rem" AlignItems="AlignItems.Center">
+
+                <RadzenIcon Icon="lock" Style="font-size: 3rem; color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" TextAlign="TextAlign.Center">
+                    KEYDO
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Subtitle1" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color); margin-top: -1rem;">
+                    Accès réservé à la phase de test
+                </RadzenText>
+
+                <RadzenTemplateForm TItem="Modele" Data="_modele" Submit="Valider" Style="width: 100%;">
+                    <RadzenStack Gap="1.25rem">
+                        <RadzenFormField Text="Code d'accès" Variant="Variant.Outlined" Style="width: 100%;">
+                            <Start>
+                                <RadzenIcon Icon="key" />
+                            </Start>
+                            <ChildContent>
+                                <RadzenTextBox @bind-Value="_modele.Code" Name="Code" Style="width: 100%;" />
+                            </ChildContent>
+                        </RadzenFormField>
+
+                        @if (_erreur)
+                        {
+                            <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" Variant="Variant.Flat" AllowClose="false" Style="margin: 0;">
+                                Code d'accès invalide.
+                            </RadzenAlert>
+                        }
+
+                        <RadzenButton Text="Entrer" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary"
+                                      Size="ButtonSize.Large" Style="width: 100%;" IsBusy="_enChargement" Icon="login" />
+                    </RadzenStack>
+                </RadzenTemplateForm>
+
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    [Parameter] public EventCallback OnValide { get; set; }
+
+    private Modele _modele = new();
+    private bool _enChargement;
+    private bool _erreur;
+
+    private async Task Valider()
+    {
+        _enChargement = true;
+        _erreur = false;
+
+        bool _ok = await SAcces.Verifier(_modele.Code);
+
+        _enChargement = false;
+
+        if (!_ok)
+        {
+            _erreur = true;
+            return;
+        }
+
+        // Mémorisé localement : le testeur ne resaisit pas le code à chaque visite
+        await JS.InvokeVoidAsync("localStorage.setItem", "acces_beta", "ok");
+        await OnValide.InvokeAsync();
+    }
+
+    private class Modele
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+}

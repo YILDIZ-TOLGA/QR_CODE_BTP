@@ -1,12 +1,19 @@
 # BTPSecure — Brief projet (lis-moi en premier)
 
 ## Identité
+- **Marque publique** : **KEYDO** (nom affiché partout côté utilisateur : loader, header, emails, PDF, `<title>`). ⚠️ « BTPSecure » reste le **nom technique interne** — dossiers, namespaces, `.csproj`, repo GitHub, `JWT_EMETTEUR`/`JWT_AUDIENCE` — **NE PAS renommer** (renommer casserait le build et invaliderait les tokens JWT existants).
 - **Type** : Blazor WebAssembly Hosted (.NET 10) + PostgreSQL + Railway
 - **Path local** : `C:\Users\y1903\Desktop\BTPSecure`
 - **Repo** : `github.com/YILDIZ-TOLGA/QR_CODE_BTP` (branche `main`)
 - **Prod** : https://qrcodebtp-production.up.railway.app
-- **Domaine perso** : https://www.codebtpsecure.cloud (OVH → Railway, CNAME www + redirection apex)
+- **Domaine perso** : https://www.keydopro.com (OVH → Railway, CNAME `www` + redirection apex ; ancien `codebtpsecure.cloud` abandonné)
 - **Métier** : sécurisation d'achats BTP via QR codes (rôles : Admin / Dirigeant / Collaborateur / Fournisseur)
+
+## Charte graphique (KEYDO)
+- **Couleur primaire** : turquoise **#00C9B7** (remplace l'ancien bleu `#1565C0`). Déclinaisons dans `index.html :root` : `--rz-primary-light #33D6C7`, `--rz-primary-lighter #66E2D6`, `--rz-primary-dark #00A99A`, `--rz-primary-darker #008577`.
+- **Fond des pages** : gris souris **#AEB4B9** (`--rz-layout-background-color` + `--rz-body-background-color`).
+- **Cartes / panneaux** : **blancs** (`--rz-card-background-color` + `--rz-panel-background-color` = `#ffffff`). ⚠️ Les `RadzenCard Variant="Outlined"` sont **transparentes** par défaut → override obligatoire `.rz-card.rz-variant-outlined { background-color: var(--rz-card-background-color); }`, sinon le gris souris traverse l'intérieur des cartes.
+- **Emails** (`S_Email.cs`) et **PDF** (`S_Pdf.cs`) : accent `#00C9B7`, marque « KEYDO » (fini le bleu / « BTPSecure »).
 
 ## Stack
 - **Server** : ASP.NET Core, EF Core (Npgsql), JWT + BCrypt, QuestPDF
@@ -104,7 +111,7 @@ git push   # Railway redéploie auto via webhook GitHub
 ## Variables d'env (Railway)
 - `DATABASE_URL` (Postgres connection string)
 - `JWT_CLE`, `JWT_EMETTEUR`, `JWT_AUDIENCE`, `JWT_DUREE_HEURES`
-- **Emails Brevo (API HTTP, pas SMTP — Railway bloque le SMTP)** : `BREVO_API_KEY`, `SMTP_FROM` (contact@codebtpsecure.cloud), `SMTP_FROM_NAME`, `SITE_URL`
+- **Emails Brevo (API HTTP, pas SMTP — Railway bloque le SMTP)** : `BREVO_API_KEY`, `SMTP_FROM` (`contact@keydopro.com`), `SMTP_FROM_NAME` (`KEYDO`), `SITE_URL` (`https://www.keydopro.com`). ⚠️ Le domaine `keydopro.com` doit être **authentifié (DKIM/DMARC)** dans le **même compte Brevo** que celui dont la `BREVO_API_KEY` est sur Railway.
 - **Admin** : `ADMIN_EMAIL`, `ADMIN_PASSWORD` (seed du compte admin ; le mot de passe n'est plus dans le code)
 - `ASPNETCORE_ENVIRONMENT=Production`, `PORT` (auto-fourni)
 - `Program.cs` réinjecte les env vars dans `IConfiguration` au boot
@@ -134,7 +141,7 @@ git push   # Railway redéploie auto via webhook GitHub
 - **Emails fiabilisés** : `AjouterCollaborateur` (« Inviter ») n'envoyait **aucun** email malgré son message de succès → `EnvoyerInvitationCollaborateur` ajouté. Les envois liés à la création ne sont **plus en fire-and-forget** : en cas d'échec Brevo, le **mot de passe temporaire est rendu au créateur** (il n'existe que dans cet email, sinon le compte est inutilisable).
 - **Sidebar conditionnelle** : cachée si non connecté ; menu burger caché aussi
 - **Highlight exact** des items menu : `Match="NavLinkMatch.All"`
-- **Loader index.html** stylisé (bouclier glassmorphism, dégradé bleu)
+- **Loader index.html** stylisé (bouclier glassmorphism, dégradé turquoise KEYDO)
 - **Persistance session** : `Page_Connexion.OnInitializedAsync` redirige si déjà authentifié
 
 ## Sources UNIQUES à réutiliser (ne pas re-dupliquer)

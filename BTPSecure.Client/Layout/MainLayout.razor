@@ -7,8 +7,23 @@
 @inject Services.S_Ticket STicket
 @inject Services.S_EtatUi SEtatUi
 @inject Services.S_Profil SProfil
+@inject Services.S_Acces SAcces
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
 
+@if (!_gatePret)
+{
+    @* Vérification du portail beta en cours : bref écran d'attente *@
+    <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="min-height: 100vh;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </RadzenRow>
+}
+else if (!_accesAutorise)
+{
+    <Comp_AccesBeta OnValide="AccesAccorde" />
+}
+else
+{
 <RadzenLayout>
     <RadzenHeader>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween"
@@ -134,6 +149,7 @@
 </RadzenLayout>
 
 <RadzenComponents />
+}
 
 @code {
     private bool _sidebarExpanded = true;
@@ -146,13 +162,48 @@
     private bool _estFournisseurPrincipal = false;
     private int _messagesNonLus = 0;
     private int _commandesAPreparer = 0;
+    private bool _gatePret = false;
+    private bool _accesAutorise = false;
 
     protected override async Task OnInitializedAsync()
     {
+        await VerifierAcces();
+
         AuthStateProvider.AuthenticationStateChanged += OnAuthStateChanged;
         Navigation.LocationChanged += OnLocationChanged;
         SEtatUi.CompteursChanges += OnCompteursChanges;
         await MettreAJourEtat();
+    }
+
+    // Portail d'accès de la phase de test (beta).
+    // Se désactive tout seul dès que la variable CODE_ACCES est retirée du serveur (fin de la beta).
+    private async Task VerifierAcces()
+    {
+        var _flag = await JS.InvokeAsync<string>("localStorage.getItem", "acces_beta");
+        if (_flag == "ok")
+        {
+            _accesAutorise = true;
+            _gatePret = true;
+            return;
+        }
+
+        bool _actif = await SAcces.EstActif();
+        if (!_actif)
+        {
+            _accesAutorise = true;
+        }
+        else
+        {
+            _accesAutorise = false;
+        }
+        _gatePret = true;
+    }
+
+    // Appelé par Comp_AccesBeta une fois le bon code saisi
+    private void AccesAccorde()
+    {
+        _accesAutorise = true;
+        StateHasChanged();
     }
 
     // Une page signale une action (commande prête, message lu...) → on remet les badges à jour

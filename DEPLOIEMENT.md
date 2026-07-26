@@ -1,5 +1,7 @@
 # Deploiement BTPSecure sur Railway
 
+> Marque publique : **KEYDO** — domaine **keydopro.com**. « BTPSecure » reste le nom technique du repo/projet.
+
 ## 1. Prerequis
 
 - Un compte Railway (railway.com)
@@ -43,19 +45,22 @@ Dans ton service Railway, va dans l'onglet **Variables** et ajoute :
 | `JWT_AUDIENCE` | `BTPSecure` |
 | `JWT_DUREE_HEURES` | `24` |
 | `BREVO_API_KEY` | Cle API Brevo (envoi des emails) |
-| `SMTP_FROM` | `contact@codebtpsecure.cloud` (email expediteur verifie chez Brevo) |
-| `SMTP_FROM_NAME` | `BTPSecure` |
-| `SITE_URL` | `https://www.codebtpsecure.cloud` (liens dans les emails) |
+| `SMTP_FROM` | `contact@keydopro.com` (domaine authentifie chez Brevo) |
+| `SMTP_FROM_NAME` | `KEYDO` |
+| `SITE_URL` | `https://www.keydopro.com` (liens dans les emails) |
+| `ADMIN_EMAIL` | `admin_acc@keydopro.com` (login du compte admin auto-cree) |
+| `ADMIN_PASSWORD` | Mot de passe du compte admin (**obligatoire** ; sans lui, aucun admin n'est cree) |
 
 > `DATABASE_URL` et `PORT` sont injectes automatiquement par Railway.
+> ⚠️ `ADMIN_PASSWORD` ne doit **jamais** etre en dur dans le code (le seed le lit depuis l'env).
 
 **Emails (Brevo) :** on utilise l'**API HTTP** de Brevo (`api.brevo.com/v3/smtp/email`), pas le SMTP — Railway bloque les ports SMTP sortants. Brevo exige que l'**IP de sortie Railway** soit whitelistee (ou desactive la restriction IP dans les parametres Brevo). Quota gratuit : 300 emails/jour.
 
 ### Domaine personnalise (OVH → Railway)
 
-1. Service Railway > **Settings** > **Networking** > **Custom Domain** > ajoute `www.codebtpsecure.cloud`
-2. Chez OVH : un enregistrement **CNAME** `www` vers la cible fournie par Railway
-3. Apex (`codebtpsecure.cloud`) : redirection vers `www` (les CNAME sur l'apex sont interdits)
+1. Service Railway > **Settings** > **Networking** > **Custom Domain** > ajoute `www.keydopro.com`
+2. Chez OVH : un enregistrement **CNAME** `www` vers la cible fournie par Railway (⚠️ supprimer d'abord les A/AAAA `www` par defaut, sinon erreur OVH « CNAME and other data »)
+3. Apex (`keydopro.com`) : **redirection** vers `www` (les CNAME sur l'apex sont interdits). Ne pas laisser l'assistant OVH rediriger **aussi** `www` — ca ecraserait le CNAME.
 4. Verification TXT si demandee : enregistrement `_railway-verify.www`
 
 ### Etape 5 : Generer un domaine
@@ -99,9 +104,11 @@ L'app envoie un email pour : creation de compte, invitation de collaborateur, co
 | `JWT_AUDIENCE` | Manuelle | Audience du token JWT |
 | `JWT_DUREE_HEURES` | Manuelle | Duree de validite du token (heures) |
 | `BREVO_API_KEY` | Manuelle | Cle API Brevo pour l'envoi des emails |
-| `SMTP_FROM` | Manuelle | Email expediteur verifie chez Brevo |
-| `SMTP_FROM_NAME` | Manuelle | Nom affiche de l'expediteur |
-| `SITE_URL` | Manuelle | URL publique du site (liens dans les emails) |
+| `SMTP_FROM` | Manuelle | Email expediteur (`contact@keydopro.com`, domaine authentifie chez Brevo) |
+| `SMTP_FROM_NAME` | Manuelle | Nom affiche de l'expediteur (`KEYDO`) |
+| `SITE_URL` | Manuelle | URL publique du site (`https://www.keydopro.com`, liens dans les emails) |
+| `ADMIN_EMAIL` | Manuelle | Login du compte admin seede au demarrage |
+| `ADMIN_PASSWORD` | Manuelle | Mot de passe du compte admin (sans lui, aucun admin cree) |
 
 ## 6. Developpement local
 
