@@ -47,13 +47,16 @@ public class S_Admin
             Id = f.Id,
             Nom = f.Nom,
             Prenom = f.Prenom,
+            NomSociete = f.NomSociete,
             Email = f.Email,
             Siret = f.Siret,
             Siren = f.Siren,
             Telephone = f.Telephone,
             DateCreation = f.DateCreation,
             EstValide = f.EstValide,
-            EstActif = f.EstActif
+            EstActif = f.EstActif,
+            EstSousCompte = f.ParentFournisseurId.HasValue,
+            LimiteSousComptes = f.LimiteSousComptes
         }).ToList();
     }
 
@@ -82,6 +85,26 @@ public class S_Admin
 
         _logger.LogInformation("Fournisseur {Email} (ID:{Id}) désactivé par l'admin.", _fournisseur.Email, _fournisseur.Id);
         return (true, $"Fournisseur {_fournisseur.Nom} désactivé.");
+    }
+
+    // Change la limite de sous-comptes d'un fournisseur principal (3 par défaut)
+    public async Task<(bool Succes, string Message)> ChangerLimiteSousComptes(int p_fournisseurId, int p_limite)
+    {
+        if (p_limite < 0 || p_limite > 50)
+            return (false, "La limite doit être comprise entre 0 et 50.");
+
+        var _fournisseur = await _daoAdmin.ObtenirUtilisateurParId(p_fournisseurId);
+        if (_fournisseur == null || _fournisseur.Role != BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+            return (false, "Fournisseur non trouvé.");
+
+        if (_fournisseur.ParentFournisseurId.HasValue)
+            return (false, "La limite se règle sur le compte principal, pas sur un sous-compte.");
+
+        _fournisseur.LimiteSousComptes = p_limite;
+        await _daoAdmin.Sauvegarder();
+
+        _logger.LogInformation("Limite de sous-comptes de {Email} (ID:{Id}) fixée à {Limite} par l'admin.", _fournisseur.Email, _fournisseur.Id, p_limite);
+        return (true, $"Limite fixée à {p_limite} sous-compte(s).");
     }
 
     public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId)

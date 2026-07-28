@@ -5,6 +5,7 @@ public class DTO_FournisseurAdmin
     public int Id { get; set; }
     public string Nom { get; set; } = string.Empty;
     public string Prenom { get; set; } = string.Empty;
+    public string? NomSociete { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? Siret { get; set; }
     public string? Siren { get; set; }
@@ -12,4 +13,7 @@ public class DTO_FournisseurAdmin
     public DateTime DateCreation { get; set; }
     public bool EstValide { get; set; }
     public bool EstActif { get; set; }
+    // Un sous-compte n'a pas de limite propre : elle se règle sur le compte principal
+    public bool EstSousCompte { get; set; }
+    public int LimiteSousComptes { get; set; }
 }

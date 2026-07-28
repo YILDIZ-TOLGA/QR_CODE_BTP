@@ -143,8 +143,19 @@ public class S_Auth
         if (p_dto.MotDePasse.Length < 8)
             return (false, "Le mot de passe doit faire minimum 8 caractères.", null);
 
-        if (string.IsNullOrWhiteSpace(p_dto.Nom) || string.IsNullOrWhiteSpace(p_dto.Prenom))
-            return (false, "Le nom et le prénom sont obligatoires.", null);
+        // Fournisseur : le nom de l'entreprise est obligatoire, le nom/prénom devient optionnel
+        string? _nomSociete = null;
+        if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+        {
+            if (string.IsNullOrWhiteSpace(p_dto.NomSociete))
+                return (false, "Le nom de l'entreprise est obligatoire.", null);
+            _nomSociete = p_dto.NomSociete.Trim();
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(p_dto.Nom) || string.IsNullOrWhiteSpace(p_dto.Prenom))
+                return (false, "Le nom et le prénom sont obligatoires.", null);
+        }
 
         if (await _daoUtilisateur.EmailExiste(p_dto.Email))
             return (false, "Un compte avec cet email existe déjà.", null);
@@ -178,13 +189,21 @@ public class S_Auth
             _estValide = false;
         }
 
+        // Fournisseur sans nom renseigné : il est affiché partout sous le nom de sa société
+        var _nom = p_dto.Nom.Trim();
+        if (string.IsNullOrWhiteSpace(_nom) && _nomSociete != null)
+        {
+            _nom = _nomSociete;
+        }
+
         var _utilisateur = new E_Utilisateur
         {
             Email = p_dto.Email.ToLower(),
             MotDePasseHash = _hash,
             Sel = _sel,
-            Nom = p_dto.Nom.Trim(),
+            Nom = _nom,
             Prenom = p_dto.Prenom.Trim(),
+            NomSociete = _nomSociete,
             Telephone = p_dto.Telephone?.Trim(),
             Siret = _siret,
             Siren = _siren,
@@ -202,7 +221,12 @@ public class S_Auth
 
         var _tokenCopie = _utilisateur.TokenVerification;
         var _emailCopie = _utilisateur.Email;
+        // « Bonjour {prénom} » : à défaut de prénom (fournisseur), on salue avec le nom de société
         var _prenomCopie = _utilisateur.Prenom;
+        if (string.IsNullOrWhiteSpace(_prenomCopie))
+        {
+            _prenomCopie = _utilisateur.Nom;
+        }
         _ = Task.Run(async () =>
         {
             await _sEmail.EnvoyerVerificationEmail(_emailCopie, _prenomCopie, _tokenCopie);
@@ -254,7 +278,12 @@ public class S_Auth
 
         var _tokenCopie = _utilisateur.TokenVerification;
         var _emailCopie = _utilisateur.Email;
+        // À défaut de prénom (fournisseur), on salue avec le nom de société
         var _prenomCopie = _utilisateur.Prenom;
+        if (string.IsNullOrWhiteSpace(_prenomCopie))
+        {
+            _prenomCopie = _utilisateur.Nom;
+        }
         _ = Task.Run(async () =>
         {
             await _sEmail.EnvoyerVerificationEmail(_emailCopie, _prenomCopie, _tokenCopie);

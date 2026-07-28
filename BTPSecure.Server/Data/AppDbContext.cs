@@ -31,7 +31,9 @@ public class AppDbContext : DbContext
             e.Property(u => u.Sel).IsRequired();
             e.Property(u => u.Nom).IsRequired().HasMaxLength(100);
             e.Property(u => u.Prenom).IsRequired().HasMaxLength(100);
+            e.Property(u => u.NomSociete).HasMaxLength(200);
             e.Property(u => u.Telephone).HasMaxLength(20);
+            e.Property(u => u.LimiteSousComptes).HasDefaultValue(3);
             e.Property(u => u.Role).HasConversion<int>();
             e.Property(u => u.EstActif).HasDefaultValue(true);
             e.Property(u => u.EstValide).HasDefaultValue(true);

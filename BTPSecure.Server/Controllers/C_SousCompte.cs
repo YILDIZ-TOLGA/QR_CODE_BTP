@@ -37,6 +37,13 @@ public class C_SousCompte : ControllerBase
         return Ok(_liste);
     }
 
+    [HttpGet("quota")]
+    public async Task<IActionResult> ObtenirQuota()
+    {
+        var _quota = await _service.ObtenirQuota(ObtenirUtilisateurId());
+        return Ok(_quota);
+    }
+
     [HttpPost("creer")]
     public async Task<IActionResult> Creer([FromBody] DTO_CreerSousCompte p_dto)
     {

@@ -1,0 +1,42 @@
+@inject DialogService Dialog
+
+@* Réglage par l'admin de la limite de sous-comptes d'un fournisseur principal *@
+<RadzenStack Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+        Nombre maximum de sous-comptes actifs autorisés pour « @NomFournisseur ».
+    </RadzenText>
+
+    <RadzenFormField Text="Limite de sous-comptes" Variant="Variant.Outlined" Style="width: 100%;">
+        <Start><RadzenIcon Icon="group" /></Start>
+        <ChildContent>
+            <RadzenNumeric TValue="int" @bind-Value="_limite" Min="0" Max="50" Style="width: 100%;" />
+        </ChildContent>
+    </RadzenFormField>
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="Annuler" Variant="Variant.Outlined" Click="Annuler" />
+        <RadzenButton Text="Enregistrer" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="Valider" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int LimiteActuelle { get; set; }
+    [Parameter] public string NomFournisseur { get; set; } = string.Empty;
+
+    private int _limite;
+
+    protected override void OnInitialized()
+    {
+        _limite = LimiteActuelle;
+    }
+
+    private void Valider()
+    {
+        Dialog.Close(_limite);
+    }
+
+    private void Annuler()
+    {
+        Dialog.Close(null);
+    }
+}

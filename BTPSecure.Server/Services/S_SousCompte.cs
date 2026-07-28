@@ -39,19 +39,49 @@ public class S_SousCompte
         return _sousComptes.Select(VersDTO).ToList();
     }
 
+    // Quota de sous-comptes du fournisseur connecté (pour l'affichage côté client)
+    public async Task<DTO_QuotaSousComptes> ObtenirQuota(int p_parentId)
+    {
+        var _quota = new DTO_QuotaSousComptes();
+        var _parent = await _daoUtilisateur.ObtenirParId(p_parentId);
+        if (_parent == null)
+            return _quota;
+
+        _quota.Limite = _parent.LimiteSousComptes;
+        _quota.Actifs = await _daoUtilisateur.CompterSousComptesActifs(p_parentId);
+        return _quota;
+    }
+
     public async Task<(bool Succes, string Message)> Creer(DTO_CreerSousCompte p_dto, int p_parentId)
     {
         if (string.IsNullOrWhiteSpace(p_dto.Email))
             return (false, "L'email est obligatoire.");
-        if (string.IsNullOrWhiteSpace(p_dto.Nom) || string.IsNullOrWhiteSpace(p_dto.Prenom))
-            return (false, "Le nom et le prénom sont obligatoires.");
 
         var _parent = await _daoUtilisateur.ObtenirParId(p_parentId);
         if (_parent == null || _parent.Role != Enum_Role.Fournisseur || _parent.ParentFournisseurId.HasValue)
             return (false, "Seul un compte fournisseur principal peut créer des sous-comptes.");
 
+        // Limite fixée par l'admin (3 par défaut) : seuls les sous-comptes actifs comptent
+        var _actifs = await _daoUtilisateur.CompterSousComptesActifs(p_parentId);
+        if (_actifs >= _parent.LimiteSousComptes)
+            return (false, "Nombre de sous-comptes atteint.");
+
         if (await _daoUtilisateur.EmailExiste(p_dto.Email))
             return (false, "Un compte avec cet email existe déjà.");
+
+        // Nom optionnel : à défaut, le sous-compte porte le nom de l'entreprise du compte principal
+        var _nom = p_dto.Nom.Trim();
+        if (string.IsNullOrWhiteSpace(_nom))
+        {
+            if (!string.IsNullOrWhiteSpace(_parent.NomSociete))
+            {
+                _nom = _parent.NomSociete.Trim();
+            }
+            else
+            {
+                _nom = _parent.Nom;
+            }
+        }
 
         var _motDePasseTemporaire = GenererMotDePasseTemporaire();
         var _sel = BCrypt.Net.BCrypt.GenerateSalt();
@@ -62,12 +92,13 @@ public class S_SousCompte
             Email = p_dto.Email.Trim().ToLower(),
             MotDePasseHash = _hash,
             Sel = _sel,
-            Nom = p_dto.Nom.Trim(),
+            Nom = _nom,
             Prenom = p_dto.Prenom.Trim(),
             Telephone = p_dto.Telephone?.Trim(),
-            // Hérite du SIRET/SIREN du compte principal → voit les mêmes commandes
+            // Hérite du SIRET/SIREN et du nom de société du compte principal → voit les mêmes commandes
             Siret = _parent.Siret,
             Siren = _parent.Siren,
+            NomSociete = _parent.NomSociete,
             Role = Enum_Role.Fournisseur,
             ParentFournisseurId = _parent.Id,
             EstActif = true,
@@ -79,9 +110,14 @@ public class S_SousCompte
         _logger.LogInformation("Sous-compte fournisseur {Email} créé par {ParentId}", _sousCompte.Email, p_parentId);
 
         var _emailCopie = _sousCompte.Email;
+        // À défaut de prénom, l'email salue avec le nom (= nom de société par héritage)
         var _prenomCopie = _sousCompte.Prenom;
+        if (string.IsNullOrWhiteSpace(_prenomCopie))
+        {
+            _prenomCopie = _sousCompte.Nom;
+        }
         var _mdpCopie = _motDePasseTemporaire;
-        var _nomPrincipal = $"{_parent.Prenom} {_parent.Nom}";
+        var _nomPrincipal = $"{_parent.Prenom} {_parent.Nom}".Trim();
         _ = Task.Run(async () =>
         {
             await _sEmail.EnvoyerIdentifiantsSousCompte(_emailCopie, _prenomCopie, _mdpCopie, _nomPrincipal);
@@ -108,6 +144,14 @@ public class S_SousCompte
         var _sousCompte = await _daoUtilisateur.ObtenirParId(p_sousCompteId);
         if (_sousCompte == null || _sousCompte.ParentFournisseurId != p_parentId)
             return (false, "Sous-compte non trouvé.");
+
+        // La réactivation reprend une place : on revérifie la limite
+        var _parent = await _daoUtilisateur.ObtenirParId(p_parentId);
+        if (_parent == null)
+            return (false, "Compte principal non trouvé.");
+        var _actifs = await _daoUtilisateur.CompterSousComptesActifs(p_parentId);
+        if (_actifs >= _parent.LimiteSousComptes)
+            return (false, "Nombre de sous-comptes atteint.");
 
         _sousCompte.EstActif = true;
         await _daoUtilisateur.Sauvegarder();

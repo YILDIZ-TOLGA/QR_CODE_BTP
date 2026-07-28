@@ -61,6 +61,16 @@ public class S_Admin
         return (false, await LireErreur(_reponse));
     }
 
+    public async Task<(bool Succes, string Message)> ChangerLimiteSousComptes(int p_id, int p_limite)
+    {
+        var _dto = new DTO_LimiteSousComptes();
+        _dto.Limite = p_limite;
+        var _reponse = await _http.PostAsJsonAsync($"api/admin/limite-souscomptes/{p_id}", _dto);
+        if (_reponse.IsSuccessStatusCode)
+            return (true, "Limite modifiée.");
+        return (false, await LireErreur(_reponse));
+    }
+
     private static async Task<string> LireErreur(HttpResponseMessage p_reponse)
     {
         try

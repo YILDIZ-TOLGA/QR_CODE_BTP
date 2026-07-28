@@ -63,6 +63,13 @@ public class DAO_Utilisateur
             .ToListAsync();
     }
 
+    // Seuls les sous-comptes actifs comptent dans la limite (désactiver libère une place)
+    public async Task<int> CompterSousComptesActifs(int p_parentId)
+    {
+        return await _context.Utilisateurs
+            .CountAsync(u => u.ParentFournisseurId == p_parentId && u.EstActif);
+    }
+
     public async Task Sauvegarder()
     {
         await _context.SaveChangesAsync();

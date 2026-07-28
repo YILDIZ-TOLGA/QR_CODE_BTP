@@ -45,6 +45,21 @@ public class S_SousCompte
         }
     }
 
+    public async Task<DTO_QuotaSousComptes> ObtenirQuota()
+    {
+        try
+        {
+            var _result = await _http.GetFromJsonAsync<DTO_QuotaSousComptes>("api/souscompte/quota");
+            if (_result == null)
+                return new DTO_QuotaSousComptes();
+            return _result;
+        }
+        catch
+        {
+            return new DTO_QuotaSousComptes();
+        }
+    }
+
     public async Task<(bool Succes, string Message)> Creer(DTO_CreerSousCompte p_dto)
     {
         var _reponse = await _http.PostAsJsonAsync("api/souscompte/creer", p_dto);

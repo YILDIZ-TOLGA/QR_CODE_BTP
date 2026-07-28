@@ -195,6 +195,13 @@ else
                                 </RadzenStack>
 
                                 <RadzenStack Gap="0.4rem">
+                                    @if (!string.IsNullOrEmpty(_f.NomSociete))
+                                    {
+                                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                            <RadzenIcon Icon="business" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis;">@_f.NomSociete</RadzenText>
+                                        </RadzenStack>
+                                    }
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
                                         <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
                                         <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis;">@_f.Email</RadzenText>
@@ -211,6 +218,18 @@ else
                                         <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Inscrit le @_f.DateCreation.ToLocalTime().ToString("dd/MM/yyyy")</RadzenText>
                                     </RadzenStack>
                                 </RadzenStack>
+
+                                @if (_f.EstSousCompte)
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="Sous-compte" IsPill="true" />
+                                }
+                                else
+                                {
+                                    @* La limite de sous-comptes se règle uniquement sur les comptes principaux *@
+                                    <RadzenButton Text="@($"Limite sous-comptes : {_f.LimiteSousComptes}")" Icon="group"
+                                                  ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                                  Style="width: 100%;" Click="() => ChangerLimite(_f)" />
+                                }
 
                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                     @if (!_f.EstValide && _f.EstActif)
@@ -263,6 +282,31 @@ else
         if (_confirm == true)
         {
             var (_succes, _message) = await SAdmin.ValiderFournisseur(p_f.Id);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                _fournisseurs = await SAdmin.ObtenirFournisseurs();
+                StateHasChanged();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private async Task ChangerLimite(DTO_FournisseurAdmin p_f)
+    {
+        var _nomAffiche = $"{p_f.Prenom} {p_f.Nom}".Trim();
+        var _result = await Dialog.OpenAsync<Comp_DialogLimiteSousComptes>("Limite de sous-comptes",
+            new Dictionary<string, object?>
+            {
+                { "LimiteActuelle", p_f.LimiteSousComptes },
+                { "NomFournisseur", _nomAffiche }
+            },
+            new DialogOptions { Width = "420px", CloseDialogOnOverlayClick = false });
+
+        if (_result is int _limite)
+        {
+            var (_succes, _message) = await SAdmin.ChangerLimiteSousComptes(p_f.Id, _limite);
             if (_succes)
             {
                 Notification.Notify(NotificationSeverity.Success, "Succès", _message);

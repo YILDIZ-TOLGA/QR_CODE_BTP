@@ -4,25 +4,24 @@
     <RadzenStack Gap="1rem">
         <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
             Un mot de passe temporaire sera généré et envoyé par email au sous-compte.
+            Sans nom renseigné, le sous-compte portera le nom de votre entreprise.
         </RadzenText>
 
         <RadzenRow Gap="1rem">
             <RadzenColumn Size="12" SizeMD="6">
-                <RadzenFormField Text="Nom" Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenFormField Text="Nom (optionnel)" Variant="Variant.Outlined" Style="width: 100%;">
                     <Start><RadzenIcon Icon="badge" /></Start>
                     <ChildContent>
-                        <RadzenTextBox @bind-Value="_dto.Nom" Name="Nom" Style="width: 100%;" />
+                        <RadzenTextBox @bind-Value="_dto.Nom" Style="width: 100%;" Placeholder="Optionnel" />
                     </ChildContent>
-                    <Helper><RadzenRequiredValidator Component="Nom" Text="Obligatoire." /></Helper>
                 </RadzenFormField>
             </RadzenColumn>
             <RadzenColumn Size="12" SizeMD="6">
-                <RadzenFormField Text="Prénom" Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenFormField Text="Prénom (optionnel)" Variant="Variant.Outlined" Style="width: 100%;">
                     <Start><RadzenIcon Icon="person" /></Start>
                     <ChildContent>
-                        <RadzenTextBox @bind-Value="_dto.Prenom" Name="Prenom" Style="width: 100%;" />
+                        <RadzenTextBox @bind-Value="_dto.Prenom" Style="width: 100%;" Placeholder="Optionnel" />
                     </ChildContent>
-                    <Helper><RadzenRequiredValidator Component="Prenom" Text="Obligatoire." /></Helper>
                 </RadzenFormField>
             </RadzenColumn>
         </RadzenRow>

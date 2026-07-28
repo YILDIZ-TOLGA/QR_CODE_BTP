@@ -8,8 +8,12 @@
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
         <RadzenIcon Icon="badge" Style="font-size: 2rem; color: var(--rz-primary);" />
         <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Mes sous-comptes</RadzenText>
+        @if (!_chargement)
+        {
+            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_quota.Actifs} / {_quota.Limite}")" IsPill="true" />
+        }
     </RadzenStack>
-    <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="OuvrirAjout" />
+    <RadzenButton Text="Ajouter" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="OuvrirAjout" Disabled="@LimiteAtteinte()" />
 </RadzenStack>
 
 @if (_chargement)
@@ -24,13 +28,20 @@ else
         Les sous-comptes permettent à vos employés de valider des codes sous votre entreprise. Chaque validation est tracée à leur nom.
     </RadzenText>
 
+    @if (LimiteAtteinte())
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat" AllowClose="false" Style="margin-bottom: 1rem;">
+            Nombre de sous-comptes atteint (@_quota.Limite maximum). Désactivez un sous-compte pour libérer une place, ou contactez l'administrateur pour augmenter la limite.
+        </RadzenAlert>
+    }
+
     @if (_sousComptes.Count == 0)
     {
         <RadzenCard Variant="Variant.Outlined">
             <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 3rem 0;">
                 <RadzenIcon Icon="group_off" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
                 <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-text-secondary-color);">Aucun sous-compte</RadzenText>
-                <RadzenButton Text="Créer mon premier sous-compte" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="OuvrirAjout" />
+                <RadzenButton Text="Créer mon premier sous-compte" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="OuvrirAjout" Disabled="@LimiteAtteinte()" />
             </RadzenStack>
         </RadzenCard>
     }
@@ -84,6 +95,7 @@ else
 
 @code {
     private List<DTO_SousCompte> _sousComptes = new();
+    private DTO_QuotaSousComptes _quota = new();
     private bool _chargement = true;
 
     protected override async Task OnInitializedAsync()
@@ -95,7 +107,17 @@ else
     {
         _chargement = true;
         _sousComptes = await SSousCompte.Lister();
+        _quota = await SSousCompte.ObtenirQuota();
         _chargement = false;
+    }
+
+    private bool LimiteAtteinte()
+    {
+        if (_chargement)
+        {
+            return false;
+        }
+        return _quota.Actifs >= _quota.Limite;
     }
 
     private async Task OuvrirAjout()
