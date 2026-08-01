@@ -11,15 +11,17 @@ namespace BTPSecure.Server.Services;
 public class S_Auth
 {
     private readonly DAO_Utilisateur _daoUtilisateur;
+    private readonly DAO_Entreprise _daoEntreprise;
     private readonly IConfiguration _config;
     private readonly ILogger<S_Auth> _logger;
     private readonly BTPSecure.Server.Data.AppDbContext _context;
     private readonly S_Email _sEmail;
 
-    public S_Auth(DAO_Utilisateur p_daoUtilisateur, IConfiguration p_config, ILogger<S_Auth> p_logger,
+    public S_Auth(DAO_Utilisateur p_daoUtilisateur, DAO_Entreprise p_daoEntreprise, IConfiguration p_config, ILogger<S_Auth> p_logger,
         BTPSecure.Server.Data.AppDbContext p_context, S_Email p_sEmail)
     {
         _daoUtilisateur = p_daoUtilisateur;
+        _daoEntreprise = p_daoEntreprise;
         _config = p_config;
         _logger = p_logger;
         _context = p_context;
@@ -144,6 +146,7 @@ public class S_Auth
             return (false, "Le mot de passe doit faire minimum 8 caractères.", null);
 
         // Fournisseur : le nom de l'entreprise est obligatoire, le nom/prénom devient optionnel
+        // Dirigeant : nom/prénom ET nom de l'entreprise obligatoires (l'entreprise est créée dès l'inscription)
         string? _nomSociete = null;
         if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
         {
@@ -155,6 +158,13 @@ public class S_Auth
         {
             if (string.IsNullOrWhiteSpace(p_dto.Nom) || string.IsNullOrWhiteSpace(p_dto.Prenom))
                 return (false, "Le nom et le prénom sont obligatoires.", null);
+
+            if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Dirigeant)
+            {
+                if (string.IsNullOrWhiteSpace(p_dto.NomSociete))
+                    return (false, "Le nom de l'entreprise est obligatoire.", null);
+                _nomSociete = p_dto.NomSociete.Trim();
+            }
         }
 
         if (await _daoUtilisateur.EmailExiste(p_dto.Email))
@@ -196,6 +206,14 @@ public class S_Auth
             _nom = _nomSociete;
         }
 
+        // Le NomSociete du compte ne concerne que les fournisseurs :
+        // pour un dirigeant, l'entreprise vit dans sa propre table (E_Entreprise)
+        string? _societeCompte = null;
+        if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
+        {
+            _societeCompte = _nomSociete;
+        }
+
         var _utilisateur = new E_Utilisateur
         {
             Email = p_dto.Email.ToLower(),
@@ -203,7 +221,7 @@ public class S_Auth
             Sel = _sel,
             Nom = _nom,
             Prenom = p_dto.Prenom.Trim(),
-            NomSociete = _nomSociete,
+            NomSociete = _societeCompte,
             Telephone = p_dto.Telephone?.Trim(),
             Siret = _siret,
             Siren = _siren,
@@ -218,6 +236,17 @@ public class S_Auth
 
         await _daoUtilisateur.Creer(_utilisateur);
         _logger.LogInformation("Nouvel utilisateur inscrit : {Email} avec le rôle {Role}", _utilisateur.Email, _utilisateur.Role);
+
+        // Dirigeant : l'entreprise est créée immédiatement (plus de formulaire à la première connexion)
+        if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Dirigeant && _nomSociete != null)
+        {
+            await _daoEntreprise.Creer(new E_Entreprise
+            {
+                Nom = _nomSociete,
+                DirigeantId = _utilisateur.Id
+            });
+            _logger.LogInformation("Entreprise '{Nom}' créée à l'inscription du dirigeant {Id}", _nomSociete, _utilisateur.Id);
+        }
 
         var _tokenCopie = _utilisateur.TokenVerification;
         var _emailCopie = _utilisateur.Email;

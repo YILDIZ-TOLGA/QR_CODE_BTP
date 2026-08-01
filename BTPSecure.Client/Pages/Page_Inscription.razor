@@ -100,6 +100,18 @@
                             }
                             else
                             {
+                                @* Dirigeant : l'entreprise est créée dès l'inscription (plus de formulaire à la première connexion) *@
+                                @if (_dto.Role == Enum_Role.Dirigeant)
+                                {
+                                    <RadzenFormField Text="Nom de l'entreprise" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <Start><RadzenIcon Icon="business" /></Start>
+                                        <ChildContent>
+                                            <RadzenTextBox @bind-Value="_dto.NomSociete" Name="NomSociete" Style="width: 100%;" />
+                                        </ChildContent>
+                                        <Helper><RadzenRequiredValidator Component="NomSociete" Text="Le nom de l'entreprise est obligatoire." /></Helper>
+                                    </RadzenFormField>
+                                }
+
                                 <RadzenRow Gap="1rem">
                                     <RadzenColumn Size="12" SizeMD="6">
                                         <RadzenFormField Text="Nom" Variant="Variant.Outlined" Style="width: 100%;">
