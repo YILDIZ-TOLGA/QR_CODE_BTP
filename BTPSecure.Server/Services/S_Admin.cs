@@ -6,11 +6,13 @@ namespace BTPSecure.Server.Services;
 public class S_Admin
 {
     private readonly DAO_Admin _daoAdmin;
+    private readonly S_CacheComptes _cacheComptes;
     private readonly ILogger<S_Admin> _logger;
 
-    public S_Admin(DAO_Admin p_daoAdmin, ILogger<S_Admin> p_logger)
+    public S_Admin(DAO_Admin p_daoAdmin, S_CacheComptes p_cacheComptes, ILogger<S_Admin> p_logger)
     {
         _daoAdmin = p_daoAdmin;
+        _cacheComptes = p_cacheComptes;
         _logger = p_logger;
     }
 
@@ -93,6 +95,7 @@ public class S_Admin
         _fournisseur.EstValide = true;
         _fournisseur.EstActif = true;
         await _daoAdmin.Sauvegarder();
+        _cacheComptes.Invalider(_fournisseur.Id);
 
         _logger.LogInformation("Fournisseur {Email} (ID:{Id}) validé par l'admin.", _fournisseur.Email, _fournisseur.Id);
         return (true, $"Fournisseur {_fournisseur.Nom} validé.");
@@ -119,17 +122,26 @@ public class S_Admin
 
         // Compte principal : la cascade s'applique à tous ses sous-comptes
         int _nbSousComptes = 0;
+        var _idsSousComptes = new List<int>();
         if (!_fournisseur.ParentFournisseurId.HasValue)
         {
             var _sousComptes = await _daoAdmin.ObtenirSousComptes(_fournisseur.Id);
             foreach (var _sc in _sousComptes)
             {
                 _sc.EstActif = _nouvelEtat;
+                _idsSousComptes.Add(_sc.Id);
             }
             _nbSousComptes = _sousComptes.Count;
         }
 
         await _daoAdmin.Sauvegarder();
+
+        // Le cache doit oublier ces comptes pour que le blocage prenne effet tout de suite
+        _cacheComptes.Invalider(_fournisseur.Id);
+        foreach (var _idSousCompte in _idsSousComptes)
+        {
+            _cacheComptes.Invalider(_idSousCompte);
+        }
 
         string _statut;
         if (_nouvelEtat)

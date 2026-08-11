@@ -10,13 +10,16 @@ public class S_SousCompte
     private readonly DAO_Utilisateur _daoUtilisateur;
     private readonly DAO_Code _daoCode;
     private readonly S_Email _sEmail;
+    private readonly S_CacheComptes _cacheComptes;
     private readonly ILogger<S_SousCompte> _logger;
 
-    public S_SousCompte(DAO_Utilisateur p_daoUtilisateur, DAO_Code p_daoCode, S_Email p_sEmail, ILogger<S_SousCompte> p_logger)
+    public S_SousCompte(DAO_Utilisateur p_daoUtilisateur, DAO_Code p_daoCode, S_Email p_sEmail,
+        S_CacheComptes p_cacheComptes, ILogger<S_SousCompte> p_logger)
     {
         _daoUtilisateur = p_daoUtilisateur;
         _daoCode = p_daoCode;
         _sEmail = p_sEmail;
+        _cacheComptes = p_cacheComptes;
         _logger = p_logger;
     }
 
@@ -134,6 +137,8 @@ public class S_SousCompte
 
         _sousCompte.EstActif = false;
         await _daoUtilisateur.Sauvegarder();
+        // Coupe l'accès immédiatement, même si le sous-compte est déjà connecté
+        _cacheComptes.Invalider(_sousCompte.Id);
 
         _logger.LogInformation("Sous-compte {Id} désactivé par {ParentId}", p_sousCompteId, p_parentId);
         return (true, "Sous-compte désactivé.");
@@ -155,6 +160,7 @@ public class S_SousCompte
 
         _sousCompte.EstActif = true;
         await _daoUtilisateur.Sauvegarder();
+        _cacheComptes.Invalider(_sousCompte.Id);
 
         _logger.LogInformation("Sous-compte {Id} réactivé par {ParentId}", p_sousCompteId, p_parentId);
         return (true, "Sous-compte réactivé.");

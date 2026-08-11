@@ -74,14 +74,26 @@ builder.Services.AddAuthentication(options =>
                 return;
             }
 
-            // Projection sur le seul booléen : lecture par clé primaire, très légère
-            var _db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            var _actif = await _db.Utilisateurs
-                .Where(u => u.Id == _id)
-                .Select(u => (bool?)u.EstActif)
-                .FirstOrDefaultAsync();
+            // Cache mémoire : évite une lecture en base à chaque requête.
+            // Un blocage invalide l'entrée, l'effet reste donc immédiat.
+            var _cache = context.HttpContext.RequestServices.GetRequiredService<S_CacheComptes>();
 
-            if (_actif != true)
+            bool _estActif;
+            if (!_cache.TryObtenir(_id, out _estActif))
+            {
+                // Projection sur le seul booléen : lecture par clé primaire, très légère
+                var _db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var _valeur = await _db.Utilisateurs
+                    .Where(u => u.Id == _id)
+                    .Select(u => (bool?)u.EstActif)
+                    .FirstOrDefaultAsync();
+
+                // Compte supprimé (null) = pas d'accès
+                _estActif = _valeur == true;
+                _cache.Definir(_id, _estActif);
+            }
+
+            if (!_estActif)
             {
                 context.Fail("Compte bloqué ou supprimé.");
             }
@@ -137,6 +149,8 @@ builder.Services.AddScoped<S_Ticket>();
 builder.Services.AddScoped<S_Memo>();
 builder.Services.AddSingleton<S_Pdf>();
 builder.Services.AddSingleton<S_Email>();
+// Partagé par toutes les requêtes : cache « ce compte est-il actif ? »
+builder.Services.AddSingleton<S_CacheComptes>();
 
 // Nettoyage automatique des tickets expirés (TTL 24 h)
 builder.Services.AddHostedService<S_NettoyageTickets>();
