@@ -9,8 +9,15 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-var _http = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
-builder.Services.AddScoped(sp => _http);
+// Le gestionnaire intercepte les 401 : un compte bloqué est déconnecté immédiatement.
+// Il ne dépend que de IJSRuntime/NavigationManager pour éviter une boucle avec HttpClient.
+builder.Services.AddScoped<S_GestionnaireAuth>();
+builder.Services.AddScoped(sp =>
+{
+    var _gestionnaire = sp.GetRequiredService<S_GestionnaireAuth>();
+    _gestionnaire.InnerHandler = new HttpClientHandler();
+    return new HttpClient(_gestionnaire) { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
+});
 
 builder.Services.AddScoped<S_AuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<S_AuthStateProvider>());

@@ -53,6 +53,40 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = _audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_cleJwt))
     };
+
+    // Un compte bloqué perd l'accès immédiatement : sans ce contrôle, son jeton
+    // resterait valable jusqu'à expiration (24 h) même après blocage par l'admin.
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var _claimId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (_claimId == null)
+            {
+                context.Fail("Jeton invalide.");
+                return;
+            }
+
+            int _id;
+            if (!int.TryParse(_claimId.Value, out _id))
+            {
+                context.Fail("Jeton invalide.");
+                return;
+            }
+
+            // Projection sur le seul booléen : lecture par clé primaire, très légère
+            var _db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var _actif = await _db.Utilisateurs
+                .Where(u => u.Id == _id)
+                .Select(u => (bool?)u.EstActif)
+                .FirstOrDefaultAsync();
+
+            if (_actif != true)
+            {
+                context.Fail("Compte bloqué ou supprimé.");
+            }
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
