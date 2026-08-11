@@ -53,12 +53,36 @@ public class S_Admin
         return (false, await LireErreur(_reponse));
     }
 
-    public async Task<(bool Succes, string Message)> DesactiverFournisseur(int p_id)
+    // Bloque / débloque un fournisseur (et ses sous-comptes s'il est principal)
+    public async Task<(bool Succes, string Message)> BasculerBlocageFournisseur(int p_id)
     {
-        var _reponse = await _http.PostAsJsonAsync($"api/admin/desactiver-fournisseur/{p_id}", new { });
+        var _reponse = await _http.PostAsJsonAsync($"api/admin/basculer-blocage-fournisseur/{p_id}", new { });
         if (_reponse.IsSuccessStatusCode)
-            return (true, "Fournisseur désactivé.");
+        {
+            // Le serveur précise combien de sous-comptes ont suivi
+            var _message = await LireMessage(_reponse);
+            if (string.IsNullOrEmpty(_message))
+                return (true, "Statut du fournisseur modifié.");
+            return (true, _message);
+        }
         return (false, await LireErreur(_reponse));
+    }
+
+    private static async Task<string> LireMessage(HttpResponseMessage p_reponse)
+    {
+        try
+        {
+            var _body = await p_reponse.Content.ReadAsStringAsync();
+            if (!string.IsNullOrWhiteSpace(_body))
+            {
+                var _obj = System.Text.Json.JsonSerializer.Deserialize<MessageReponse>(_body,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (_obj != null && !string.IsNullOrEmpty(_obj.Message))
+                    return _obj.Message;
+            }
+        }
+        catch { }
+        return string.Empty;
     }
 
     public async Task<(bool Succes, string Message)> ChangerLimiteSousComptes(int p_id, int p_limite)

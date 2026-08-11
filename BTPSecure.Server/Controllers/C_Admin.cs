@@ -46,10 +46,11 @@ public class C_Admin : ControllerBase
         return Ok(new { message = _message });
     }
 
-    [HttpPost("desactiver-fournisseur/{p_id}")]
-    public async Task<IActionResult> DesactiverFournisseur(int p_id)
+    // Bloque / débloque un fournisseur (et ses sous-comptes s'il est principal)
+    [HttpPost("basculer-blocage-fournisseur/{p_id}")]
+    public async Task<IActionResult> BasculerBlocageFournisseur(int p_id)
     {
-        var (_succes, _message) = await _sAdmin.DesactiverFournisseur(p_id);
+        var (_succes, _message) = await _sAdmin.BasculerBlocageFournisseur(p_id);
         if (!_succes) return BadRequest(new { message = _message });
         return Ok(new { message = _message });
     }

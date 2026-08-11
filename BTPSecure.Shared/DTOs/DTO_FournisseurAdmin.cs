@@ -16,4 +16,9 @@ public class DTO_FournisseurAdmin
     // Un sous-compte n'a pas de limite propre : elle se règle sur le compte principal
     public bool EstSousCompte { get; set; }
     public int LimiteSousComptes { get; set; }
+    // Compte principal : nombre de sous-comptes qui suivront un blocage
+    public int NombreSousComptes { get; set; }
+    // Sous-compte : son compte principal est bloqué (impossible de le débloquer seul)
+    public bool ParentBloque { get; set; }
+    public string? NomParent { get; set; }
 }

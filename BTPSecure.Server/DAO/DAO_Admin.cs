@@ -53,6 +53,14 @@ public class DAO_Admin
         return await _context.Utilisateurs.FindAsync(p_id);
     }
 
+    // Sous-comptes d'un fournisseur principal (blocage en cascade)
+    public async Task<List<E_Utilisateur>> ObtenirSousComptes(int p_parentId)
+    {
+        return await _context.Utilisateurs
+            .Where(u => u.ParentFournisseurId == p_parentId)
+            .ToListAsync();
+    }
+
     public async Task Sauvegarder()
     {
         await _context.SaveChangesAsync();

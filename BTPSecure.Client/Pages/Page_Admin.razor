@@ -182,7 +182,7 @@ else
                                     </RadzenStack>
                                     @if (!_f.EstActif)
                                     {
-                                        <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="Désactivé" IsPill="true" />
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Bloqué" IsPill="true" />
                                     }
                                     else if (_f.EstValide)
                                     {
@@ -221,7 +221,13 @@ else
 
                                 @if (_f.EstSousCompte)
                                 {
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="Sous-compte" IsPill="true" />
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="Sous-compte" IsPill="true" />
+                                        @if (!string.IsNullOrEmpty(_f.NomParent))
+                                        {
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">de @_f.NomParent</RadzenText>
+                                        }
+                                    </RadzenStack>
                                 }
                                 else
                                 {
@@ -229,6 +235,13 @@ else
                                     <RadzenButton Text="@($"Limite sous-comptes : {_f.LimiteSousComptes}")" Icon="group"
                                                   ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Size="ButtonSize.Small"
                                                   Style="width: 100%;" Click="() => ChangerLimite(_f)" />
+                                }
+
+                                @if (_f.EstSousCompte && _f.ParentBloque && !_f.EstActif)
+                                {
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                        Bloqué avec son compte principal : débloquez d'abord celui-ci.
+                                    </RadzenText>
                                 }
 
                                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
@@ -240,9 +253,16 @@ else
                                     }
                                     @if (_f.EstActif)
                                     {
-                                        <RadzenButton Text="Désactiver" Icon="block" ButtonStyle="ButtonStyle.Danger"
+                                        <RadzenButton Text="Bloquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
                                                       Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
-                                                      Click="() => DesactiverFournisseur(_f)" />
+                                                      Click="() => BasculerBlocage(_f)" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenButton Text="Débloquer" Icon="lock_open" ButtonStyle="ButtonStyle.Success"
+                                                      Variant="Variant.Outlined" Size="ButtonSize.Small" Style="flex: 1;"
+                                                      Disabled="@(_f.EstSousCompte && _f.ParentBloque)"
+                                                      Click="() => BasculerBlocage(_f)" />
                                     }
                                 </RadzenStack>
                             </RadzenStack>
@@ -318,15 +338,48 @@ else
         }
     }
 
-    private async Task DesactiverFournisseur(DTO_FournisseurAdmin p_f)
+    // Bloque / débloque un fournisseur ; sur un compte principal, ses sous-comptes suivent
+    private async Task BasculerBlocage(DTO_FournisseurAdmin p_f)
     {
+        var _nomAffiche = $"{p_f.Prenom} {p_f.Nom}".Trim();
+
+        string _action;
+        if (p_f.EstActif)
+        {
+            _action = "Bloquer";
+        }
+        else
+        {
+            _action = "Débloquer";
+        }
+
+        // Le message annonce la cascade quand le compte principal a des sous-comptes
+        string _question;
+        if (p_f.EstActif)
+        {
+            _question = $"Bloquer le compte fournisseur « {_nomAffiche} » ? Il ne pourra plus se connecter.";
+            if (!p_f.EstSousCompte && p_f.NombreSousComptes > 0)
+            {
+                _question = $"Bloquer le compte fournisseur « {_nomAffiche} » ainsi que ses {p_f.NombreSousComptes} sous-compte(s) ? Aucun d'eux ne pourra plus se connecter.";
+            }
+        }
+        else
+        {
+            _question = $"Débloquer le compte fournisseur « {_nomAffiche} » ? Il pourra de nouveau se connecter.";
+            if (!p_f.EstSousCompte && p_f.NombreSousComptes > 0)
+            {
+                _question = $"Débloquer le compte fournisseur « {_nomAffiche} » ainsi que ses {p_f.NombreSousComptes} sous-compte(s) ?";
+            }
+        }
+
         var _confirm = await Dialog.Confirm(
-            $"Désactiver le compte fournisseur « {p_f.Prenom} {p_f.Nom} » ? Il ne pourra plus se connecter.",
+            _question,
             "Confirmation",
-            new ConfirmOptions { OkButtonText = "Désactiver", CancelButtonText = "Annuler" });
+            new ConfirmOptions { OkButtonText = _action, CancelButtonText = "Annuler" });
+
         if (_confirm == true)
         {
-            var (_succes, _message) = await SAdmin.DesactiverFournisseur(p_f.Id);
+            var (_succes, _message) = await SAdmin.BasculerBlocageFournisseur(p_f.Id);
             if (_succes)
             {
                 Notification.Notify(NotificationSeverity.Success, "Succès", _message);

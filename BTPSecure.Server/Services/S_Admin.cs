@@ -42,22 +42,46 @@ public class S_Admin
     public async Task<List<DTO_FournisseurAdmin>> ObtenirFournisseurs()
     {
         var _fournisseurs = await _daoAdmin.ObtenirFournisseurs();
-        return _fournisseurs.Select(f => new DTO_FournisseurAdmin
+        var _result = new List<DTO_FournisseurAdmin>();
+
+        foreach (var _f in _fournisseurs)
         {
-            Id = f.Id,
-            Nom = f.Nom,
-            Prenom = f.Prenom,
-            NomSociete = f.NomSociete,
-            Email = f.Email,
-            Siret = f.Siret,
-            Siren = f.Siren,
-            Telephone = f.Telephone,
-            DateCreation = f.DateCreation,
-            EstValide = f.EstValide,
-            EstActif = f.EstActif,
-            EstSousCompte = f.ParentFournisseurId.HasValue,
-            LimiteSousComptes = f.LimiteSousComptes
-        }).ToList();
+            var _dto = new DTO_FournisseurAdmin
+            {
+                Id = _f.Id,
+                Nom = _f.Nom,
+                Prenom = _f.Prenom,
+                NomSociete = _f.NomSociete,
+                Email = _f.Email,
+                Siret = _f.Siret,
+                Siren = _f.Siren,
+                Telephone = _f.Telephone,
+                DateCreation = _f.DateCreation,
+                EstValide = _f.EstValide,
+                EstActif = _f.EstActif,
+                EstSousCompte = _f.ParentFournisseurId.HasValue,
+                LimiteSousComptes = _f.LimiteSousComptes
+            };
+
+            // Tout est déjà en mémoire : on évite une requête par fournisseur
+            if (_f.ParentFournisseurId.HasValue)
+            {
+                var _parent = _fournisseurs.FirstOrDefault(u => u.Id == _f.ParentFournisseurId.Value);
+                if (_parent != null)
+                {
+                    _dto.ParentBloque = !_parent.EstActif;
+                    _dto.NomParent = $"{_parent.Prenom} {_parent.Nom}".Trim();
+                }
+            }
+            else
+            {
+                _dto.NombreSousComptes = _fournisseurs.Count(u => u.ParentFournisseurId == _f.Id);
+            }
+
+            _result.Add(_dto);
+        }
+
+        return _result;
     }
 
     public async Task<(bool Succes, string Message)> ValiderFournisseur(int p_fournisseurId)
@@ -74,17 +98,55 @@ public class S_Admin
         return (true, $"Fournisseur {_fournisseur.Nom} validé.");
     }
 
-    public async Task<(bool Succes, string Message)> DesactiverFournisseur(int p_fournisseurId)
+    // Bloque / débloque un fournisseur. Sur un compte principal, l'action se répercute sur tous ses sous-comptes.
+    public async Task<(bool Succes, string Message)> BasculerBlocageFournisseur(int p_fournisseurId)
     {
         var _fournisseur = await _daoAdmin.ObtenirUtilisateurParId(p_fournisseurId);
         if (_fournisseur == null || _fournisseur.Role != BTPSecure.Shared.Enums.Enum_Role.Fournisseur)
             return (false, "Fournisseur non trouvé.");
 
-        _fournisseur.EstActif = false;
+        bool _nouvelEtat = !_fournisseur.EstActif;
+
+        // Un sous-compte ne peut pas être débloqué tant que son compte principal l'est
+        if (_nouvelEtat && _fournisseur.ParentFournisseurId.HasValue)
+        {
+            var _parent = await _daoAdmin.ObtenirUtilisateurParId(_fournisseur.ParentFournisseurId.Value);
+            if (_parent != null && !_parent.EstActif)
+                return (false, "Débloquez d'abord le compte principal.");
+        }
+
+        _fournisseur.EstActif = _nouvelEtat;
+
+        // Compte principal : la cascade s'applique à tous ses sous-comptes
+        int _nbSousComptes = 0;
+        if (!_fournisseur.ParentFournisseurId.HasValue)
+        {
+            var _sousComptes = await _daoAdmin.ObtenirSousComptes(_fournisseur.Id);
+            foreach (var _sc in _sousComptes)
+            {
+                _sc.EstActif = _nouvelEtat;
+            }
+            _nbSousComptes = _sousComptes.Count;
+        }
+
         await _daoAdmin.Sauvegarder();
 
-        _logger.LogInformation("Fournisseur {Email} (ID:{Id}) désactivé par l'admin.", _fournisseur.Email, _fournisseur.Id);
-        return (true, $"Fournisseur {_fournisseur.Nom} désactivé.");
+        string _statut;
+        if (_nouvelEtat)
+        {
+            _statut = "débloqué";
+        }
+        else
+        {
+            _statut = "bloqué";
+        }
+
+        _logger.LogInformation("Fournisseur {Email} (ID:{Id}) {Statut} par l'admin ({Nb} sous-compte(s) impacté(s)).",
+            _fournisseur.Email, _fournisseur.Id, _statut, _nbSousComptes);
+
+        if (_nbSousComptes > 0)
+            return (true, $"Fournisseur {_statut} ainsi que ses {_nbSousComptes} sous-compte(s).");
+        return (true, $"Fournisseur {_statut}.");
     }
 
     // Change la limite de sous-comptes d'un fournisseur principal (3 par défaut)
