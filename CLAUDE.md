@@ -14,6 +14,8 @@
 - **Fond des pages** : gris souris **#AEB4B9** (`--rz-layout-background-color` + `--rz-body-background-color`).
 - **Cartes / panneaux** : **blancs** (`--rz-card-background-color` + `--rz-panel-background-color` = `#ffffff`). ⚠️ Les `RadzenCard Variant="Outlined"` sont **transparentes** par défaut → override obligatoire `.rz-card.rz-variant-outlined { background-color: var(--rz-card-background-color); }`, sinon le gris souris traverse l'intérieur des cartes.
 - **Emails** (`S_Email.cs`) et **PDF** (`S_Pdf.cs`) : accent `#00C9B7`, marque « KEYDO » (fini le bleu / « BTPSecure »).
+- **Logo officiel** : `Comp_Logo.razor` — tracé vectoriel fourni par la charte, deux formes : monogramme **« K »** (défaut) et **mot-symbole « KEYDO »** (`Complet="true"`). Il remplace partout l'ancienne icône `shield` et le texte « KEYDO ». Couleur = `currentColor` (donner la couleur au parent). ⚠️ Le **« O » est fait de deux contours** → `fill-rule="evenodd"` obligatoire, sinon le centre se remplit. Dupliqué à trois endroits par nécessité (médias différents) : `Comp_Logo.razor` (app), `index.html` (loader, avant le démarrage de Blazor), `S_Pdf.cs` (PDF, via `.Svg()` avec `fill` explicite car `currentColor` n'existe pas en PDF). **Emails laissés en texte** : Gmail et Outlook suppriment les SVG inline.
+- ⚠️ **Dérogation assumée à la règle full Radzen** (comme les pièces jointes messagerie) : aucun composant Radzen ne rend un logo vectoriel → SVG inline dans `Comp_Logo.razor`. **Ne pas « corriger ».**
 
 ## Stack
 - **Server** : ASP.NET Core, EF Core (Npgsql), JWT + BCrypt, QuestPDF
@@ -157,6 +159,7 @@ git push   # Railway redéploie auto via webhook GitHub
 **Composants réutilisables** (`BTPSecure.Client/Components/`) :
 | Composant | Rôle |
 |---|---|
+| `Comp_Logo` | Logo KEYDO : monogramme « K » ou mot-symbole complet (`Complet="true"`) |
 | `Comp_AutoRefresh` | Polling 60 s + pause si onglet caché + bouton manuel |
 | `Comp_SelecteurPieceJointe` | Choix + validation d'une PJ (JPG/PNG/PDF, 5 Mo), `@bind-Fichier` |
 | `Comp_FormCreerCollaborateur` | Formulaire de création (page + pop-up), `OnCree` |
