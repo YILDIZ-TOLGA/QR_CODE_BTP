@@ -34,7 +34,9 @@ public class S_Admin
                 DateCreation = _e.DateCreation,
                 EstAutorisee = _e.EstAutorisee,
                 NombreCollaborateurs = await _daoAdmin.CompterCollaborateurs(_e.Id),
-                NombreCodes = await _daoAdmin.CompterCodes(_e.Id)
+                NombreCodes = await _daoAdmin.CompterCodes(_e.Id),
+                LimiteResponsables = _e.LimiteResponsables,
+                NombreResponsables = await _daoAdmin.CompterResponsables(_e.Id)
             });
         }
 
@@ -179,6 +181,23 @@ public class S_Admin
 
         _logger.LogInformation("Limite de sous-comptes de {Email} (ID:{Id}) fixée à {Limite} par l'admin.", _fournisseur.Email, _fournisseur.Id, p_limite);
         return (true, $"Limite fixée à {p_limite} sous-compte(s).");
+    }
+
+    // Plafond commun Responsable + Responsable Admin d'une entreprise
+    public async Task<(bool Succes, string Message)> ChangerLimiteResponsables(int p_entrepriseId, int p_limite)
+    {
+        if (p_limite < 0 || p_limite > 50)
+            return (false, "La limite doit être comprise entre 0 et 50.");
+
+        var _entreprise = await _daoAdmin.ObtenirEntrepriseParId(p_entrepriseId);
+        if (_entreprise == null)
+            return (false, "Entreprise non trouvée.");
+
+        _entreprise.LimiteResponsables = p_limite;
+        await _daoAdmin.Sauvegarder();
+
+        _logger.LogInformation("Limite de responsables de l'entreprise {Nom} (ID:{Id}) fixée à {Limite} par l'admin.", _entreprise.Nom, _entreprise.Id, p_limite);
+        return (true, $"Limite fixée à {p_limite} responsable(s).");
     }
 
     public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId)

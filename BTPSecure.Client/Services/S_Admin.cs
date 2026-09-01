@@ -85,6 +85,16 @@ public class S_Admin
         return string.Empty;
     }
 
+    public async Task<(bool Succes, string Message)> ChangerLimiteResponsables(int p_id, int p_limite)
+    {
+        var _dto = new DTO_LimiteResponsables();
+        _dto.Limite = p_limite;
+        var _reponse = await _http.PostAsJsonAsync($"api/admin/limite-responsables/{p_id}", _dto);
+        if (_reponse.IsSuccessStatusCode)
+            return (true, "Limite modifiée.");
+        return (false, await LireErreur(_reponse));
+    }
+
     public async Task<(bool Succes, string Message)> ChangerLimiteSousComptes(int p_id, int p_limite)
     {
         var _dto = new DTO_LimiteSousComptes();

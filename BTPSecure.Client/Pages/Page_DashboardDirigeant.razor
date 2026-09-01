@@ -170,6 +170,9 @@ else
                                          Text="@($"{CollaborateursDuRole(_r).Count} {Services.H_RoleEntreprise.LibellePluriel(_r)}")" IsPill="true" />
                         }
                     }
+                    @* Plafond commun Responsable + Responsable Admin, réglé par l'administrateur *@
+                    <RadzenBadge BadgeStyle="@StylePlafondResponsables()"
+                                 Text="@($"Responsables {NombreResponsables()} / {_entreprise!.LimiteResponsables}")" IsPill="true" />
                     <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_codes.Count(c => c.Statut == Enum_StatutCode.Actif)} code(s) actif(s)")" IsPill="true" />
                 </RadzenStack>
             </RadzenStack>
@@ -646,6 +649,33 @@ else
 
     // Miroir de la règle serveur (S_Code.VerifierDroitSurCode) : le Dirigeant agit sur
     // tous les codes de son entreprise, un Responsable Admin sur ceux dont il est l'auteur.
+    // Responsables + Responsables Admin acceptés : ils partagent le plafond fixé par l'admin
+    private int NombreResponsables()
+    {
+        int _total = 0;
+        foreach (var _c in _collaborateurs)
+        {
+            if (_c.StatutInvitation != Enum_StatutInvitation.Acceptee)
+            {
+                continue;
+            }
+            if (_c.RoleEntreprise == Enum_RoleEntreprise.Responsable || _c.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+            {
+                _total = _total + 1;
+            }
+        }
+        return _total;
+    }
+
+    private BadgeStyle StylePlafondResponsables()
+    {
+        if (_entreprise != null && NombreResponsables() >= _entreprise.LimiteResponsables)
+        {
+            return BadgeStyle.Warning;
+        }
+        return BadgeStyle.Light;
+    }
+
     // Le serveur retire la valeur des codes destinés à un collègue (le code est un porteur)
     private static string ValeurAffichee(DTO_CodeAffichage p_code)
     {

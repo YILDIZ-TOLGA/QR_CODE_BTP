@@ -127,6 +127,11 @@ else
                                     <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_ent.NombreCodes} code(s)")" IsPill="true" />
                                 </RadzenStack>
 
+                                @* Plafond commun Responsable + Responsable Admin *@
+                                <RadzenButton Text="@($"Limite responsables : {_ent.NombreResponsables} / {_ent.LimiteResponsables}")" Icon="shield"
+                                              ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                              Style="width: 100%;" Click="() => ChangerLimiteResponsables(_ent)" />
+
                                 @if (_ent.EstAutorisee)
                                 {
                                     <RadzenButton Text="Bloquer" Icon="block" ButtonStyle="ButtonStyle.Danger"
@@ -306,6 +311,31 @@ else
             {
                 Notification.Notify(NotificationSeverity.Success, "Succès", _message);
                 _fournisseurs = await SAdmin.ObtenirFournisseurs();
+                StateHasChanged();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private async Task ChangerLimiteResponsables(DTO_EntrepriseAdmin p_ent)
+    {
+        var _result = await Dialog.OpenAsync<Comp_DialogLimiteResponsables>("Limite de responsables",
+            new Dictionary<string, object?>
+            {
+                { "LimiteActuelle", p_ent.LimiteResponsables },
+                { "NombreActuel", p_ent.NombreResponsables },
+                { "NomEntreprise", p_ent.Nom }
+            },
+            new DialogOptions { Width = "460px", CloseDialogOnOverlayClick = false });
+
+        if (_result is int _limite)
+        {
+            var (_succes, _message) = await SAdmin.ChangerLimiteResponsables(p_ent.Id, _limite);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                _entreprises = await SAdmin.ObtenirEntreprises();
                 StateHasChanged();
             }
             else

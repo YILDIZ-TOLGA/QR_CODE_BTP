@@ -1,0 +1,59 @@
+@inject DialogService Dialog
+
+@* Réglage par l'admin du plafond commun Responsable + Responsable Admin d'une entreprise *@
+<RadzenStack Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+        Nombre maximum de Responsables et Responsables Admin (les deux rôles partagent ce même plafond)
+        pour « @NomEntreprise ».
+    </RadzenText>
+
+    @if (NombreActuel > 0)
+    {
+        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+            Actuellement occupé : @NombreActuel place(s).
+        </RadzenText>
+    }
+
+    <RadzenFormField Text="Limite de responsables" Variant="Variant.Outlined" Style="width: 100%;">
+        <Start><RadzenIcon Icon="shield" /></Start>
+        <ChildContent>
+            <RadzenNumeric TValue="int" @bind-Value="_limite" Min="0" Max="50" Style="width: 100%;" />
+        </ChildContent>
+    </RadzenFormField>
+
+    @if (_limite < NombreActuel)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat" AllowClose="false" Style="margin: 0;">
+            Cette limite est inférieure au nombre actuel. Les responsables en place sont conservés,
+            mais aucune nouvelle nomination ne sera possible tant que le nombre reste au-dessus.
+        </RadzenAlert>
+    }
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="Annuler" Variant="Variant.Outlined" Click="Annuler" />
+        <RadzenButton Text="Enregistrer" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="Valider" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int LimiteActuelle { get; set; }
+    [Parameter] public int NombreActuel { get; set; }
+    [Parameter] public string NomEntreprise { get; set; } = string.Empty;
+
+    private int _limite;
+
+    protected override void OnInitialized()
+    {
+        _limite = LimiteActuelle;
+    }
+
+    private void Valider()
+    {
+        Dialog.Close(_limite);
+    }
+
+    private void Annuler()
+    {
+        Dialog.Close(null);
+    }
+}

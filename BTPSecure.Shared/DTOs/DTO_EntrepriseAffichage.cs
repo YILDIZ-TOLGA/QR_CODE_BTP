@@ -8,4 +8,6 @@ public class DTO_EntrepriseAffichage
     public string? Siret { get; set; }
     public DateTime DateCreation { get; set; }
     public bool EstAutorisee { get; set; }
+    // Plafond commun Responsable + Responsable Admin (réglé par l'admin)
+    public int LimiteResponsables { get; set; }
 }

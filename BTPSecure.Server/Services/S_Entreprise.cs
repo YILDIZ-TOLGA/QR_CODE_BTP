@@ -41,6 +41,21 @@ public class S_Entreprise
         if (_lien.StatutInvitation != Enum_StatutInvitation.Acceptee)
             return (false, "Ce collaborateur n'a pas encore accepté l'invitation.");
 
+        // Plafond commun Responsable + Responsable Admin. Passer de Responsable à
+        // Responsable Admin (ou l'inverse) n'occupe pas de place supplémentaire :
+        // on ne contrôle donc que si l'intéressé n'en occupait pas déjà une.
+        if (p_nouveauRole == Enum_RoleEntreprise.Responsable || p_nouveauRole == Enum_RoleEntreprise.ResponsableAdmin)
+        {
+            bool _occupeDeja = _lien.RoleEntreprise == Enum_RoleEntreprise.Responsable
+                || _lien.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin;
+            if (!_occupeDeja)
+            {
+                var _nbResponsables = await _daoEntreprise.CompterResponsables(_entreprise.Id);
+                if (_nbResponsables >= _entreprise.LimiteResponsables)
+                    return (false, $"Nombre de responsables atteint ({_entreprise.LimiteResponsables} maximum).");
+            }
+        }
+
         _lien.RoleEntreprise = p_nouveauRole;
         await _daoEntreprise.Sauvegarder();
 
@@ -93,6 +108,15 @@ public class S_Entreprise
         // Anti-escalade : un Responsable Admin ne peut pas créer un autre Responsable Admin
         if (!_estDirigeant && p_dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
             return (false, "Seul le dirigeant peut créer un Responsable Admin.");
+
+        // Même plafond à la création directe d'un responsable.
+        // Contrôlé avant toute création : sinon on créerait un compte pour ensuite le refuser.
+        if (p_dto.RoleEntreprise == Enum_RoleEntreprise.Responsable || p_dto.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin)
+        {
+            var _nbResponsables = await _daoEntreprise.CompterResponsables(_entreprise.Id);
+            if (_nbResponsables >= _entreprise.LimiteResponsables)
+                return (false, $"Nombre de responsables atteint ({_entreprise.LimiteResponsables} maximum). Créez ce compte en Collaborateur ou libérez une place.");
+        }
 
         if (await _daoUtilisateur.EmailExiste(p_dto.Email))
             return (false, "Un compte avec cet email existe déjà.");
@@ -310,7 +334,8 @@ public class S_Entreprise
             Adresse = p_entreprise.Adresse,
             Siret = p_entreprise.Siret,
             DateCreation = p_entreprise.DateCreation,
-            EstAutorisee = p_entreprise.EstAutorisee
+            EstAutorisee = p_entreprise.EstAutorisee,
+            LimiteResponsables = p_entreprise.LimiteResponsables
         };
     }
 }

@@ -32,3 +32,9 @@ public class DTO_LimiteSousComptes
 {
     public int Limite { get; set; }
 }
+
+// Changement du plafond Responsable + Responsable Admin d'une entreprise par l'admin
+public class DTO_LimiteResponsables
+{
+    public int Limite { get; set; }
+}

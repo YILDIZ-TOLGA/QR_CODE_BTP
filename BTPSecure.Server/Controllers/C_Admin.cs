@@ -55,6 +55,14 @@ public class C_Admin : ControllerBase
         return Ok(new { message = _message });
     }
 
+    [HttpPost("limite-responsables/{p_id}")]
+    public async Task<IActionResult> ChangerLimiteResponsables(int p_id, [FromBody] BTPSecure.Shared.DTOs.DTO_LimiteResponsables p_dto)
+    {
+        var (_succes, _message) = await _sAdmin.ChangerLimiteResponsables(p_id, p_dto.Limite);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
+    }
+
     [HttpPost("limite-souscomptes/{p_id}")]
     public async Task<IActionResult> ChangerLimiteSousComptes(int p_id, [FromBody] BTPSecure.Shared.DTOs.DTO_LimiteSousComptes p_dto)
     {

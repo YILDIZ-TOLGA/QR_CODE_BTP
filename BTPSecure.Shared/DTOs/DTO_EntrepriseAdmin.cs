@@ -12,4 +12,7 @@ public class DTO_EntrepriseAdmin
     public bool EstAutorisee { get; set; }
     public int NombreCollaborateurs { get; set; }
     public int NombreCodes { get; set; }
+    // Plafond commun Responsable + Responsable Admin, et son occupation actuelle
+    public int LimiteResponsables { get; set; }
+    public int NombreResponsables { get; set; }
 }

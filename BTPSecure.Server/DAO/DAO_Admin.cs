@@ -34,6 +34,17 @@ public class DAO_Admin
             .CountAsync(se => se.EntrepriseId == p_entrepriseId && se.EstActif);
     }
 
+    // Responsables + Responsables Admin actifs (ils partagent le même plafond)
+    public async Task<int> CompterResponsables(int p_entrepriseId)
+    {
+        return await _context.CollaborateursEntreprises
+            .CountAsync(se => se.EntrepriseId == p_entrepriseId
+                && se.EstActif
+                && se.StatutInvitation == BTPSecure.Shared.Enums.Enum_StatutInvitation.Acceptee
+                && (se.RoleEntreprise == BTPSecure.Shared.Enums.Enum_RoleEntreprise.Responsable
+                    || se.RoleEntreprise == BTPSecure.Shared.Enums.Enum_RoleEntreprise.ResponsableAdmin));
+    }
+
     public async Task<int> CompterCodes(int p_entrepriseId)
     {
         return await _context.Codes

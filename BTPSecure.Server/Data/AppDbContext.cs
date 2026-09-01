@@ -57,6 +57,7 @@ public class AppDbContext : DbContext
             e.Property(ent => ent.Adresse).HasMaxLength(500);
             e.Property(ent => ent.Siret).HasMaxLength(20);
             e.Property(ent => ent.EstAutorisee).HasDefaultValue(false);
+            e.Property(ent => ent.LimiteResponsables).HasDefaultValue(2);
             // Colonne physique conservée : "PatronId"
             e.Property(ent => ent.DirigeantId).HasColumnName("PatronId");
             e.HasOne(ent => ent.Dirigeant)
