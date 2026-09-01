@@ -36,6 +36,7 @@ builder.Services.AddScoped<S_Ticket>();
 builder.Services.AddScoped<S_EtatUi>();
 builder.Services.AddScoped<S_Memo>();
 builder.Services.AddScoped<S_Acces>();
+builder.Services.AddScoped<S_Notification>();
 
 builder.Services.AddRadzenComponents();
 

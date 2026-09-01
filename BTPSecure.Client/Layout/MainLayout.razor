@@ -8,6 +8,8 @@
 @inject Services.S_EtatUi SEtatUi
 @inject Services.S_Profil SProfil
 @inject Services.S_Acces SAcces
+@inject Services.S_Notification SNotification
+@inject NotificationService Notification
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
 
@@ -159,6 +161,7 @@ else
     private bool _estFournisseurPrincipal = false;
     private int _messagesNonLus = 0;
     private int _commandesAPreparer = 0;
+    private bool _notificationsVerifiees = false;
     private bool _gatePret = false;
     private bool _accesAutorise = false;
 
@@ -170,6 +173,58 @@ else
         Navigation.LocationChanged += OnLocationChanged;
         SEtatUi.CompteursChanges += OnCompteursChanges;
         await MettreAJourEtat();
+    }
+
+    // Les notifications s'affichent après le premier rendu : <RadzenComponents /> doit
+    // déjà exister pour accueillir le toast, sinon il serait perdu.
+    protected override async Task OnAfterRenderAsync(bool p_premierRendu)
+    {
+        if (!_estConnecte)
+        {
+            return;
+        }
+        if (_notificationsVerifiees)
+        {
+            return;
+        }
+        _notificationsVerifiees = true;
+        await AfficherNotifications();
+    }
+
+    // Changements survenus pendant l'absence de l'utilisateur (statut modifié par son dirigeant)
+    private async Task AfficherNotifications()
+    {
+        var _liste = await SNotification.ObtenirNonLues();
+        if (_liste.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var _n in _liste)
+        {
+            var _message = new NotificationMessage();
+            _message.Severity = ConvertirSeverite(_n.Severite);
+            _message.Summary = _n.Titre;
+            _message.Detail = _n.Message;
+            _message.Duration = 12000;
+            Notification.Notify(_message);
+        }
+
+        // Marquées lues : elles ne réapparaîtront pas à la prochaine connexion
+        await SNotification.MarquerLues();
+    }
+
+    private static NotificationSeverity ConvertirSeverite(Enum_SeveriteNotification p_severite)
+    {
+        if (p_severite == Enum_SeveriteNotification.Succes)
+        {
+            return NotificationSeverity.Success;
+        }
+        if (p_severite == Enum_SeveriteNotification.Avertissement)
+        {
+            return NotificationSeverity.Warning;
+        }
+        return NotificationSeverity.Info;
     }
 
     // Portail d'accès de la phase de test (beta).
@@ -259,6 +314,7 @@ else
         if (_etat.User.Identity == null || !_etat.User.Identity.IsAuthenticated)
         {
             _estConnecte = false;
+            _notificationsVerifiees = false;
             _email = "";
             _role = "";
             _nomAffiche = "";

@@ -135,6 +135,7 @@ builder.Services.AddScoped<DAO_FournisseurContact>();
 builder.Services.AddScoped<DAO_Blacklist>();
 builder.Services.AddScoped<DAO_Ticket>();
 builder.Services.AddScoped<DAO_Memo>();
+builder.Services.AddScoped<DAO_Notification>();
 
 // Services
 builder.Services.AddScoped<S_Auth>();
@@ -147,6 +148,7 @@ builder.Services.AddScoped<S_SousCompte>();
 builder.Services.AddScoped<S_Blacklist>();
 builder.Services.AddScoped<S_Ticket>();
 builder.Services.AddScoped<S_Memo>();
+builder.Services.AddScoped<S_Notification>();
 builder.Services.AddSingleton<S_Pdf>();
 builder.Services.AddSingleton<S_Email>();
 // Partagé par toutes les requêtes : cache « ce compte est-il actif ? »

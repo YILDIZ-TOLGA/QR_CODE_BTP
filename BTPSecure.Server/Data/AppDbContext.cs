@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<E_Blacklist> Blacklists => Set<E_Blacklist>();
     public DbSet<E_Ticket> Tickets => Set<E_Ticket>();
     public DbSet<E_Memo> Memos => Set<E_Memo>();
+    public DbSet<E_Notification> Notifications => Set<E_Notification>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -184,6 +185,22 @@ public class AppDbContext : DbContext
             e.HasOne(m => m.Utilisateur)
                 .WithMany()
                 .HasForeignKey(m => m.UtilisateurId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // E_Notification (message personnel affiché à la prochaine connexion)
+        p_modelBuilder.Entity<E_Notification>(e =>
+        {
+            e.ToTable("notifications");
+            e.HasKey(n => n.Id);
+            e.Property(n => n.Titre).IsRequired().HasMaxLength(150);
+            e.Property(n => n.Message).IsRequired().HasMaxLength(1000);
+            e.Property(n => n.Severite).HasConversion<int>();
+            e.Property(n => n.EstLue).HasDefaultValue(false);
+            e.HasIndex(n => new { n.UtilisateurId, n.EstLue });
+            e.HasOne(n => n.Utilisateur)
+                .WithMany()
+                .HasForeignKey(n => n.UtilisateurId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

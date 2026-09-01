@@ -12,16 +12,19 @@ public class S_Entreprise
     private readonly DAO_Code _daoCode;
     private readonly S_Email _sEmail;
     private readonly S_Code _sCode;
+    private readonly S_Notification _sNotification;
     private readonly ILogger<S_Entreprise> _logger;
 
     public S_Entreprise(DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
-        DAO_Code p_daoCode, S_Email p_sEmail, S_Code p_sCode, ILogger<S_Entreprise> p_logger)
+        DAO_Code p_daoCode, S_Email p_sEmail, S_Code p_sCode, S_Notification p_sNotification,
+        ILogger<S_Entreprise> p_logger)
     {
         _daoEntreprise = p_daoEntreprise;
         _daoUtilisateur = p_daoUtilisateur;
         _daoCode = p_daoCode;
         _sEmail = p_sEmail;
         _sCode = p_sCode;
+        _sNotification = p_sNotification;
         _logger = p_logger;
     }
 
@@ -49,6 +52,16 @@ public class S_Entreprise
         {
             await _sCode.RevoquerCodePermanent(p_collaborateurId, _entreprise.Id);
         }
+
+        // Le collaborateur est souvent déconnecté : on stocke l'information pour sa prochaine visite
+        var _libelle = LibelleRole(p_nouveauRole);
+        var _severite = Enum_SeveriteNotification.Info;
+        if (p_nouveauRole == Enum_RoleEntreprise.Responsable || p_nouveauRole == Enum_RoleEntreprise.ResponsableAdmin)
+        {
+            _severite = Enum_SeveriteNotification.Succes;
+        }
+        await _sNotification.Creer(p_collaborateurId, "Votre statut a changé",
+            $"Vous êtes désormais {_libelle} au sein de l'entreprise {_entreprise.Nom}.", _severite);
 
         _logger.LogInformation("Rôle du collaborateur {CollaborateurId} changé en {Role} par dirigeant {DirigeantId}", p_collaborateurId, p_nouveauRole, p_dirigeantId);
         return (true, "Rôle mis à jour.");
@@ -266,8 +279,26 @@ public class S_Entreprise
         await _daoEntreprise.RetirerCollaborateur(_lien);
         await _daoCode.RevoquerCodesParCollaborateurEtEntreprise(_lien.CollaborateurId, _entreprise.Id);
 
+        await _sNotification.Creer(_lien.CollaborateurId, "Votre statut a changé",
+            $"Vous ne faites plus partie de l'entreprise {_entreprise.Nom}. Les codes qui vous étaient liés ont été révoqués.",
+            Enum_SeveriteNotification.Avertissement);
+
         _logger.LogInformation("Salarié {CollaborateurId} retiré de l'entreprise {EntrepriseId}, codes révoqués", _lien.CollaborateurId, _entreprise.Id);
         return (true, "Collaborateur retiré et ses codes liés révoqués.");
+    }
+
+    // H_RoleEntreprise est côté client : libellé équivalent pour les messages serveur
+    private static string LibelleRole(Enum_RoleEntreprise p_role)
+    {
+        if (p_role == Enum_RoleEntreprise.Responsable)
+        {
+            return "Responsable";
+        }
+        if (p_role == Enum_RoleEntreprise.ResponsableAdmin)
+        {
+            return "Responsable Admin";
+        }
+        return "Collaborateur";
     }
 
     private static DTO_EntrepriseAffichage VersDTO(E_Entreprise p_entreprise)
