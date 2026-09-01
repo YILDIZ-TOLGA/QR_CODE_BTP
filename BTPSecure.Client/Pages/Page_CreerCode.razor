@@ -42,12 +42,24 @@
                         Code créé avec succès
                     </RadzenText>
 
-                    <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-primary); width: 100%;">
-                        <RadzenText TextStyle="TextStyle.H2" TextAlign="TextAlign.Center"
-                                    Style="font-family: monospace; letter-spacing: 6px; color: white; margin: 0.5rem 0;">
-                            @_codeGenere.Valeur
-                        </RadzenText>
-                    </RadzenCard>
+                    @* Valeur vide : le serveur ne la renvoie pas quand le code est destiné à un tiers
+                       et que l'auteur n'est pas le dirigeant (le code est un porteur) *@
+                    @if (!string.IsNullOrEmpty(_codeGenere.Valeur))
+                    {
+                        <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-primary); width: 100%;">
+                            <RadzenText TextStyle="TextStyle.H2" TextAlign="TextAlign.Center"
+                                        Style="font-family: monospace; letter-spacing: 6px; color: white; margin: 0.5rem 0;">
+                                @_codeGenere.Valeur
+                            </RadzenText>
+                        </RadzenCard>
+                    }
+                    else
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat"
+                                     AllowClose="false" Style="width: 100%; margin: 0;">
+                            @MessageCodeMasque()
+                        </RadzenAlert>
+                    }
 
                     <RadzenStack Gap="0.5rem" Style="width: 100%;">
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
@@ -312,6 +324,16 @@
         }
     }
     private DTO_CodeAffichage? _codeGenere;
+
+    // Le code n'est pas affiché à son auteur quand il est destiné à quelqu'un d'autre
+    private string MessageCodeMasque()
+    {
+        if (_codeGenere != null && !string.IsNullOrEmpty(_codeGenere.EmailTiers))
+        {
+            return "Le code est réservé à son destinataire : il vient de lui être envoyé par email.";
+        }
+        return "Le code est réservé à son destinataire : il le retrouvera dans son espace « Mes codes ».";
+    }
     private bool _enChargement;
     private List<CollaborateurItem> _collaborateurs = new();
     private int _entrepriseId;

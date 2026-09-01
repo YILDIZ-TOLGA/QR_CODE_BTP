@@ -233,7 +233,21 @@ public class S_Code
             }
         }
 
-        return (true, "Code créé avec succès.", VersDTO(_code));
+        var _dtoCree = VersDTO(_code);
+
+        // Le code est un PORTEUR : un Responsable Admin qui connaîtrait la valeur d'un code
+        // destiné à un collègue pourrait le dépenser. On ne la lui renvoie donc jamais.
+        // Le destinataire la retrouve dans son espace (ou la reçoit par email si c'est un tiers).
+        if (!_estDirigeant)
+        {
+            bool _pourLuiMeme = _collaborateurId.HasValue && _collaborateurId.Value == p_dirigeantId;
+            if (!_pourLuiMeme)
+            {
+                _dtoCree.Valeur = string.Empty;
+            }
+        }
+
+        return (true, "Code créé avec succès.", _dtoCree);
     }
 
     public async Task<List<DTO_CodeAffichage>> ObtenirParDirigeant(int p_dirigeantId)
@@ -309,11 +323,12 @@ public class S_Code
 
         var _codes = await _daoCode.ObtenirParDirigeant(_entreprise.DirigeantId);
 
-        // Le Dirigeant voit tous les codes de l'entreprise ; un Responsable Admin
-        // ne voit que ceux qu'il a créés lui-même (évite le flood).
+        // Le Dirigeant voit tous les codes de l'entreprise. Un Responsable (Admin) ne voit
+        // que les codes qui LUI sont destinés (dont son code permanent) : il peut en créer
+        // pour ses collègues, mais le code étant un porteur, il ne doit pas pouvoir les dépenser.
         if (!_ctx.EstProprietaire)
         {
-            _codes = _codes.Where(c => c.CreateurId.HasValue && c.CreateurId.Value == p_userId).ToList();
+            _codes = _codes.Where(c => c.CollaborateurId.HasValue && c.CollaborateurId.Value == p_userId).ToList();
         }
 
         _ctx.Codes = _codes.Select(VersDTO).ToList();
@@ -644,11 +659,23 @@ public class S_Code
         if (_valeurRegeneree)
             _message = "Code modifié et régénéré : l'ancienne valeur n'est plus valable.";
 
+        // Même règle qu'à la création : on ne renvoie jamais la valeur d'un code destiné
+        // à quelqu'un d'autre à un auteur qui n'est pas le dirigeant (le code est un porteur).
+        var _valeurRenvoyee = _code.Valeur;
+        if (_code.DirigeantId != p_userId)
+        {
+            bool _pourLuiMeme = _code.CollaborateurId.HasValue && _code.CollaborateurId.Value == p_userId;
+            if (!_pourLuiMeme)
+            {
+                _valeurRenvoyee = string.Empty;
+            }
+        }
+
         var _resultat = new DTO_ResultatModificationCode
         {
             Message = _message,
             CodeRegenere = _valeurRegeneree,
-            NouvelleValeur = _code.Valeur
+            NouvelleValeur = _valeurRenvoyee
         };
         return (true, _message, _resultat);
     }
