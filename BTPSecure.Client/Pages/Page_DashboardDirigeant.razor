@@ -414,11 +414,19 @@ else
                                         <RadzenBadge BadgeStyle="@ObtenirStyleStatut(_c.Statut)" Text="@_c.Statut.ToString()" IsPill="true" />
                                     </RadzenStack>
 
+                                    @* Valeur vide = code destiné à un collègue : le serveur ne l'envoie pas *@
                                     <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-primary); padding: 0.75rem;">
                                         <RadzenText TextStyle="TextStyle.H4" TextAlign="TextAlign.Center"
                                                     Style="font-family: monospace; letter-spacing: 3px; color: white; margin: 0;">
-                                            @_c.Valeur
+                                            @ValeurAffichee(_c)
                                         </RadzenText>
+                                        @if (string.IsNullOrEmpty(_c.Valeur))
+                                        {
+                                            <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center"
+                                                        Style="color: white; opacity: 0.85; margin: 0;">
+                                                Visible uniquement par son destinataire
+                                            </RadzenText>
+                                        }
                                     </RadzenCard>
 
                                     <RadzenStack Gap="0.4rem">
@@ -516,7 +524,6 @@ else
     private int _nbNotifications = 0;
     private bool _chargement = true;
     private bool _estProprietaire = true;
-    private int _monId;
     private DTO_CodeAffichage? _monCodePermanent;
     private bool _aAcces = false;
     private bool _estDirigeantSansEntreprise = false;
@@ -639,6 +646,16 @@ else
 
     // Miroir de la règle serveur (S_Code.VerifierDroitSurCode) : le Dirigeant agit sur
     // tous les codes de son entreprise, un Responsable Admin sur ceux dont il est l'auteur.
+    // Le serveur retire la valeur des codes destinés à un collègue (le code est un porteur)
+    private static string ValeurAffichee(DTO_CodeAffichage p_code)
+    {
+        if (string.IsNullOrEmpty(p_code.Valeur))
+        {
+            return "••••-••••";
+        }
+        return p_code.Valeur;
+    }
+
     // Son propre code permanent n'est ni modifiable ni révocable : il serait recréé aussitôt
     private bool EstMonCodePermanent(DTO_CodeAffichage p_code)
     {
@@ -646,7 +663,7 @@ else
         {
             return false;
         }
-        return p_code.CollaborateurId == _monId;
+        return p_code.CollaborateurId == _userId;
     }
 
     private bool PeutAgirSurCode(DTO_CodeAffichage p_code)
@@ -702,12 +719,11 @@ else
         _codes = _ctx.Codes;
         _fournisseurs = _ctx.Fournisseurs;
         _nbNotifications = _ctx.NbNotifications;
-        _monId = _ctx.MonId;
 
         _monCodePermanent = null;
         foreach (var _c in _codes)
         {
-            if (_c.EstPermanent && _c.CollaborateurId == _monId && _c.Statut == Enum_StatutCode.Actif)
+            if (_c.EstPermanent && _c.CollaborateurId == _userId && _c.Statut == Enum_StatutCode.Actif)
             {
                 _monCodePermanent = _c;
             }

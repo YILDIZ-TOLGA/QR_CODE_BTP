@@ -10,6 +10,4 @@ public class DTO_ContexteDashboard
     public List<DTO_CodeAffichage> Codes { get; set; } = new();
     public List<DTO_FournisseurContact> Fournisseurs { get; set; } = new();
     public int NbNotifications { get; set; }
-    // Permet au client de reconnaître ses propres codes (dont son code permanent)
-    public int MonId { get; set; }
 }

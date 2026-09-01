@@ -324,14 +324,29 @@ public class S_Code
         var _codes = await _daoCode.ObtenirParDirigeant(_entreprise.DirigeantId);
 
         // Le Dirigeant voit tous les codes de l'entreprise. Un Responsable (Admin) ne voit
-        // que les codes qui LUI sont destinés (dont son code permanent) : il peut en créer
-        // pour ses collègues, mais le code étant un porteur, il ne doit pas pouvoir les dépenser.
+        // que ceux qu'il a créés et ceux qui lui sont destinés (dont son code permanent).
         if (!_ctx.EstProprietaire)
         {
-            _codes = _codes.Where(c => c.CollaborateurId.HasValue && c.CollaborateurId.Value == p_userId).ToList();
+            _codes = _codes.Where(c =>
+                (c.CreateurId.HasValue && c.CreateurId.Value == p_userId)
+                || (c.CollaborateurId.HasValue && c.CollaborateurId.Value == p_userId)).ToList();
         }
 
         _ctx.Codes = _codes.Select(VersDTO).ToList();
+
+        // Le code est un PORTEUR : en connaître la valeur permet de le dépenser. Un Responsable
+        // (Admin) garde donc le suivi et la révocation de ses codes, mais la valeur de ceux
+        // destinés à un collègue est retirée AVANT l'envoi (elle n'atteint pas son navigateur).
+        if (!_ctx.EstProprietaire)
+        {
+            foreach (var _dtoCode in _ctx.Codes)
+            {
+                if (_dtoCode.CollaborateurId != p_userId)
+                {
+                    _dtoCode.Valeur = string.Empty;
+                }
+            }
+        }
 
         var _fournisseurs = await _daoFournisseurContact.ObtenirParDirigeant(_entreprise.DirigeantId);
         _ctx.Fournisseurs = _fournisseurs.Select(f => new DTO_FournisseurContact
@@ -346,7 +361,6 @@ public class S_Code
 
         var _notifs = await _daoCode.ObtenirNotificationsPourDirigeant(_entreprise.DirigeantId);
         _ctx.NbNotifications = _notifs.Count;
-        _ctx.MonId = p_userId;
 
         return _ctx;
     }
