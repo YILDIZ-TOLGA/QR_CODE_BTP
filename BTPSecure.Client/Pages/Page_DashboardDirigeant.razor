@@ -113,6 +113,29 @@ else
             </RadzenAlert>
         }
 
+        @* Accès permanent du dirigeant : mis en avant, sinon il se perdrait dans la liste des codes *@
+        @if (_monCodePermanent != null)
+        {
+            <RadzenCard Variant="Variant.Filled" Style="background: var(--rz-primary); color: white;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="1rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+                        <RadzenIcon Icon="vpn_key" Style="font-size: 2rem;" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin: 0; color: white; opacity: 0.9;">
+                                Mon code permanent
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; color: white; opacity: 0.8;">
+                                Libre-service, valable en permanence. Il change à chaque utilisation.
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                    <RadzenText TextStyle="TextStyle.H5" Style="margin: 0; color: white; font-family: monospace; font-weight: 700; letter-spacing: 2px;">
+                        @_monCodePermanent.Valeur
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        }
+
         <!-- En-tête entreprise -->
         <RadzenCard Variant="Variant.Outlined">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="1rem">
@@ -435,7 +458,7 @@ else
                                         }
                                     </RadzenStack>
 
-                                    @if (_c.Statut == Enum_StatutCode.Actif && PeutAgirSurCode(_c))
+                                    @if (_c.Statut == Enum_StatutCode.Actif && PeutAgirSurCode(_c) && !EstMonCodePermanent(_c))
                                     {
                                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                             @if (!_c.EstPermanent)
@@ -493,6 +516,8 @@ else
     private int _nbNotifications = 0;
     private bool _chargement = true;
     private bool _estProprietaire = true;
+    private int _monId;
+    private DTO_CodeAffichage? _monCodePermanent;
     private bool _aAcces = false;
     private bool _estDirigeantSansEntreprise = false;
 
@@ -614,6 +639,16 @@ else
 
     // Miroir de la règle serveur (S_Code.VerifierDroitSurCode) : le Dirigeant agit sur
     // tous les codes de son entreprise, un Responsable Admin sur ceux dont il est l'auteur.
+    // Son propre code permanent n'est ni modifiable ni révocable : il serait recréé aussitôt
+    private bool EstMonCodePermanent(DTO_CodeAffichage p_code)
+    {
+        if (!p_code.EstPermanent)
+        {
+            return false;
+        }
+        return p_code.CollaborateurId == _monId;
+    }
+
     private bool PeutAgirSurCode(DTO_CodeAffichage p_code)
     {
         if (_estProprietaire)
@@ -667,6 +702,16 @@ else
         _codes = _ctx.Codes;
         _fournisseurs = _ctx.Fournisseurs;
         _nbNotifications = _ctx.NbNotifications;
+        _monId = _ctx.MonId;
+
+        _monCodePermanent = null;
+        foreach (var _c in _codes)
+        {
+            if (_c.EstPermanent && _c.CollaborateurId == _monId && _c.Statut == Enum_StatutCode.Actif)
+            {
+                _monCodePermanent = _c;
+            }
+        }
     }
 
     private async Task CreerEntreprise()

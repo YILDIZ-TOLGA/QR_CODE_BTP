@@ -252,6 +252,15 @@ public class S_Code
         {
             _ctx.EstProprietaire = true;
             _ctx.AAcces = true;
+
+            // Le dirigeant dispose d'un code permanent au même titre qu'un Responsable Admin.
+            // Création à la volée (idempotente) : couvre aussi les entreprises déjà existantes.
+            // Conditionnée à l'autorisation admin : sinon une entreprise non autorisée
+            // disposerait d'un code utilisable, ce que le garde-fou de Creer() interdit.
+            if (_entreprise.EstAutorisee)
+            {
+                await CreerCodePermanent(p_userId, _entreprise);
+            }
         }
         else
         {
@@ -322,6 +331,7 @@ public class S_Code
 
         var _notifs = await _daoCode.ObtenirNotificationsPourDirigeant(_entreprise.DirigeantId);
         _ctx.NbNotifications = _notifs.Count;
+        _ctx.MonId = p_userId;
 
         return _ctx;
     }
@@ -491,6 +501,10 @@ public class S_Code
 
         if (_code.Statut != Enum_StatutCode.Actif)
             return (false, "Seuls les codes actifs peuvent être révoqués.");
+
+        // Son propre code permanent serait recréé au prochain chargement : refus explicite
+        if (_code.EstPermanent && _code.CollaborateurId.HasValue && _code.CollaborateurId.Value == p_userId)
+            return (false, "Votre code permanent ne peut pas être révoqué.");
 
         _code.Statut = Enum_StatutCode.Revoque;
         await _daoCode.Sauvegarder();
