@@ -42,7 +42,8 @@ BTPSecure/
 ├── BTPSecure.Shared/
 │   ├── DTOs/          DTO_*.cs
 │   ├── Entites/       E_*.cs
-│   └── Enums/         Enum_*.cs
+│   ├── Enums/         Enum_*.cs
+│   └── Helpers/       H_*.cs        (logique partagée client + serveur)
 ├── publish/                          (artefacts buildés, COMMITÉS pour Docker)
 ├── Dockerfile, railway.json, DEPLOIEMENT.md
 ```
@@ -69,6 +70,7 @@ BTPSecure/
 - **Claims JWT** : `NameIdentifier` (Id), `Email`, `Role`
 - **Redirections post-login par rôle** : `/admin`, `/dirigeant`, `/collaborateur`, `/fournisseur`
 - `MainLayout` s'abonne à `AuthenticationStateChanged` pour MAJ live de la sidebar
+- 🔒 **`EstActif = false` coupe l'accès immédiatement** (voir piège 14), pas seulement la prochaine connexion. Seuls deux endroits bloquent un compte, et **les deux sont réversibles** : blocage fournisseur par l'admin (cascade sur les sous-comptes) et désactivation d'un sous-compte par son fournisseur principal. Les comptes Dirigeant / Collaborateur ne sont bloqués par aucune interface — « Bloquer » sur une entreprise agit sur `EstAutorisee` (droit de générer des codes), pas sur les comptes.
 
 ## Workflow déploiement (CRITIQUE)
 ```bash
@@ -103,8 +105,10 @@ git push   # Railway redéploie auto via webhook GitHub
 9. **Listes de tickets : jamais charger le `bytea`** → projeter sur `TicketApercu` (présence de PJ déduite du nom). Les octets ne sont lus que par `ObtenirParId` pour le **téléchargement**. Marquage lu / purge via `ExecuteUpdate` / `ExecuteDelete` (pas de chargement d'entités).
 10. 🔒 **Le code est un PORTEUR** : quiconque connaît la valeur peut dépenser l'argent. Donc si on **change le destinataire** d'un code (`S_Code.Modifier`), il faut **RÉGÉNÉRER la valeur** — l'ancien destinataire l'a vue dans son espace (ou reçue par email pour un tiers) et pourrait encore l'utiliser. Changer **seulement le fournisseur** ne régénère pas (le fournisseur ne détient pas le code) mais remet `EstPrete`/`DatePrete` à zéro. Refusé sur code non actif ou permanent.
 11. **Correspondance fournisseur : le SIRET décide, pas le SIREN.** Le SIREN est optionnel des deux côtés (carnet fournisseur ET inscription) ; exiger qu'il soit présent des deux côtés ou d'aucun **masquait silencieusement des commandes**. Le SIREN n'est comparé que **s'il est renseigné des deux côtés**. Un SIRET (14 chiffres) identique implique le même SIREN (ses 9 premiers chiffres) → aucune perte de sécurité. Règle appliquée dans `DAO_Code.ObtenirCommandesPourFournisseur` **et** `S_Code.MarquerPrete` (sinon la commande s'affiche mais « prête » est refusé).
-13. 🔒 **Un Responsable (Admin) ne voit JAMAIS la valeur d'un code destiné à un collègue.** Il le voit dans sa liste (suivi + révocation conservés) mais la valeur est remplacée par `••••-••••`, car le code est un **porteur** : la connaître = pouvoir la dépenser. Masquage **côté serveur** (la valeur n'atteint pas son navigateur, la cacher en CSS ne protégerait rien) en trois points : `S_Code.Creer` (valeur vidée dans le DTO retourné), `S_Code.Modifier` (`NouvelleValeur` vidée — sinon régénérer un code servirait de porte dérobée) et `ObtenirContexteDashboard` (vide `Valeur` pour tout code dont il n'est pas le destinataire). Il voit en clair les codes qui **lui** sont destinés, dont son code permanent. Le Dirigeant (`EstProprietaire`) garde la visibilité totale. `api/codes/dirigeant` est déjà `[Authorize(Roles="Dirigeant")]` et `notifications-dirigeant` ne renvoie pas la valeur.
 12. **Textes saisis par l'utilisateur** : toujours `white-space: pre-wrap` **+ `overflow-wrap: anywhere`**. Sans le second, une longue suite de caractères **sans espace** n'a aucun point de coupure et **déborde** de la carte. Utiliser `H_TexteLibre` (troncature + « … » + style + curseur).
+13. 🔒 **Un Responsable (Admin) ne voit JAMAIS la valeur d'un code destiné à un collègue.** Il le voit dans sa liste (suivi + révocation conservés) mais la valeur est remplacée par `••••-••••`, car le code est un **porteur** : la connaître = pouvoir la dépenser. Masquage **côté serveur** (la valeur n'atteint pas son navigateur, la cacher en CSS ne protégerait rien) en trois points : `S_Code.Creer` (valeur vidée dans le DTO retourné), `S_Code.Modifier` (`NouvelleValeur` vidée — sinon régénérer un code servirait de porte dérobée) et `ObtenirContexteDashboard` (vide `Valeur` pour tout code dont il n'est pas le destinataire). Il voit en clair les codes qui **lui** sont destinés, dont son code permanent. Le Dirigeant (`EstProprietaire`) garde la visibilité totale. `api/codes/dirigeant` est déjà `[Authorize(Roles="Dirigeant")]` et `notifications-dirigeant` ne renvoie pas la valeur.
+14. 🔒 **Un compte bloqué perd l'accès IMMÉDIATEMENT**, sans attendre l'expiration de son jeton (24 h). Contrôle dans `OnTokenValidated` (Program.cs) : il couvre **toutes** les routes d'un coup, impossible d'en oublier une, et vaut aussi pour un appel API hors navigateur. Adossé à `S_CacheComptes` (singleton, TTL 5 min) pour ne pas lire la base à chaque requête — **toute modification de `EstActif` doit appeler `Invalider(id)`**, sinon le blocage attendrait l'expiration du cache. Côté client, `S_GestionnaireAuth` (DelegatingHandler) intercepte les 401, efface le jeton et renvoie vers `/connexion` : une connexion refusée renvoie **400**, donc un 401 signifie bien « jeton rejeté ».
+15. **Un serveur de test local verrouille `publish/`** : si `dotnet publish` échoue sur `MSB3027 / fichier verrouillé`, c'est qu'une instance tourne encore (`Stop-Process` sur le PID qui écoute le port).
 
 ## Endpoints diagnostiques
 - `GET /health` → `200 ok` (utilisé par Railway healthcheck)
@@ -116,6 +120,7 @@ git push   # Railway redéploie auto via webhook GitHub
 - `JWT_CLE`, `JWT_EMETTEUR`, `JWT_AUDIENCE`, `JWT_DUREE_HEURES`
 - **Emails Brevo (API HTTP, pas SMTP — Railway bloque le SMTP)** : `BREVO_API_KEY`, `SMTP_FROM` (`contact@keydopro.com`), `SMTP_FROM_NAME` (`KEYDO`), `SITE_URL` (`https://www.keydopro.com`). ⚠️ Le domaine `keydopro.com` doit être **authentifié (DKIM/DMARC)** dans le **même compte Brevo** que celui dont la `BREVO_API_KEY` est sur Railway.
 - **Admin** : `ADMIN_EMAIL`, `ADMIN_PASSWORD` (seed du compte admin ; le mot de passe n'est plus dans le code)
+- **Phase de test** : `CODE_ACCES` — **présente = portail beta actif** (splash « Code d'accès » avant le login) ; **la retirer désactive le portail** sans aucune modification de code. C'est le levier de sortie de beta.
 - `ASPNETCORE_ENVIRONMENT=Production`, `PORT` (auto-fourni)
 - `Program.cs` réinjecte les env vars dans `IConfiguration` au boot
 - ⚠️ Brevo exige que l'IP de sortie Railway soit whitelistée (ou désactiver la restriction IP côté Brevo)
@@ -147,16 +152,22 @@ git push   # Railway redéploie auto via webhook GitHub
 - **Message contextuel** : bouton « Envoyer un message » sur les fiches collaborateur (dashboard) et fournisseur (Mes fournisseurs) → `Comp_DialogEnvoyerMessage`, qui **résout seul** le destinataire (compte interne trouvé dans l'annuaire, sinon envoi par email) et gère les pièces jointes.
 - **Emails fiabilisés** : `AjouterCollaborateur` (« Inviter ») n'envoyait **aucun** email malgré son message de succès → `EnvoyerInvitationCollaborateur` ajouté. Les envois liés à la création ne sont **plus en fire-and-forget** : en cas d'échec Brevo, le **mot de passe temporaire est rendu au créateur** (il n'existe que dans cet email, sinon le compte est inutilisable).
 - **Notifications de changement de statut** : `E_Notification` (table `notifications`) + `S_Notification`. Le dirigeant change le rôle d'un collaborateur (ou le retire de l'entreprise) pendant que celui-ci est déconnecté → la notification est **stockée**, puis affichée en toast Radzen à sa **prochaine connexion** par `MainLayout.OnAfterRenderAsync` (pas `OnInitializedAsync` : `<RadzenComponents />` doit déjà être rendu, sinon le toast est perdu), et marquée lue dans la foulée pour ne pas réapparaître.
+- **Portail d'accès beta** : `Comp_AccesBeta` + `S_Acces` + `C_Acces`. Splash « Code d'accès » **avant le login**, monté dans `MainLayout` — chokepoint unique qui intercepte **toute** URL, y compris une adresse tapée à la main. Le code réel n'est **jamais dans le bundle WASM** : le client demande seulement « le portail est-il actif ? » puis « ce code est-il bon ? ». Réponse mémorisée dans `localStorage` (`acces_beta`) → saisie une seule fois. Piloté par la variable `CODE_ACCES` (voir Variables d'env).
+- **Blocage / déblocage fournisseur (admin)** : vrai toggle — l'ancien bouton « Désactiver » était **à sens unique**, aucun retour possible. Bloquer un **compte principal bloque tous ses sous-comptes** ; le débloquer les débloque. Un sous-compte ne peut pas être débloqué seul tant que son principal l'est (garde serveur **et** bouton désactivé).
+- **Limite de sous-comptes fournisseur** : `E_Utilisateur.LimiteSousComptes` (**défaut 3**), réglable par l'admin. Seuls les sous-comptes **actifs** comptent → désactiver libère une place. Vérifiée à la création **et à la réactivation** (sinon on contournerait en désactivant/réactivant). Badge « X / Y » + alerte « Nombre de sous-comptes atteint » sur la page fournisseur.
+- **Inscription fournisseur** : **nom de l'entreprise obligatoire**, nom/prénom **optionnels** (à défaut, le compte porte le nom de la société ; les emails saluent avec ce nom pour éviter « Bonjour , »). Les sous-comptes **héritent** de la société du principal.
+- **Entreprise du dirigeant créée dès l'inscription** : le champ « Nom de l'entreprise » est demandé au formulaire, l'`E_Entreprise` est créée dans la foulée. L'écran « Créer votre entreprise » du tableau de bord ne subsiste qu'en **filet de sécurité** pour d'anciens comptes. La société d'un dirigeant vit **uniquement** dans `E_Entreprise` (`E_Utilisateur.NomSociete` reste réservé aux fournisseurs — pas de duplication).
 - **Sidebar conditionnelle** : cachée si non connecté ; menu burger caché aussi
 - **Highlight exact** des items menu : `Match="NavLinkMatch.All"`
-- **Loader index.html** stylisé (bouclier glassmorphism, dégradé turquoise KEYDO)
+- **Loader index.html** stylisé : monogramme « K » dans un carré glassmorphism + mot-symbole KEYDO, dégradé turquoise. ⚠️ Écrit en dur dans `index.html` car il s'affiche **avant** le démarrage de Blazor : `Comp_Logo` n'y est pas utilisable.
 - **Persistance session** : `Page_Connexion.OnInitializedAsync` redirige si déjà authentifié
 
 ## Sources UNIQUES à réutiliser (ne pas re-dupliquer)
 
-**Helpers** (`BTPSecure.Client/Services/`) :
+**Helpers** — côté client dans `BTPSecure.Client/Services/`, **sauf `H_Siret`** qui vit dans `BTPSecure.Shared/Helpers/` car serveur et client l'utilisent tous les deux :
 | Helper | Rôle |
 |---|---|
+| `H_Siret` *(Shared)* | Nettoyage + validation de la clé de Luhn SIREN/SIRET, hors ligne. Exception La Poste (`356000000`) gérée. |
 | `H_RoleEntreprise` | Libellé / pluriel / couleur / icône / badge / description des droits d'un rôle |
 | `H_TexteLibre` | Seuil de troncature (140), « … », style `pre-wrap + overflow-wrap`, curseur si cliquable |
 | `H_Code` | Formatage de la saisie d'un code : majuscules, `-` auto après 4 caractères, 8 max |
@@ -173,6 +184,12 @@ git push   # Railway redéploie auto via webhook GitHub
 | `Comp_DialogTexte` | Affichage d'un texte long en dialogue |
 | `Comp_ListeCommandes` | Liste des commandes fournisseur (à préparer / prêtes) |
 | `Comp_Conversation` | Fil de discussion en bulles + réponse |
+| `Comp_RechercheSiret` | Bouton « Retrouver l'entreprise depuis le SIRET », `OnTrouve` laisse le parent choisir les champs à remplir |
+| `Comp_AccesBeta` | Splash du portail de phase de test (piloté par `CODE_ACCES`) |
+| `Comp_Logo` *(cf. charte)* | Logo KEYDO, deux formes |
+| `Comp_ResultatValidation` | Détail d'une validation (collaborateur, matériaux, PDF), partagé accueil fournisseur + pop-up |
+| `Comp_DialogLimiteResponsables` | Réglage admin du plafond Responsable + Responsable Admin |
+| `Comp_DialogLimiteSousComptes` | Réglage admin de la limite de sous-comptes d'un fournisseur |
 
 ## Pattern services client (HTTP)
 ```csharp
@@ -189,7 +206,19 @@ if (!_reponse.IsSuccessStatusCode)
 ```bash
 git log --oneline -5
 dotnet publish BTPSecure.Server/BTPSecure.Server.csproj -c Release -o publish
-curl -s https://qrcodebtp-production.up.railway.app/health
-curl -s https://qrcodebtp-production.up.railway.app/ | grep -o 'blazor.webassembly[^"]*'
+curl -s https://www.keydopro.com/health
+curl -s https://www.keydopro.com/api/acces/statut          # {"actif":true} = portail beta actif
 git commit --allow-empty -m "trigger redeploy" && git push
+```
+
+**Tester le build publié en local avant de pousser** (recommandé : c'est l'artefact réellement déployé, trimmé) :
+```bash
+cd /c/Users/y1903/Desktop/BTPSecure/publish
+ASPNETCORE_ENVIRONMENT=Production dotnet BTPSecure.Server.dll --urls http://localhost:5199
+# PostgreSQL local absent : les erreurs Npgsql au démarrage sont NORMALES,
+# l'app sert quand même le WASM et les endpoints sans base.
+```
+Puis arrêter avant tout nouveau `publish`, sinon la DLL reste verrouillée (piège 15) :
+```powershell
+Get-NetTCPConnection -LocalPort 5199 -State Listen | Select-Object -First 1 -ExpandProperty OwningProcess | Stop-Process -Force
 ```
