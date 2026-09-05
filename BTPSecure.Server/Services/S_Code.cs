@@ -86,8 +86,14 @@ public class S_Code
         }
         else
         {
-            if (!await _daoEntreprise.CollaborateurEstDansEntreprise(p_dto.CollaborateurId, p_dto.EntrepriseId))
+            // Le dirigeant n'est pas dans la table des collaborateurs : il est accepté
+            // explicitement pour pouvoir se générer un code ponctuel.
+            bool _destinataireEstLeDirigeant = p_dto.CollaborateurId == _entreprise.DirigeantId;
+            if (!_destinataireEstLeDirigeant
+                && !await _daoEntreprise.CollaborateurEstDansEntreprise(p_dto.CollaborateurId, p_dto.EntrepriseId))
+            {
                 return (false, "Ce collaborateur n'appartient pas à votre entreprise.", null);
+            }
 
             _collaborateur = await _daoUtilisateur.ObtenirParId(p_dto.CollaborateurId);
             if (_collaborateur == null)
@@ -386,10 +392,10 @@ public class S_Code
         _ctx.NomEntreprise = _entreprise.Nom;
         _ctx.EstAutorisee = _entreprise.EstAutorisee;
 
+        // L'auteur peut se créer un code à lui-même : il n'est donc plus exclu de la liste
         var _liens = await _daoEntreprise.ObtenirCollaborateurs(_entreprise.Id);
         _ctx.Collaborateurs = _liens
-            .Where(l => l.StatutInvitation == Enum_StatutInvitation.Acceptee
-                && l.CollaborateurId != p_userId)
+            .Where(l => l.StatutInvitation == Enum_StatutInvitation.Acceptee)
             .Select(l => new DTO_CollaborateurAffichage
             {
                 Id = l.Id,
@@ -400,6 +406,23 @@ public class S_Code
                 StatutInvitation = l.StatutInvitation,
                 RoleEntreprise = l.RoleEntreprise
             }).ToList();
+
+        // Le dirigeant n'est pas dans la table des collaborateurs : on l'ajoute à la main
+        // pour qu'il puisse se générer un code ponctuel. En tête de liste, il se trouve vite.
+        var _dirigeant = await _daoUtilisateur.ObtenirParId(_entreprise.DirigeantId);
+        if (_dirigeant != null)
+        {
+            _ctx.Collaborateurs.Insert(0, new DTO_CollaborateurAffichage
+            {
+                Id = 0,
+                CollaborateurId = _dirigeant.Id,
+                Nom = _dirigeant.Nom,
+                Prenom = _dirigeant.Prenom,
+                Email = _dirigeant.Email,
+                StatutInvitation = Enum_StatutInvitation.Acceptee,
+                RoleEntreprise = Enum_RoleEntreprise.ResponsableAdmin
+            });
+        }
 
         var _fournisseurs = await _daoFournisseurContact.ObtenirParDirigeant(_entreprise.DirigeantId);
         _ctx.Fournisseurs = _fournisseurs.Select(f => new DTO_FournisseurContact

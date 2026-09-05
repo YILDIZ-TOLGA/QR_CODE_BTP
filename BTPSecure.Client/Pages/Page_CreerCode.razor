@@ -346,6 +346,7 @@
     private int _entrepriseId;
     private bool _peutCreer = true;
     private bool _estDirigeant = false;
+    private int _userId;
     private List<DTO_FournisseurContact> _fournisseurs = new();
     private string _modeFournisseur = "existant";
 
@@ -365,6 +366,13 @@
         if (_claimRole != null && _claimRole.Value == "Dirigeant")
             _estDirigeant = true;
 
+        // Sert à signaler « moi-même » dans la liste des destinataires
+        var _claimId = _etat.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (_claimId != null)
+        {
+            int.TryParse(_claimId.Value, out _userId);
+        }
+
         var _ctx = await SCode.ObtenirContexteCreation();
         _peutCreer = _ctx.PeutCreer;
         if (_peutCreer)
@@ -374,7 +382,7 @@
             _collaborateurs = _ctx.Collaborateurs.Select(s => new CollaborateurItem
             {
                 CollaborateurId = s.CollaborateurId,
-                Label = $"{s.Prenom} {s.Nom} ({s.Email})"
+                Label = LibelleDestinataire(s)
             }).ToList();
             _fournisseurs = _ctx.Fournisseurs;
         }
@@ -440,7 +448,7 @@
             _collaborateurs = _ctx.Collaborateurs.Select(s => new CollaborateurItem
             {
                 CollaborateurId = s.CollaborateurId,
-                Label = $"{s.Prenom} {s.Nom} ({s.Email})"
+                Label = LibelleDestinataire(s)
             }).ToList();
 
             // Le pré-sélectionner directement
@@ -455,6 +463,16 @@
         _codeGenere = null;
         _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Liste, EntrepriseId = _entrepriseId, DureeValiditeHeures = 24 };
         _modeFournisseur = "existant";
+    }
+
+    // Le destinataire peut être soi-même : on le signale pour éviter toute confusion
+    private string LibelleDestinataire(DTO_CollaborateurAffichage p_c)
+    {
+        if (p_c.CollaborateurId == _userId)
+        {
+            return $"{p_c.Prenom} {p_c.Nom} — moi-même";
+        }
+        return $"{p_c.Prenom} {p_c.Nom} ({p_c.Email})";
     }
 
     private class CollaborateurItem
