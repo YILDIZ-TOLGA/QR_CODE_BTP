@@ -1,0 +1,120 @@
+@inject Services.S_RechercheEntreprise SRecherche
+
+@* Remplit le nom d'entreprise à partir du SIRET (ou du SIREN) via l'annuaire public.
+   Réutilisé par l'inscription fournisseur, le carnet fournisseur, la création de code
+   et la création d'entreprise. Le champ rempli reste toujours modifiable à la main. *@
+<RadzenStack Gap="0.5rem" Style="width: 100%;">
+    <RadzenButton Text="@LibelleBouton()" Icon="travel_explore"
+                  ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined"
+                  Size="ButtonSize.Medium" Style="width: 100%;"
+                  Disabled="@(!SaisieUtilisable())" IsBusy="_enCours"
+                  BusyText="Recherche en cours..." Click="Rechercher" type="button" />
+
+    @if (_resultat != null && _resultat.Trouve)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Success" ShowIcon="true" Variant="Variant.Flat"
+                     AllowClose="false" Style="margin: 0;">
+            <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">@_resultat.Nom</RadzenText>
+            @if (!string.IsNullOrEmpty(_resultat.Adresse))
+            {
+                <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0;">@_resultat.Adresse</RadzenText>
+            }
+            @if (!_resultat.EstActive)
+            {
+                <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; font-weight: 600;">
+                    Attention : cet établissement est signalé comme fermé.
+                </RadzenText>
+            }
+        </RadzenAlert>
+    }
+    else if (_resultat != null)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat"
+                     AllowClose="false" Style="margin: 0;">
+            @_resultat.Message
+        </RadzenAlert>
+    }
+</RadzenStack>
+
+@code {
+    [Parameter] public string? Siret { get; set; }
+    [Parameter] public string? Siren { get; set; }
+
+    // Le parent décide des champs à remplir : le nom seul, ou aussi l'adresse
+    [Parameter] public EventCallback<DTO_InfoEntreprise> OnTrouve { get; set; }
+
+    private DTO_InfoEntreprise? _resultat;
+    private bool _enCours;
+    private string _dernierIdentifiant = string.Empty;
+
+    // Le SIRET prime : il désigne l'établissement précis, le SIREN toute l'entreprise
+    private string Identifiant()
+    {
+        var _siret = BTPSecure.Shared.Helpers.H_Siret.GarderChiffres(Siret);
+        if (_siret.Length == 14)
+        {
+            return _siret;
+        }
+        var _siren = BTPSecure.Shared.Helpers.H_Siret.GarderChiffres(Siren);
+        if (_siren.Length == 9)
+        {
+            return _siren;
+        }
+        return string.Empty;
+    }
+
+    private bool SaisieUtilisable()
+    {
+        return Identifiant().Length > 0;
+    }
+
+    private string LibelleBouton()
+    {
+        var _siret = BTPSecure.Shared.Helpers.H_Siret.GarderChiffres(Siret);
+        if (_siret.Length == 14)
+        {
+            return "Retrouver l'entreprise depuis le SIRET";
+        }
+        var _siren = BTPSecure.Shared.Helpers.H_Siret.GarderChiffres(Siren);
+        if (_siren.Length == 9)
+        {
+            return "Retrouver l'entreprise depuis le SIREN";
+        }
+        return "Saisissez un SIRET (14 chiffres) ou un SIREN (9)";
+    }
+
+    private async Task Rechercher()
+    {
+        var _identifiant = Identifiant();
+        if (_identifiant.Length == 0)
+        {
+            return;
+        }
+
+        _enCours = true;
+        _resultat = null;
+
+        _resultat = await SRecherche.Rechercher(_identifiant);
+        _dernierIdentifiant = _identifiant;
+
+        _enCours = false;
+
+        if (_resultat.Trouve)
+        {
+            await OnTrouve.InvokeAsync(_resultat);
+        }
+    }
+
+    // Le numéro a changé depuis la dernière recherche : l'ancien résultat n'a plus de sens
+    protected override void OnParametersSet()
+    {
+        if (_resultat == null)
+        {
+            return;
+        }
+        if (Identifiant() != _dernierIdentifiant)
+        {
+            _resultat = null;
+        }
+    }
+}

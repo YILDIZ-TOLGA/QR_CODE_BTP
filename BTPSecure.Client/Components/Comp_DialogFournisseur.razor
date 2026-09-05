@@ -40,6 +40,8 @@
             </ChildContent>
         </RadzenFormField>
 
+        <Comp_RechercheSiret Siret="@_dto.Siret" Siren="@_dto.Siren" OnTrouve="AppliquerEntreprise" />
+
         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
             <RadzenButton Text="Annuler" Variant="Variant.Outlined" Click="Annuler" />
             <RadzenButton Text="Enregistrer" Icon="save" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" />
@@ -48,6 +50,12 @@
 </RadzenTemplateForm>
 
 @code {
+    // L'annuaire a trouvé l'entreprise : on remplit le nom, qui reste modifiable
+    private void AppliquerEntreprise(DTO_InfoEntreprise p_info)
+    {
+        _dto.NomEntreprise = p_info.Nom;
+    }
+
     [Parameter] public DTO_FournisseurContact? Initial { get; set; }
 
     private DTO_CreerFournisseurContact _dto = new();

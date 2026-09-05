@@ -149,6 +149,12 @@ builder.Services.AddScoped<S_Blacklist>();
 builder.Services.AddScoped<S_Ticket>();
 builder.Services.AddScoped<S_Memo>();
 builder.Services.AddScoped<S_Notification>();
+// Annuaire public des entreprises : timeout court, l'écran ne doit jamais rester bloqué
+builder.Services.AddHttpClient<S_RechercheEntreprise>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("KEYDO/1.0");
+});
 builder.Services.AddSingleton<S_Pdf>();
 builder.Services.AddSingleton<S_Email>();
 // Partagé par toutes les requêtes : cache « ce compte est-il actif ? »

@@ -227,6 +227,9 @@
                                                 </ChildContent>
                                             </RadzenFormField>
 
+                                            <Comp_RechercheSiret Siret="@_dto.NouveauFournisseurSiret" Siren="@_dto.NouveauFournisseurSiren"
+                                                                 OnTrouve="AppliquerEntreprise" />
+
                                             <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
                                                 Ce fournisseur sera ajouté à votre carnet pour réutilisation future.
                                             </RadzenText>
@@ -463,6 +466,12 @@
         _codeGenere = null;
         _dto = new DTO_CreerCode { TypeCode = Enum_TypeCode.Liste, EntrepriseId = _entrepriseId, DureeValiditeHeures = 24 };
         _modeFournisseur = "existant";
+    }
+
+    // L'annuaire a trouvé l'entreprise : on remplit le nom, qui reste modifiable
+    private void AppliquerEntreprise(DTO_InfoEntreprise p_info)
+    {
+        _dto.NouveauFournisseurNomEntreprise = p_info.Nom;
     }
 
     // Le destinataire peut être soi-même : on le signale pour éviter toute confusion

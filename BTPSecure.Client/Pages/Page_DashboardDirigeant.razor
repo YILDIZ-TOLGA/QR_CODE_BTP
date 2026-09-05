@@ -68,6 +68,9 @@ else if (_estDirigeantSansEntreprise)
                                 </ChildContent>
                             </RadzenFormField>
 
+                            @* Ici l'annuaire remplit aussi l'adresse : le formulaire la demande *@
+                            <Comp_RechercheSiret Siret="@_dtoEntreprise.Siret" OnTrouve="AppliquerEntreprise" />
+
                             <RadzenButton Text="Créer l'entreprise" ButtonType="ButtonType.Submit" Icon="rocket_launch"
                                           ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" Style="width: 100%;" />
                         </RadzenStack>
@@ -757,6 +760,16 @@ else
             {
                 _monCodePermanent = _c;
             }
+        }
+    }
+
+    // L'annuaire a trouvé l'entreprise : nom et adresse pré-remplis, tous deux modifiables
+    private void AppliquerEntreprise(DTO_InfoEntreprise p_info)
+    {
+        _dtoEntreprise.Nom = p_info.Nom;
+        if (!string.IsNullOrWhiteSpace(p_info.Adresse))
+        {
+            _dtoEntreprise.Adresse = p_info.Adresse;
         }
     }
 
