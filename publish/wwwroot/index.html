@@ -150,6 +150,29 @@
     </div>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
     <script>
+        // Suivi de l'inactivité : aucun composant Radzen ne capte l'activité globale
+        // de la page. Simple horodatage remis à zéro à chaque interaction ; c'est Blazor
+        // qui interroge la durée écoulée, donc aucun rappel JS -> .NET à gérer.
+        window.keydoInactivite = (function () {
+            var dernierEvenement = Date.now();
+
+            function marquerActivite() {
+                dernierEvenement = Date.now();
+            }
+
+            var evenements = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel'];
+            for (var i = 0; i < evenements.length; i++) {
+                document.addEventListener(evenements[i], marquerActivite, { passive: true, capture: true });
+            }
+
+            return {
+                secondes: function () {
+                    return Math.floor((Date.now() - dernierEvenement) / 1000);
+                },
+                reinitialiser: marquerActivite
+            };
+        })();
+
         // Téléchargement d'un fichier depuis une chaîne base64 (pièces jointes des tickets).
         // Passe par un Blob : fiable sur Chrome qui bloque la navigation vers les data: URI.
         window.btpTelechargerFichier = function (base64, nom, type) {

@@ -1,0 +1,90 @@
+@implements IDisposable
+@inject IJSRuntime JS
+@inject S_Auth SAuth
+@inject NavigationManager Navigation
+@inject NotificationService Notification
+
+@code {
+    // Déconnexion automatique après une période sans interaction, pour les comptes
+    // qui peuvent engager de l'argent (Dirigeant, Responsable, Responsable Admin).
+    // Le suivi d'activité vit dans index.html (window.keydoInactivite) : aucun composant
+    // Radzen ne capte l'activité globale de la page.
+    [Parameter] public int DelaiSecondes { get; set; } = 600;
+    // Fenêtre d'avertissement avant la déconnexion effective
+    [Parameter] public int AvertissementSecondes { get; set; } = 60;
+
+    private System.Timers.Timer? _timer;
+    private bool _avertissementAffiche;
+    private bool _deconnexionLancee;
+
+    protected override void OnInitialized()
+    {
+        // 15 s : assez fin pour que l'avertissement d'une minute reste utile,
+        // assez espacé pour rester indolore.
+        _timer = new System.Timers.Timer(15000);
+        _timer.Elapsed += async (_, _) => await Verifier();
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async Task Verifier()
+    {
+        await InvokeAsync(async () =>
+        {
+            if (_deconnexionLancee)
+            {
+                return;
+            }
+
+            int _inactif;
+            try
+            {
+                _inactif = await JS.InvokeAsync<int>("keydoInactivite.secondes");
+            }
+            catch
+            {
+                // Suivi indisponible : on ne déconnecte jamais sur une incertitude
+                return;
+            }
+
+            if (_inactif >= DelaiSecondes)
+            {
+                _deconnexionLancee = true;
+                await Deconnecter();
+                return;
+            }
+
+            if (_inactif >= DelaiSecondes - AvertissementSecondes)
+            {
+                if (!_avertissementAffiche)
+                {
+                    _avertissementAffiche = true;
+                    var _message = new NotificationMessage();
+                    _message.Severity = NotificationSeverity.Warning;
+                    _message.Summary = "Vous allez être déconnecté";
+                    _message.Detail = "Sans activité de votre part, la session sera fermée dans moins d'une minute.";
+                    _message.Duration = 30000;
+                    Notification.Notify(_message);
+                }
+                return;
+            }
+
+            // L'utilisateur est revenu : l'avertissement pourra se réafficher plus tard
+            _avertissementAffiche = false;
+        });
+    }
+
+    private async Task Deconnecter()
+    {
+        _timer?.Stop();
+        await SAuth.Deconnecter();
+        // Rechargement complet + indicateur : l'écran de connexion explique la déconnexion
+        Navigation.NavigateTo("/connexion?inactif=1", true);
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
+    }
+}

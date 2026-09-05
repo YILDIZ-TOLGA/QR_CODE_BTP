@@ -55,6 +55,12 @@ else
         @* Sans bouton : sert uniquement à tenir les badges de la sidebar à jour (60 s, en pause si l'onglet est masqué) *@
         <Comp_AutoRefresh OnRefresh="RafraichirCompteurs" AfficherBouton="false" />
 
+        @* Comptes pouvant engager de l'argent : session fermée après 10 min sans activité *@
+        @if (_soumisInactivite)
+        {
+            <Comp_Inactivite />
+        }
+
         <RadzenSidebar @bind-Expanded="_sidebarExpanded" Style="z-index: 2; display: flex; flex-direction: column;">
             @* Identité de l'utilisateur, tout en haut *@
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.6rem"
@@ -159,6 +165,7 @@ else
     private string _entrepriseAffiche = "";
     private bool _peutCreerCodes = false;
     private bool _estFournisseurPrincipal = false;
+    private bool _soumisInactivite = false;
     private int _messagesNonLus = 0;
     private int _commandesAPreparer = 0;
     private bool _notificationsVerifiees = false;
@@ -314,6 +321,7 @@ else
         if (_etat.User.Identity == null || !_etat.User.Identity.IsAuthenticated)
         {
             _estConnecte = false;
+            _soumisInactivite = false;
             _notificationsVerifiees = false;
             _email = "";
             _role = "";
@@ -339,12 +347,21 @@ else
         // Nom/prénom + entreprise pour l'entête de la sidebar (le JWT ne les contient pas)
         _nomAffiche = _email;
         _entrepriseAffiche = "";
+        _soumisInactivite = false;
         var _profil = await SProfil.ObtenirMoi();
         if (_profil != null)
         {
             _nomAffiche = $"{_profil.Prenom} {_profil.Nom}";
             if (_profil.Entreprises.Count > 0)
                 _entrepriseAffiche = _profil.Entreprises[0];
+
+            // Dirigeant, Responsable et Responsable Admin engagent de l'argent :
+            // leur session se ferme après 10 min sans activité.
+            // « Responsable » n'est pas un rôle JWT, d'où le drapeau porté par le profil.
+            if (_role == "Dirigeant" || _profil.EstResponsable)
+            {
+                _soumisInactivite = true;
+            }
         }
 
         // Un Collaborateur Responsable Admin peut créer des codes → afficher le menu

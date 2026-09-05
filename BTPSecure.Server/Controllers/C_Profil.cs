@@ -61,6 +61,14 @@ public class C_Profil : ControllerBase
                     && se.StatutInvitation == Enum_StatutInvitation.Acceptee)
                 .Select(se => se.Entreprise.Nom)
                 .ToListAsync();
+
+            // Sert à savoir si la déconnexion automatique pour inactivité s'applique
+            _profil.EstResponsable = await _context.CollaborateursEntreprises
+                .AnyAsync(se => se.CollaborateurId == _id
+                    && se.EstActif
+                    && se.StatutInvitation == Enum_StatutInvitation.Acceptee
+                    && (se.RoleEntreprise == Enum_RoleEntreprise.Responsable
+                        || se.RoleEntreprise == Enum_RoleEntreprise.ResponsableAdmin));
         }
 
         return Ok(_profil);

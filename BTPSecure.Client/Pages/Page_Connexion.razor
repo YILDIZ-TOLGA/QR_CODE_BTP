@@ -18,6 +18,14 @@
                     Accédez à votre espace KEYDO
                 </RadzenText>
 
+                @if (_deconnexionInactivite)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat"
+                                 AllowClose="false" Style="width: 100%; margin: 0;">
+                        Vous avez été déconnecté après 10 minutes sans activité. Reconnectez-vous pour reprendre.
+                    </RadzenAlert>
+                }
+
                 <RadzenTemplateForm TItem="DTO_Connexion" Data="_dto" Submit="Connecter" Style="width: 100%;">
                     <RadzenStack Gap="1.25rem">
                         <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
@@ -93,9 +101,17 @@
     private bool _emailNonVerifie;
     private bool _envoiEnCours;
     private bool _voirMotDePasse;
+    private bool _deconnexionInactivite;
 
     protected override async Task OnInitializedAsync()
     {
+        // Posé par Comp_Inactivite au moment de la fermeture automatique de session
+        var _uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (_uri.Query.Contains("inactif=1"))
+        {
+            _deconnexionInactivite = true;
+        }
+
         var _etat = await AuthState.GetAuthenticationStateAsync();
 
         if (_etat.User.Identity == null)

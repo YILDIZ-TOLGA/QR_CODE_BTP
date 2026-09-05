@@ -14,4 +14,7 @@ public class DTO_Profil
     public Enum_Role Role { get; set; }
     public DateTime DateCreation { get; set; }
     public List<string> Entreprises { get; set; } = new();
+    // Responsable ou Responsable Admin dans au moins une entreprise.
+    // Le JWT ne porte que « Collaborateur » : le client ne peut pas le déduire seul.
+    public bool EstResponsable { get; set; }
 }
