@@ -58,6 +58,17 @@ public class DAO_Code
             .ToListAsync();
     }
 
+    // Tous les codes permanents actifs d'une entreprise (vue d'audit du dirigeant)
+    public async Task<List<E_Code>> ObtenirCodesPermanentsActifs(int p_entrepriseId)
+    {
+        return await _context.Codes
+            .Where(c => c.EntrepriseId == p_entrepriseId
+                && c.EstPermanent
+                && c.Statut == Enum_StatutCode.Actif)
+            .OrderBy(c => c.DateCreation)
+            .ToListAsync();
+    }
+
     public async Task<E_Code?> ObtenirCodePermanentActif(int p_collaborateurId, int p_entrepriseId)
     {
         return await _context.Codes

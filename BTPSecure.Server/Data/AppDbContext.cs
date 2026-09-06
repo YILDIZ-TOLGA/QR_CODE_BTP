@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<E_Ticket> Tickets => Set<E_Ticket>();
     public DbSet<E_Memo> Memos => Set<E_Memo>();
     public DbSet<E_Notification> Notifications => Set<E_Notification>();
+    public DbSet<E_ValidationCode> ValidationsCodes => Set<E_ValidationCode>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -203,6 +204,33 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(n => n.UtilisateurId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // E_ValidationCode (trace d'une utilisation ; voir l'entité pour le pourquoi)
+        p_modelBuilder.Entity<E_ValidationCode>(e =>
+        {
+            e.ToTable("validations_codes");
+            e.HasKey(v => v.Id);
+            e.Property(v => v.ValeurUtilisee).IsRequired().HasMaxLength(9);
+            e.Property(v => v.NumeroCommande).IsRequired().HasMaxLength(100);
+            e.Property(v => v.EmailTiers).HasMaxLength(256);
+            e.Property(v => v.AchatsSupplementaires).HasDefaultValue(0);
+            e.Property(v => v.EstPermanent).HasDefaultValue(false);
+            e.HasIndex(v => new { v.EntrepriseId, v.DateValidation });
+            e.HasIndex(v => v.PorteurId);
+            // Restrict partout : l'historique ne doit jamais disparaître avec un code ou un compte
+            e.HasOne(v => v.Code)
+                .WithMany()
+                .HasForeignKey(v => v.CodeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(v => v.Porteur)
+                .WithMany()
+                .HasForeignKey(v => v.PorteurId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(v => v.Validateur)
+                .WithMany()
+                .HasForeignKey(v => v.ValidateurId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // E_Ticket (messagerie / tickets avec pièce jointe, TTL 24 h)

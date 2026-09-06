@@ -9,6 +9,7 @@ namespace BTPSecure.Server.Services;
 public class S_Code
 {
     private readonly DAO_Code _daoCode;
+    private readonly DAO_ValidationCode _daoValidationCode;
     private readonly DAO_Entreprise _daoEntreprise;
     private readonly DAO_Utilisateur _daoUtilisateur;
     private readonly DAO_FournisseurContact _daoFournisseurContact;
@@ -19,10 +20,11 @@ public class S_Code
 
     private const string CARACTERES_AUTORISES = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-    public S_Code(DAO_Code p_daoCode, DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
+    public S_Code(DAO_Code p_daoCode, DAO_ValidationCode p_daoValidationCode, DAO_Entreprise p_daoEntreprise, DAO_Utilisateur p_daoUtilisateur,
         DAO_FournisseurContact p_daoFournisseurContact, DAO_Blacklist p_daoBlacklist, S_Pdf p_sPdf, S_Email p_sEmail, ILogger<S_Code> p_logger)
     {
         _daoCode = p_daoCode;
+        _daoValidationCode = p_daoValidationCode;
         _daoEntreprise = p_daoEntreprise;
         _daoUtilisateur = p_daoUtilisateur;
         _daoFournisseurContact = p_daoFournisseurContact;
@@ -471,6 +473,22 @@ public class S_Code
         _code.FournisseurId = p_fournisseurId;
         _code.DateValidation = DateTime.UtcNow;
 
+        // Instantané AVANT régénération : un code permanent change de valeur juste après,
+        // et sa ligne sera écrasée à la prochaine utilisation.
+        var _trace = new E_ValidationCode
+        {
+            CodeId = _code.Id,
+            EntrepriseId = _code.EntrepriseId,
+            PorteurId = _code.CollaborateurId,
+            EmailTiers = _code.EmailTiers,
+            ValidateurId = p_fournisseurId,
+            DateValidation = _code.DateValidation.Value,
+            ValeurUtilisee = _code.Valeur,
+            NumeroCommande = _code.NumeroCommande,
+            AchatsSupplementaires = _code.AchatsSupplementaires,
+            EstPermanent = _code.EstPermanent
+        };
+
         // Code permanent (Responsable) → régénère sa valeur et reste actif.
         // Tout autre code → usage unique : consommé après une validation.
         if (_code.EstPermanent)
@@ -484,6 +502,17 @@ public class S_Code
         }
 
         await _daoCode.Sauvegarder();
+
+        // Après la sauvegarde du code : une trace en échec ne doit pas annuler une
+        // validation déjà acquise côté fournisseur.
+        try
+        {
+            await _daoValidationCode.Creer(_trace);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Trace de validation non enregistrée pour le code {CodeId}", _code.Id);
+        }
 
         var _pdf = _sPdf.GenererConfirmation(_code);
 

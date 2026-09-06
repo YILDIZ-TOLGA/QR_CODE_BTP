@@ -1,0 +1,237 @@
+@page "/dirigeant/codes-permanents"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
+@inject Services.S_HistoriqueCode SHistorique
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1.5rem;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenIcon Icon="vpn_key" Style="font-size: 2rem; color: var(--rz-primary);" />
+        <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Gestion des codes permanents</RadzenText>
+    </RadzenStack>
+    <Comp_AutoRefresh OnRefresh="Charger" />
+</RadzenStack>
+
+@if (_chargement)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+    </RadzenRow>
+}
+else if (_porteurs.Count == 0)
+{
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 3rem 0;">
+            <RadzenIcon Icon="key_off" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-text-secondary-color);">Aucun code permanent</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
+                Les codes permanents sont attribués automatiquement à vous-même et aux Responsables de votre entreprise.
+            </RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+}
+else
+{
+    <RadzenStack Gap="1.5rem">
+        <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+            Un code permanent est valable en continu et change de valeur à chaque utilisation.
+            Cliquez sur une personne pour voir le détail de ses passages et qui les a validés.
+        </RadzenText>
+
+        <RadzenRow Gap="1rem">
+            @foreach (var _p in _porteurs)
+            {
+                <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                    <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                        <RadzenStack Gap="0.75rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="min-width: 0; flex: 1;">
+                                    <RadzenIcon Icon="account_circle" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                                    <RadzenText Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @_p.Prenom @_p.Nom
+                                    </RadzenText>
+                                </RadzenStack>
+                                @if (!string.IsNullOrEmpty(_p.RoleLibelle))
+                                {
+                                    <RadzenBadge BadgeStyle="@StyleRole(_p)" Text="@_p.RoleLibelle" IsPill="true" />
+                                }
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="mail" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow: hidden; text-overflow: ellipsis;">@_p.Email</RadzenText>
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                <RadzenBadge BadgeStyle="BadgeStyle.Light" IsPill="true"
+                                             Text="@($"{_p.NombreUtilisations} utilisation(s)")" />
+                                @if (_p.TotalAchatsSupplementaires > 0)
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="true"
+                                                 Text="@($"{_p.TotalAchatsSupplementaires} € HT suppl.")" />
+                                }
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="schedule" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                    @LibelleDerniereUtilisation(_p)
+                                </RadzenText>
+                            </RadzenStack>
+
+                            <RadzenButton Text="Voir l'historique" Icon="history" ButtonStyle="ButtonStyle.Primary"
+                                          Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                          Click="() => Selectionner(_p)" />
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            }
+        </RadzenRow>
+
+        @if (_porteurSelectionne != null)
+        {
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1rem;">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="history" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">
+                            Historique — @_porteurSelectionne.Prenom @_porteurSelectionne.Nom
+                        </RadzenText>
+                    </RadzenStack>
+                    <RadzenButton Icon="close" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base"
+                                  Size="ButtonSize.Small" Click="Fermer" />
+                </RadzenStack>
+
+                @if (_chargementDetail)
+                {
+                    <RadzenRow JustifyContent="JustifyContent.Center" Style="padding: 2rem 0;">
+                        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    </RadzenRow>
+                }
+                else if (_utilisations.Count == 0)
+                {
+                    <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem" Style="padding: 2rem 0;">
+                        <RadzenIcon Icon="inbox" Style="font-size: 2.5rem; color: var(--rz-text-disabled-color);" />
+                        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">
+                            Aucune utilisation enregistrée
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
+                            L'historique démarre à la mise en service de cette page : les passages antérieurs n'ont pas été conservés.
+                        </RadzenText>
+                    </RadzenStack>
+                }
+                else
+                {
+                    <RadzenDataGrid Data="@_utilisations" TItem="DTO_UtilisationCode" AllowPaging="true" PageSize="10"
+                                    AllowSorting="true" Density="Density.Compact">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="DTO_UtilisationCode" Property="DateValidation" Title="Date" Width="160px">
+                                <Template Context="_u">
+                                    @_u.DateValidation.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="DTO_UtilisationCode" Property="NumeroCommande" Title="Commande" />
+                            <RadzenDataGridColumn TItem="DTO_UtilisationCode" Property="NomValidateur" Title="Validé par">
+                                <Template Context="_u">
+                                    <RadzenStack Gap="0">
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+                                            @LibelleValidateur(_u)
+                                        </RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; color: var(--rz-text-secondary-color);">
+                                            @_u.EmailValidateur
+                                        </RadzenText>
+                                    </RadzenStack>
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="DTO_UtilisationCode" Property="AchatsSupplementaires" Title="Achats suppl." Width="130px">
+                                <Template Context="_u">
+                                    @if (_u.AchatsSupplementaires > 0)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="true" Text="@($"{_u.AchatsSupplementaires} € HT")" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">—</RadzenText>
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="DTO_UtilisationCode" Property="ValeurUtilisee" Title="Code utilisé" Width="140px">
+                                <Template Context="_u">
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace;">@_u.ValeurUtilisee</RadzenText>
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+            </RadzenCard>
+        }
+    </RadzenStack>
+}
+
+@code {
+    private List<DTO_PorteurCodePermanent> _porteurs = new();
+    private List<DTO_UtilisationCode> _utilisations = new();
+    private DTO_PorteurCodePermanent? _porteurSelectionne;
+    private bool _chargement = true;
+    private bool _chargementDetail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Charger();
+        _chargement = false;
+    }
+
+    private async Task Charger()
+    {
+        _porteurs = await SHistorique.ObtenirPorteurs();
+
+        // Le détail affiché doit suivre le rafraîchissement automatique
+        if (_porteurSelectionne != null)
+        {
+            _utilisations = await SHistorique.ObtenirUtilisations(_porteurSelectionne.PorteurId);
+        }
+    }
+
+    private async Task Selectionner(DTO_PorteurCodePermanent p_porteur)
+    {
+        _porteurSelectionne = p_porteur;
+        _chargementDetail = true;
+        _utilisations = await SHistorique.ObtenirUtilisations(p_porteur.PorteurId);
+        _chargementDetail = false;
+    }
+
+    private void Fermer()
+    {
+        _porteurSelectionne = null;
+        _utilisations = new List<DTO_UtilisationCode>();
+    }
+
+    private static BadgeStyle StyleRole(DTO_PorteurCodePermanent p_porteur)
+    {
+        if (p_porteur.EstDirigeant)
+        {
+            return BadgeStyle.Success;
+        }
+        if (p_porteur.RoleLibelle == "Responsable Admin")
+        {
+            return BadgeStyle.Warning;
+        }
+        return BadgeStyle.Info;
+    }
+
+    private static string LibelleDerniereUtilisation(DTO_PorteurCodePermanent p_porteur)
+    {
+        if (!p_porteur.DerniereUtilisation.HasValue)
+        {
+            return "Jamais utilisé";
+        }
+        return $"Dernière utilisation le {p_porteur.DerniereUtilisation.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")}";
+    }
+
+    private static string LibelleValidateur(DTO_UtilisationCode p_utilisation)
+    {
+        if (!string.IsNullOrEmpty(p_utilisation.SocieteValidateur))
+        {
+            return $"{p_utilisation.SocieteValidateur} — {p_utilisation.NomValidateur}";
+        }
+        return p_utilisation.NomValidateur;
+    }
+}
