@@ -78,11 +78,34 @@
                         <RadzenPanelMenuItem Text="Création collaborateur" Icon="person_add" Path="dirigeant/creer-collaborateur" Match="NavLinkMatch.All" />
                         <RadzenPanelMenuItem Text="Codes permanents" Icon="vpn_key" Path="dirigeant/codes-permanents" Match="NavLinkMatch.All" />
                         <RadzenPanelMenuItem Text="Mes fournisseurs" Icon="contacts" Path="dirigeant/fournisseurs" Match="NavLinkMatch.All" />
-                        <RadzenPanelMenuItem Text="Notifications" Icon="notifications" Path="dirigeant/notifications" Match="NavLinkMatch.All" />
+                        <RadzenPanelMenuItem Icon="notifications" Path="dirigeant/notifications" Match="NavLinkMatch.All">
+                            @* Le Template ne remplace QUE le texte : l'icône vient de l'attribut Icon *@
+                            <Template>
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                    <RadzenText Style="margin: 0;">Notifications</RadzenText>
+                                    @if (_commandesPretes > 0)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@_commandesPretes.ToString()" IsPill="true" />
+                                    }
+                                </RadzenStack>
+                            </Template>
+                        </RadzenPanelMenuItem>
                     }
                     @if (_role == "Collaborateur")
                     {
                         <RadzenPanelMenuItem Text="Mes codes" Icon="qr_code" Path="collaborateur" Match="NavLinkMatch.All" />
+                        @* Le destinataire doit être prévenu que sa commande est prête *@
+                        <RadzenPanelMenuItem Icon="notifications" Path="dirigeant/notifications" Match="NavLinkMatch.All">
+                            <Template>
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                    <RadzenText Style="margin: 0;">Notifications</RadzenText>
+                                    @if (_commandesPretes > 0)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@_commandesPretes.ToString()" IsPill="true" />
+                                    }
+                                </RadzenStack>
+                            </Template>
+                        </RadzenPanelMenuItem>
                         @if (_peutCreerCodes)
                         {
                             <RadzenPanelMenuItem Text="Tableau de bord" Icon="dashboard" Path="dirigeant" Match="NavLinkMatch.All" />
@@ -154,6 +177,7 @@
     private bool _soumisInactivite = false;
     private int _messagesNonLus = 0;
     private int _commandesAPreparer = 0;
+    private int _commandesPretes = 0;
     private bool _notificationsVerifiees = false;
 
     protected override async Task OnInitializedAsync()
@@ -249,6 +273,14 @@
         if (_estConnecte && _role == "Fournisseur")
         {
             _commandesAPreparer = await SCode.CompterCommandesAPreparer();
+        }
+
+        // Commandes prêtes à retirer : le dirigeant pour toute son entreprise,
+        // le collaborateur pour les siennes uniquement (le serveur borne)
+        _commandesPretes = 0;
+        if (_estConnecte && (_role == "Dirigeant" || _role == "Collaborateur"))
+        {
+            _commandesPretes = await SCode.CompterNotifications();
         }
     }
 

@@ -112,6 +112,48 @@ public class DAO_Code
         return _codes.Where(c => c.Statut == Enum_StatutCode.Actif).ToList();
     }
 
+    // Badges de la sidebar : COUNT pur, sans Include ni SaveChanges.
+    // Interrogé toutes les 60 s par utilisateur, il doit rester le plus léger possible.
+    public async Task<int> CompterNotificationsPourDirigeant(int p_dirigeantId)
+    {
+        var _maintenant = DateTime.UtcNow;
+        return await _context.Codes
+            .CountAsync(c => c.DirigeantId == p_dirigeantId
+                && c.EstPrete
+                && c.Statut == Enum_StatutCode.Actif
+                && (c.DateExpiration == null || c.DateExpiration > _maintenant));
+    }
+
+    public async Task<int> CompterNotificationsPourCollaborateur(int p_collaborateurId)
+    {
+        var _maintenant = DateTime.UtcNow;
+        return await _context.Codes
+            .CountAsync(c => c.CollaborateurId == p_collaborateurId
+                && c.EstPrete
+                && c.Statut == Enum_StatutCode.Actif
+                && (c.DateExpiration == null || c.DateExpiration > _maintenant));
+    }
+
+    // Commandes prêtes DESTINÉES à cette personne : le collaborateur qui ira retirer
+    // la marchandise doit être prévenu, pas seulement le dirigeant qui a créé le code.
+    public async Task<List<E_Code>> ObtenirNotificationsPourCollaborateur(int p_collaborateurId)
+    {
+        var _maintenant = DateTime.UtcNow;
+        var _codes = await _context.Codes
+            .Include(c => c.Collaborateur)
+            .Include(c => c.FournisseurContact)
+            .Where(c => c.CollaborateurId == p_collaborateurId
+                && c.EstPrete
+                && c.Statut == Enum_StatutCode.Actif
+                && (c.DateExpiration == null || c.DateExpiration > _maintenant))
+            .OrderByDescending(c => c.DatePrete)
+            .ToListAsync();
+
+        MettreAJourExpirations(_codes);
+        await _context.SaveChangesAsync();
+        return _codes.Where(c => c.Statut == Enum_StatutCode.Actif).ToList();
+    }
+
     public async Task<List<E_Code>> ObtenirCommandesPourFournisseur(string p_siret, string? p_siren)
     {
         var _maintenant = DateTime.UtcNow;

@@ -866,6 +866,19 @@ public class S_Code
         return "";
     }
 
+    // Nombre de commandes prêtes à retirer (badge de la sidebar).
+    // Passe par un COUNT dédié : recharger la liste complète pour un badge
+    // interrogé toutes les 60 s coûterait cher pour rien.
+    public async Task<int> CompterNotifications(int p_userId)
+    {
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_userId);
+        if (_entreprise != null)
+        {
+            return await _daoCode.CompterNotificationsPourDirigeant(p_userId);
+        }
+        return await _daoCode.CompterNotificationsPourCollaborateur(p_userId);
+    }
+
     // Nombre de commandes restant à préparer (pour le badge de la sidebar)
     public async Task<int> CompterCommandesAPreparer(int p_fournisseurId)
     {
@@ -914,9 +927,21 @@ public class S_Code
         return (true, "Commande marquée comme prête.");
     }
 
+    // Le dirigeant voit les commandes prêtes de toute son entreprise ; tout autre
+    // utilisateur ne voit QUE celles qui lui sont destinées — un Responsable n'a pas
+    // à suivre les retraits de ses collègues.
     public async Task<List<DTO_NotificationDirigeant>> ObtenirNotificationsDirigeant(int p_dirigeantId)
     {
-        var _codes = await _daoCode.ObtenirNotificationsPourDirigeant(p_dirigeantId);
+        List<E_Code> _codes;
+        var _entreprise = await _daoEntreprise.ObtenirParDirigeantId(p_dirigeantId);
+        if (_entreprise != null)
+        {
+            _codes = await _daoCode.ObtenirNotificationsPourDirigeant(p_dirigeantId);
+        }
+        else
+        {
+            _codes = await _daoCode.ObtenirNotificationsPourCollaborateur(p_dirigeantId);
+        }
 
         return _codes.Select(c => new DTO_NotificationDirigeant
         {

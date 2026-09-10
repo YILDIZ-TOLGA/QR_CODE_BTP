@@ -110,12 +110,23 @@ public class C_Code : ControllerBase
         return Ok(new { message = _message });
     }
 
+    // Ouvert au destinataire : c'est lui qui va retirer la marchandise.
+    // Le service borne ce que chacun voit (entreprise entière pour le dirigeant,
+    // ses seules commandes sinon).
     [HttpGet("notifications-dirigeant")]
-    [Authorize(Roles = "Dirigeant")]
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
     public async Task<IActionResult> ObtenirNotificationsDirigeant()
     {
         var _liste = await _sCode.ObtenirNotificationsDirigeant(ObtenirUtilisateurId());
         return Ok(_liste);
+    }
+
+    [HttpGet("nb-notifications")]
+    [Authorize(Roles = "Dirigeant,Collaborateur")]
+    public async Task<IActionResult> CompterNotifications()
+    {
+        var _nombre = await _sCode.CompterNotifications(ObtenirUtilisateurId());
+        return Ok(new { count = _nombre });
     }
 
     [HttpPost("revoquer/{p_id}")]

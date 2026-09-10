@@ -126,6 +126,24 @@ public class S_Code
     }
 
     // Compteur pour le badge « À préparer » de la sidebar
+    public async Task<int> CompterNotifications()
+    {
+        try
+        {
+            var _reponse = await _http.GetAsync("api/codes/nb-notifications");
+            if (!_reponse.IsSuccessStatusCode)
+                return 0;
+            var _obj = await _reponse.Content.ReadFromJsonAsync<CompteurReponse>();
+            if (_obj == null)
+                return 0;
+            return _obj.Count;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     public async Task<int> CompterCommandesAPreparer()
     {
         try

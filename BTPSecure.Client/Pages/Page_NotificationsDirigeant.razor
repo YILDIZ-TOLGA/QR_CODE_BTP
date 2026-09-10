@@ -1,5 +1,5 @@
 @page "/dirigeant/notifications"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Dirigeant,Collaborateur")]
 @inject Services.S_Code SCode
 @inject DialogService Dialog
 
@@ -30,7 +30,7 @@ else if (_notifications.Count == 0)
                 Aucune notification
             </RadzenText>
             <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color); text-align: center;">
-                Quand un fournisseur marquera une commande comme prête, elle apparaîtra ici.
+                Quand un fournisseur marquera une commande vous concernant comme prête, elle apparaîtra ici.
             </RadzenText>
         </RadzenStack>
     </RadzenCard>
