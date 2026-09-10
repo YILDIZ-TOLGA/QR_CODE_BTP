@@ -23,6 +23,10 @@ public class E_Utilisateur
     public bool EstActif { get; set; } = true;
     public bool EstValide { get; set; } = true;
     public bool EmailVerifie { get; set; }
+    // Session en cours : régénérée à CHAQUE connexion. Un jeton qui ne porte pas
+    // cette valeur n'est plus la session active → une seule personne à la fois.
+    // Vide = aucune connexion depuis la mise en service (aucun contrôle appliqué).
+    public string? SessionId { get; set; }
     public string? TokenVerification { get; set; }
     public DateTime? TokenVerificationExpiration { get; set; }
 }

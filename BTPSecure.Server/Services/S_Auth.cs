@@ -16,9 +16,10 @@ public class S_Auth
     private readonly ILogger<S_Auth> _logger;
     private readonly BTPSecure.Server.Data.AppDbContext _context;
     private readonly S_Email _sEmail;
+    private readonly S_CacheComptes _cacheComptes;
 
     public S_Auth(DAO_Utilisateur p_daoUtilisateur, DAO_Entreprise p_daoEntreprise, IConfiguration p_config, ILogger<S_Auth> p_logger,
-        BTPSecure.Server.Data.AppDbContext p_context, S_Email p_sEmail)
+        BTPSecure.Server.Data.AppDbContext p_context, S_Email p_sEmail, S_CacheComptes p_cacheComptes)
     {
         _daoUtilisateur = p_daoUtilisateur;
         _daoEntreprise = p_daoEntreprise;
@@ -26,6 +27,7 @@ public class S_Auth
         _logger = p_logger;
         _context = p_context;
         _sEmail = p_sEmail;
+        _cacheComptes = p_cacheComptes;
     }
 
     public async Task<(bool Succes, string Message)> DemanderResetMotDePasse(string p_email)
@@ -339,6 +341,14 @@ public class S_Auth
         if (_utilisateur.Role == BTPSecure.Shared.Enums.Enum_Role.Fournisseur && !_utilisateur.EstValide)
             return (false, "Votre compte fournisseur est en attente de validation par un administrateur.", null);
 
+        // Une seule session à la fois : cette connexion remplace la précédente.
+        // Le jeton de l'appareil déjà connecté ne correspondra plus et sera refusé.
+        _utilisateur.SessionId = Guid.NewGuid().ToString("N");
+        await _daoUtilisateur.Sauvegarder();
+        // Sans cette invalidation, l'ancien appareil resterait accepté jusqu'à
+        // l'expiration du cache (5 min).
+        _cacheComptes.Invalider(_utilisateur.Id);
+
         var _token = GenererToken(_utilisateur);
 
         var _reponse = new DTO_ReponseAuth
@@ -365,6 +375,14 @@ public class S_Auth
             new(ClaimTypes.Email, p_utilisateur.Email),
             new(ClaimTypes.Role, p_utilisateur.Role.ToString())
         };
+
+        // Identifie la session : comparé à la valeur en base à chaque requête.
+        // Nom volontairement non standard : « sid » est un claim JWT réservé que le
+        // framework renomme à la lecture, la comparaison échouerait systématiquement.
+        if (!string.IsNullOrEmpty(p_utilisateur.SessionId))
+        {
+            _claims.Add(new Claim("keydo_sid", p_utilisateur.SessionId));
+        }
 
         var _credentials = new SigningCredentials(
             new SymmetricSecurityKey(_cle),

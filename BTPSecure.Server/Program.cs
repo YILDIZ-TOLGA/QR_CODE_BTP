@@ -36,6 +36,19 @@ builder.Configuration["Jwt:Emetteur"] = _emetteur;
 builder.Configuration["Jwt:Audience"] = _audience;
 builder.Configuration["Jwt:DureeHeures"] = _dureeHeures;
 
+// Session unique : un compte ne peut être connecté que sur un appareil à la fois.
+// SESSION_UNIQUE_EXCLUSIONS permet d'exempter des rôles sans toucher au code
+// (ex. « Fournisseur », ou « Fournisseur,Collaborateur »). Absente = tous les rôles.
+var _exclusionsSessionUnique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+var _exclusionsBrutes = Environment.GetEnvironmentVariable("SESSION_UNIQUE_EXCLUSIONS");
+if (!string.IsNullOrWhiteSpace(_exclusionsBrutes))
+{
+    foreach (var _role in _exclusionsBrutes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    {
+        _exclusionsSessionUnique.Add(_role);
+    }
+}
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -75,28 +88,68 @@ builder.Services.AddAuthentication(options =>
             }
 
             // Cache mémoire : évite une lecture en base à chaque requête.
-            // Un blocage invalide l'entrée, l'effet reste donc immédiat.
+            // Un blocage ou une nouvelle connexion invalide l'entrée : effet immédiat.
             var _cache = context.HttpContext.RequestServices.GetRequiredService<S_CacheComptes>();
 
             bool _estActif;
-            if (!_cache.TryObtenir(_id, out _estActif))
+            string _sessionEnCours;
+            if (!_cache.TryObtenir(_id, out _estActif, out _sessionEnCours))
             {
-                // Projection sur le seul booléen : lecture par clé primaire, très légère
+                // Projection sur les seuls champs utiles : lecture par clé primaire, très légère
                 var _db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-                var _valeur = await _db.Utilisateurs
+                var _compte = await _db.Utilisateurs
                     .Where(u => u.Id == _id)
-                    .Select(u => (bool?)u.EstActif)
+                    .Select(u => new { u.EstActif, u.SessionId })
                     .FirstOrDefaultAsync();
 
                 // Compte supprimé (null) = pas d'accès
-                _estActif = _valeur == true;
-                _cache.Definir(_id, _estActif);
+                _estActif = _compte != null && _compte.EstActif;
+                _sessionEnCours = string.Empty;
+                if (_compte != null && _compte.SessionId != null)
+                {
+                    _sessionEnCours = _compte.SessionId;
+                }
+                _cache.Definir(_id, _estActif, _sessionEnCours);
             }
 
             if (!_estActif)
             {
                 context.Fail("Compte bloqué ou supprimé.");
+                return;
             }
+
+            // Session unique : le jeton doit porter la session en cours.
+            // Session vide = aucune connexion depuis la mise en service → on laisse passer,
+            // sinon tout le monde serait déconnecté au déploiement.
+            if (_sessionEnCours.Length == 0)
+            {
+                return;
+            }
+
+            var _claimRole = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role);
+            if (_claimRole != null && _exclusionsSessionUnique.Contains(_claimRole.Value))
+            {
+                return;
+            }
+
+            var _claimSession = context.Principal?.FindFirst("keydo_sid");
+            if (_claimSession == null || _claimSession.Value != _sessionEnCours)
+            {
+                // Signalé à OnChallenge pour que le navigateur affiche la bonne explication
+                context.HttpContext.Items["SessionRemplacee"] = true;
+                context.Fail("Session remplacée par une connexion plus récente.");
+            }
+        },
+        OnChallenge = context =>
+        {
+            // Permet au navigateur d'afficher « compte utilisé ailleurs » plutôt qu'un
+            // message générique. Ajouté seulement dans ce cas précis.
+            object? _motif;
+            if (context.HttpContext.Items.TryGetValue("SessionRemplacee", out _motif) && _motif is bool _vrai && _vrai)
+            {
+                context.Response.Headers["X-Session-Remplacee"] = "1";
+            }
+            return Task.CompletedTask;
         }
     };
 });

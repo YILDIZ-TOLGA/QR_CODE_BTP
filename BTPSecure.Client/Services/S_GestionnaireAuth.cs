@@ -24,8 +24,17 @@ public class S_GestionnaireAuth : DelegatingHandler
         if (_reponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             await _js.InvokeVoidAsync("localStorage.removeItem", "token");
+
+            // Le serveur signale le cas « compte repris sur un autre appareil » :
+            // sans cette distinction l'utilisateur croirait à un bug.
+            var _url = "/connexion";
+            if (_reponse.Headers.Contains("X-Session-Remplacee"))
+            {
+                _url = "/connexion?remplace=1";
+            }
+
             // Rechargement complet : l'état d'authentification repart de zéro
-            _navigation.NavigateTo("/connexion", true);
+            _navigation.NavigateTo(_url, true);
         }
 
         return _reponse;

@@ -18,6 +18,15 @@
                     Accédez à votre espace KEYDO
                 </RadzenText>
 
+                @if (_sessionRemplacee)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true" Variant="Variant.Flat"
+                                 AllowClose="false" Style="width: 100%; margin: 0;">
+                        Votre session a été fermée : ce compte vient d'être utilisé sur un autre appareil.
+                        Un seul appareil peut être connecté à la fois.
+                    </RadzenAlert>
+                }
+
                 @if (_deconnexionInactivite)
                 {
                     <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat"
@@ -102,6 +111,7 @@
     private bool _envoiEnCours;
     private bool _voirMotDePasse;
     private bool _deconnexionInactivite;
+    private bool _sessionRemplacee;
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,6 +120,10 @@
         if (_uri.Query.Contains("inactif=1"))
         {
             _deconnexionInactivite = true;
+        }
+        if (_uri.Query.Contains("remplace=1"))
+        {
+            _sessionRemplacee = true;
         }
 
         var _etat = await AuthState.GetAuthenticationStateAsync();
