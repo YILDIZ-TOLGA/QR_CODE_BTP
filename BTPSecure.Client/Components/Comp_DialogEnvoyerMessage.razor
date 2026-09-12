@@ -61,19 +61,11 @@
     {
         _destinataireResolu = DestinataireId;
 
-        // Pas d'identifiant fourni : on cherche un compte correspondant à l'email dans l'annuaire
+        // Pas d'identifiant fourni : le serveur indique si cette adresse correspond
+        // à un compte que l'on a le droit de contacter (l'annuaire ne diffuse plus d'emails)
         if (!_destinataireResolu.HasValue && !string.IsNullOrEmpty(EmailDestinataire))
         {
-            var _email = EmailDestinataire.Trim().ToLower();
-            var _annuaire = await STicket.ObtenirAnnuaire();
-            foreach (var _contact in _annuaire)
-            {
-                if (_contact.Email.ToLower() == _email)
-                {
-                    _destinataireResolu = _contact.UtilisateurId;
-                    break;
-                }
-            }
+            _destinataireResolu = await STicket.ResoudreDestinataire(EmailDestinataire.Trim().ToLower());
         }
 
         _estInterne = _destinataireResolu.HasValue;

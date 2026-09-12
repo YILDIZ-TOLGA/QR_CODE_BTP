@@ -12,6 +12,27 @@ public class S_Ticket
         _http = p_http;
     }
 
+    // Resolution cote serveur : le navigateur ne recoit plus l'email de tout l'annuaire
+    public async Task<int?> ResoudreDestinataire(string p_email)
+    {
+        try
+        {
+            var _dto = new DTO_ResoudreDestinataire();
+            _dto.Email = p_email;
+            var _reponse = await _http.PostAsJsonAsync("api/tickets/resoudre-destinataire", _dto);
+            if (!_reponse.IsSuccessStatusCode)
+                return null;
+            var _resultat = await _reponse.Content.ReadFromJsonAsync<DTO_DestinataireResolu>();
+            if (_resultat == null)
+                return null;
+            return _resultat.UtilisateurId;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public async Task<List<DTO_ContactAnnuaire>> ObtenirAnnuaire()
     {
         try

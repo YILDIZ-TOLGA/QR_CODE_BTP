@@ -12,6 +12,21 @@
     <Comp_AutoRefresh OnRefresh="RafraichirUi" />
 </RadzenStack>
 
+@* Transparence RGPD : l'utilisateur doit savoir qui peut lire ses messages
+   et combien de temps ils sont conservés, sans avoir à le demander. *@
+<RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat"
+             AllowClose="true" Style="margin-bottom: 1.25rem;">
+    <RadzenStack Gap="0.25rem">
+        <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+            Vos messages et leurs pièces jointes sont supprimés automatiquement au bout de 24 heures.
+        </RadzenText>
+        <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0;">
+            Seuls vous et votre correspondant pouvez les lire. Vous pouvez échanger avec les membres
+            de votre entreprise et, selon votre rôle, avec vos fournisseurs.
+        </RadzenText>
+    </RadzenStack>
+</RadzenAlert>
+
 @if (_chargement)
 {
     <RadzenRow JustifyContent="JustifyContent.Center" Style="margin-top: 4rem;">

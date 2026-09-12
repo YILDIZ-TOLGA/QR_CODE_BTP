@@ -30,6 +30,15 @@ public class C_Ticket : ControllerBase
         return Ok(_liste);
     }
 
+    // POST et non GET : une adresse email n'a pas a se retrouver dans une URL,
+    // donc dans les journaux du serveur.
+    [HttpPost("resoudre-destinataire")]
+    public async Task<IActionResult> ResoudreDestinataire([FromBody] BTPSecure.Shared.DTOs.DTO_ResoudreDestinataire p_dto)
+    {
+        var _id = await _service.ResoudreDestinataire(ObtenirUtilisateurId(), p_dto.Email);
+        return Ok(new BTPSecure.Shared.DTOs.DTO_DestinataireResolu { UtilisateurId = _id });
+    }
+
     [HttpPost("envoyer")]
     public async Task<IActionResult> Envoyer([FromBody] DTO_EnvoyerTicket p_dto)
     {

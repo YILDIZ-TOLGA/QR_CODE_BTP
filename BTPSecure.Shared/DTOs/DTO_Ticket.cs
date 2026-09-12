@@ -42,8 +42,19 @@ public class DTO_ContactAnnuaire
     public int UtilisateurId { get; set; }
     public string Nom { get; set; } = string.Empty;
     public string Prenom { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
     public string Relation { get; set; } = string.Empty;
+}
+
+// Minimisation RGPD : plutot que de diffuser l'email de tout l'annuaire au navigateur,
+// on resout une seule adresse, deja connue de l'appelant.
+public class DTO_ResoudreDestinataire
+{
+    public string Email { get; set; } = string.Empty;
+}
+
+public class DTO_DestinataireResolu
+{
+    public int? UtilisateurId { get; set; }
 }
 
 // Résumé d'une conversation (fil d'échanges avec un autre utilisateur)
