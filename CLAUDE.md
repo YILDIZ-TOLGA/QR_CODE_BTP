@@ -162,6 +162,8 @@ git push   # Railway redéploie auto via webhook GitHub
 - **Limite de sous-comptes fournisseur** : `E_Utilisateur.LimiteSousComptes` (**défaut 3**), réglable par l'admin. Seuls les sous-comptes **actifs** comptent → désactiver libère une place. Vérifiée à la création **et à la réactivation** (sinon on contournerait en désactivant/réactivant). Badge « X / Y » + alerte « Nombre de sous-comptes atteint » sur la page fournisseur.
 - **Inscription fournisseur** : **nom de l'entreprise obligatoire**, nom/prénom **optionnels** (à défaut, le compte porte le nom de la société ; les emails saluent avec ce nom pour éviter « Bonjour , »). Les sous-comptes **héritent** de la société du principal.
 - **Entreprise du dirigeant créée dès l'inscription** : le champ « Nom de l'entreprise » est demandé au formulaire, l'`E_Entreprise` est créée dans la foulée. L'écran « Créer votre entreprise » du tableau de bord ne subsiste qu'en **filet de sécurité** pour d'anciens comptes. La société d'un dirigeant vit **uniquement** dans `E_Entreprise` (`E_Utilisateur.NomSociete` reste réservé aux fournisseurs — pas de duplication).
+- **Mémos / « Prêt de matériel »** (`E_Memo`, `S_Memo`, `C_Memo`, `Page_Memo`, `Comp_DialogMemo`) : pense-bête **strictement personnel**, ouvert à **tout compte connecté** (`[Authorize]` sans rôle). Chaque lecture, enregistrement et suppression est borné à `UtilisateurId` **côté serveur** — personne ne voit les notes d'un autre, pas même le dirigeant ou l'admin. ⚠️ **Contrairement aux tickets, un mémo n'expire pas** : pas de TTL 24 h, `S_NettoyageTickets` ne le touche pas. Bornes de saisie : titre 200 caractères, contenu 10 000. Recherche client sur titre + contenu.
+- **Historique des validations côté fournisseur** (`Page_HistoriqueValidations`, `/fournisseur/historique`, `[Authorize(Roles="Fournisseur")]`) : ce qu'a validé le compte principal **et ses sous-comptes**. ⚠️ À ne pas confondre avec `Page_GestionCodesPermanents` (côté **dirigeant**, via `C_HistoriqueCode`) : deux publics, deux endpoints, deux bornages distincts.
 - **Sidebar conditionnelle** : cachée si non connecté ; menu burger caché aussi
 - **Highlight exact** des items menu : `Match="NavLinkMatch.All"`
 - **Loader index.html** stylisé : monogramme « K » dans un carré glassmorphism + mot-symbole KEYDO, dégradé turquoise. ⚠️ Écrit en dur dans `index.html` car il s'affiche **avant** le démarrage de Blazor : `Comp_Logo` n'y est pas utilisable.
@@ -190,10 +192,12 @@ git push   # Railway redéploie auto via webhook GitHub
 | `Comp_ListeCommandes` | Liste des commandes fournisseur (à préparer / prêtes) |
 | `Comp_Conversation` | Fil de discussion en bulles + réponse |
 | `Comp_RechercheSiret` | Bouton « Retrouver l'entreprise depuis le SIRET », `OnTrouve` laisse le parent choisir les champs à remplir |
-| `Comp_Logo` *(cf. charte)* | Logo KEYDO, deux formes |
 | `Comp_ResultatValidation` | Détail d'une validation (collaborateur, matériaux, PDF), partagé accueil fournisseur + pop-up |
 | `Comp_DialogLimiteResponsables` | Réglage admin du plafond Responsable + Responsable Admin |
 | `Comp_DialogLimiteSousComptes` | Réglage admin de la limite de sous-comptes d'un fournisseur |
+| `Comp_Inactivite` | Déconnexion auto après 10 min d'inactivité (Dirigeant / Responsable / RA) |
+| `Comp_PieceJointe` | Affichage + téléchargement d'une pièce jointe de message |
+| `Comp_DialogMemo` | Création / édition d'un mémo personnel |
 
 ## Pattern services client (HTTP)
 ```csharp
@@ -205,6 +209,14 @@ if (!_reponse.IsSuccessStatusCode)
     return (false, _msg);
 }
 ```
+
+## Points de sauvegarde git
+`git tag -l` — tags existants, du plus ancien au plus récent :
+`checkpoint-avant-chat`, `checkpoint-avant-charte-keiro`, `checkpoint-phase-test-keydo`, `checkpoint-beta-v2`, `checkpoint-avant-historique`.
+Revenir à l'un d'eux : `git reset --hard <tag>` (⚠️ efface les modifications non commitées).
+
+## ⚠️ Limite de vérification locale
+**Aucun PostgreSQL sur la machine de dev** (ni Docker, ni `psql`, ni service installé — vérifié). On peut donc valider en local : la compilation, le `publish`, le démarrage du serveur (l'injection de dépendances, les erreurs Npgsql au boot étant normales), les 401 sur les endpoints protégés et le contenu du WASM publié. **Tout ce qui touche la base se valide en prod.** Fonctionnalités livrées dont le parcours complet n'a jamais tourné en local : session unique (2 appareils), historique des codes permanents, notification « commande prête » au destinataire, annuaire de messagerie élargi.
 
 ## Commandes utiles
 ```bash

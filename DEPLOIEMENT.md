@@ -10,22 +10,49 @@
 
 ## 2. Deploiement en 5 minutes
 
-### Etape 1 : Pousser le code sur GitHub
+### Etape 1 : Publier PUIS pousser sur GitHub
+
+> ⚠️ **Le plus important de cette page.** Le `Dockerfile` fait `COPY publish/ .` : il **ne compile rien**, il copie le dossier `publish/` tel qu'il est dans le repo. Pousser du code source sans republier deploie donc **l'ancienne version** — le build Railway reussit, le site ne change pas, et on cherche le probleme du mauvais cote.
 
 ```bash
-cd BTPSecure
-git init
-git add .
-git commit -m "Initial commit - BTPSecure"
-git remote add origin https://github.com/TON_USER/btpsecure.git
-git push -u origin main
+cd /c/Users/y1903/Desktop/BTPSecure
+
+# 1) Compiler l'artefact qui sera reellement deploye
+dotnet publish BTPSecure.Server/BTPSecure.Server.csproj -c Release -o publish
+
+# 2) Verifier le fingerprint Blazor (piege recurrent, voir plus bas)
+ls publish/wwwroot/_framework/ | grep '^blazor.webassembly\.[a-z0-9]*\.js$'
+grep -o 'blazor.webassembly[^"]*' publish/wwwroot/index.html
+
+# 3) Commiter les sources ET publish/
+git add <fichiers source> publish/
+git commit -m "Description du changement"
+git push        # Railway redeploie automatiquement via le webhook GitHub
 ```
+
+Le repo est deja initialise : `github.com/YILDIZ-TOLGA/QR_CODE_BTP`, branche `main`.
+
+#### Le fingerprint Blazor (a verifier a chaque publish touchant `index.html`)
+
+Blazor ecrit dans `index.html` un nom de fichier horodate, par exemple `blazor.webassembly.66stpp682q.js`. Il arrive que le publish laisse le **placeholder** non resolu :
+
+```
+blazor.webassembly#[.{fingerprint}].js
+```
+
+Dans ce cas le navigateur demande un fichier inexistant et **l'application reste bloquee sur le loader**. Correctif :
+
+```bash
+sed -i 's|blazor.webassembly#\[\.{fingerprint}\]\.js|blazor.webassembly.LE_VRAI_HASH.js|g' publish/wwwroot/index.html
+```
+
+Les deux commandes de l'etape 2 ci-dessus doivent afficher **le meme nom de fichier**.
 
 ### Etape 2 : Creer le projet sur Railway
 
 1. Va sur **railway.com** > **New Project**
 2. Clique sur **Deploy from GitHub repo**
-3. Selectionne ton repo `btpsecure`
+3. Selectionne le repo `QR_CODE_BTP`
 4. Railway detecte automatiquement le `Dockerfile` et lance le build
 
 ### Etape 3 : Ajouter PostgreSQL
@@ -50,6 +77,7 @@ Dans ton service Railway, va dans l'onglet **Variables** et ajoute :
 | `SITE_URL` | `https://www.keydopro.com` (liens dans les emails) |
 | `ADMIN_EMAIL` | `admin_acc@keydopro.com` (login du compte admin auto-cree) |
 | `ADMIN_PASSWORD` | Mot de passe du compte admin (**obligatoire** ; sans lui, aucun admin n'est cree) |
+| `SESSION_UNIQUE_EXCLUSIONS` | *(facultative)* Roles exemptes de la session unique, separes par des virgules (ex. `Fournisseur`). **Absente = tous les roles concernes.** |
 
 > `DATABASE_URL` et `PORT` sont injectes automatiquement par Railway.
 > ⚠️ `ADMIN_PASSWORD` ne doit **jamais** etre en dur dans le code (le seed le lit depuis l'env).
@@ -72,7 +100,8 @@ Dans ton service Railway, va dans l'onglet **Variables** et ajoute :
 
 - Les migrations s'executent automatiquement au demarrage
 - Le Dockerfile installe les dependances pour la generation PDF (QuestPDF)
-- Railway rebuild automatiquement a chaque `git push` sur `main`
+- Railway reconstruit l'image a chaque `git push` sur `main`… **mais ne compile pas le .NET** : il copie le `publish/` du repo (voir Etape 1)
+- « Redeploy » dans Railway **ne redeploie pas le dernier commit**. Si le webhook a ete rate : `git commit --allow-empty -m "trigger redeploy" && git push`
 
 ## 4. Verifier les logs
 
@@ -109,15 +138,30 @@ L'app envoie un email pour : creation de compte, invitation de collaborateur, co
 | `SITE_URL` | Manuelle | URL publique du site (`https://www.keydopro.com`, liens dans les emails) |
 | `ADMIN_EMAIL` | Manuelle | Login du compte admin seede au demarrage |
 | `ADMIN_PASSWORD` | Manuelle | Mot de passe du compte admin (sans lui, aucun admin cree) |
+| `SESSION_UNIQUE_EXCLUSIONS` | Manuelle, facultative | Roles exemptes de la session unique. Lue **au demarrage** : la changer exige un redemarrage du service. |
 
-## 6. Developpement local
+## 6. Tester en local avant de pousser
 
-Pour tester en local, utilise `appsettings.json` avec une base PostgreSQL locale :
+⚠️ **Il n'y a pas de PostgreSQL sur la machine de dev** (ni Docker, ni `psql`, ni service installe). Tout ce qui touche la base se valide donc **en prod**. Ce qu'on peut verifier en local reste utile : la compilation, le demarrage, l'injection de dependances, les 401 sur les endpoints proteges et le contenu du WASM publie.
+
+Le plus fiable est de lancer **l'artefact reellement deploye** (donc trimme, comme en prod) plutot que `dotnet run` :
 
 ```bash
-# Installer PostgreSQL localement, puis :
-dotnet ef database update --project BTPSecure.Server
-dotnet run --project BTPSecure.Server
+cd /c/Users/y1903/Desktop/BTPSecure/publish
+ASPNETCORE_ENVIRONMENT=Production dotnet BTPSecure.Server.dll --urls http://localhost:5199
 ```
 
-L'app est accessible sur `http://localhost:5137`.
+Les erreurs Npgsql au demarrage sont **normales** (aucune base joignable) : l'app sert quand meme le WASM et les endpoints qui n'ont pas besoin de la base.
+
+Puis **arreter le serveur avant tout nouveau publish**, sinon la DLL reste verrouillee et le publish echoue en `MSB3027` :
+
+```powershell
+Get-NetTCPConnection -LocalPort 5199 -State Listen | Select-Object -First 1 -ExpandProperty OwningProcess | Stop-Process -Force
+```
+
+Avec une base PostgreSQL disponible, le parcours classique reste :
+
+```bash
+dotnet ef database update --project BTPSecure.Server
+dotnet run --project BTPSecure.Server   # http://localhost:5137
+```
