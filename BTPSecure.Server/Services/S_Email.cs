@@ -38,13 +38,13 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Votre compte a été créé</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
-        <h2 style=""color: #00C9B7; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
+        <h2 style=""color: #00D6FF; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
         <p>L'entreprise <strong>{p_nomEntrepriseDirigeant}</strong> vient de vous créer un compte collaborateur sur KEYDO.</p>
 
@@ -56,14 +56,14 @@ public class S_Email
         </div>
 
         <p style=""text-align: center; margin: 32px 0;"">
-            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #00C9B7; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #00D6FF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
                 Se connecter
             </a>
         </p>
 
         <div style=""background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px 16px; border-radius: 4px; margin: 16px 0;"">
             <p style=""margin: 0; color: #856404;"">
-                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion en allant dans <a href=""{_lienProfil}"" style=""color: #00C9B7;"">Mon profil</a>, section « Changer mon mot de passe ».
+                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion en allant dans <a href=""{_lienProfil}"" style=""color: #00D6FF;"">Mon profil</a>, section « Changer mon mot de passe ».
             </p>
         </div>
 
@@ -135,20 +135,20 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Invitation à rejoindre une entreprise</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
-        <h2 style=""color: #00C9B7; margin-top: 0;"">Bonjour {p_prenom},</h2>
+        <h2 style=""color: #00D6FF; margin-top: 0;"">Bonjour {p_prenom},</h2>
 
         <p>L'entreprise <strong>{p_nomEntreprise}</strong> vous invite à la rejoindre sur KEYDO.</p>
 
         <p>Connectez-vous avec votre compte habituel : l'invitation vous attend dans votre espace, vous pourrez l'<strong>accepter ou la refuser</strong>.</p>
 
         <p style=""text-align: center; margin: 32px 0;"">
-            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #00C9B7; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #00D6FF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
                 Voir l'invitation
             </a>
         </p>
@@ -223,13 +223,13 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Votre accès fournisseur</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
-        <h2 style=""color: #00C9B7; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
+        <h2 style=""color: #00D6FF; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
         <p><strong>{p_nomPrincipal}</strong> vient de vous créer un accès pour valider des codes sur KEYDO.</p>
 
@@ -239,14 +239,14 @@ public class S_Email
         </div>
 
         <p style=""text-align: center; margin: 32px 0;"">
-            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #00C9B7; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+            <a href=""{_lienConnexion}"" style=""display: inline-block; background: #00D6FF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
                 Se connecter
             </a>
         </p>
 
         <div style=""background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px 16px; border-radius: 4px; margin: 16px 0;"">
             <p style=""margin: 0; color: #856404;"">
-                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion via <a href=""{_lienProfil}"" style=""color: #00C9B7;"">Mon profil</a>.
+                <strong>⚠️ Important :</strong> Changez votre mot de passe dès votre première connexion via <a href=""{_lienProfil}"" style=""color: #00D6FF;"">Mon profil</a>.
             </p>
         </div>
 
@@ -309,7 +309,7 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Code de retrait</p>
     </div>
@@ -322,7 +322,7 @@ public class S_Email
         <p style=""margin: 0.25rem 0;""><strong>Numéro de commande :</strong> {p_numeroCommande}</p>
 
         <div style=""text-align: center; margin: 28px 0;"">
-            <div style=""display: inline-block; background: #00C9B7; color: white; padding: 16px 32px; border-radius: 8px; font-family: monospace; font-size: 1.8rem; letter-spacing: 4px; font-weight: 700;"">
+            <div style=""display: inline-block; background: #00D6FF; color: white; padding: 16px 32px; border-radius: 8px; font-family: monospace; font-size: 1.8rem; letter-spacing: 4px; font-weight: 700;"">
                 {p_valeurCode}
             </div>
         </div>
@@ -398,20 +398,20 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Vérification de votre email</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
-        <h2 style=""color: #00C9B7; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
+        <h2 style=""color: #00D6FF; margin-top: 0;"">Bienvenue {p_prenom} !</h2>
 
         <p>Merci de vous être inscrit sur KEYDO.</p>
 
         <p>Pour activer votre compte et vous connecter, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :</p>
 
         <p style=""text-align: center; margin: 32px 0;"">
-            <a href=""{_lien}"" style=""display: inline-block; background: #00C9B7; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+            <a href=""{_lien}"" style=""display: inline-block; background: #00D6FF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
                 Vérifier mon email
             </a>
         </p>
@@ -496,20 +496,20 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Réinitialisation de mot de passe</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
-        <h2 style=""color: #00C9B7; margin-top: 0;"">Bonjour {p_prenom},</h2>
+        <h2 style=""color: #00D6FF; margin-top: 0;"">Bonjour {p_prenom},</h2>
 
         <p>Vous avez demandé la réinitialisation du mot de passe de votre compte KEYDO.</p>
 
         <p>Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
 
         <p style=""text-align: center; margin: 32px 0;"">
-            <a href=""{_lien}"" style=""display: inline-block; background: #00C9B7; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+            <a href=""{_lien}"" style=""display: inline-block; background: #00D6FF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
                 Réinitialiser mon mot de passe
             </a>
         </p>
@@ -597,7 +597,7 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Nouveau message</p>
     </div>
@@ -709,13 +709,13 @@ public class S_Email
 <html>
 <head><meta charset=""utf-8""></head>
 <body style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;"">
-    <div style=""background: #00C9B7; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
+    <div style=""background: #00D6FF; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;"">
         <h1 style=""margin: 0; font-size: 24px;"">🛡️ KEYDO</h1>
         <p style=""margin: 8px 0 0 0; opacity: 0.9;"">Sécurisation des achats BTP</p>
     </div>
 
     <div style=""background: #fff; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;"">
-        <h2 style=""color: #00C9B7; margin-top: 0;"">Une commande a été faite pour votre entreprise</h2>
+        <h2 style=""color: #00D6FF; margin-top: 0;"">Une commande a été faite pour votre entreprise</h2>
 
         <p>Bonjour,</p>
 
@@ -731,7 +731,7 @@ public class S_Email
         </div>
 
         <p style=""margin-top: 24px;"">
-            <a href=""{_siteUrl}"" style=""display: inline-block; background: #00C9B7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
+            <a href=""{_siteUrl}"" style=""display: inline-block; background: #00D6FF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;"">
                 Accéder à KEYDO
             </a>
         </p>

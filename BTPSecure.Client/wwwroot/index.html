@@ -13,12 +13,20 @@
     <script type="importmap"></script>
     <style>
         :root {
-            /* Charte KEYDO — turquoise de reference #00C9B7 */
-            --rz-primary: #00C9B7;
-            --rz-primary-light: #33D6C7;
-            --rz-primary-lighter: #66E2D6;
-            --rz-primary-dark: #00A99A;
-            --rz-primary-darker: #008577;
+            /* Charte KEYDO — cyan de reference #00D6FF */
+            --rz-primary: #00D6FF;
+            --rz-primary-light: #33DEFF;
+            --rz-primary-lighter: #66E6FF;
+            --rz-primary-dark: #00B4D6;
+            --rz-primary-darker: #008CA7;
+
+            /* Le bleu "Info" du theme Radzen (#2196F3) jurait avec la charte :
+               on l'aligne sur la couleur primaire. Consequence assumee : un badge
+               Info n'est plus visuellement distinct d'un element primaire. */
+            --rz-info: #00D6FF;
+            --rz-info-light: #33DEFF;
+            --rz-info-dark: #00B4D6;
+            --rz-info-darker: #008CA7;
 
             /* Fond des pages : gris souris ; cartes/panneaux : blanc (contraste) */
             --rz-layout-background-color: #AEB4B9;
@@ -43,7 +51,7 @@
             align-items: center;
             justify-content: center;
             gap: 1.5rem;
-            background: linear-gradient(135deg, #008577 0%, #00C9B7 50%, #33D6C7 100%);
+            background: linear-gradient(135deg, #008CA7 0%, #00D6FF 50%, #33DEFF 100%);
             color: #fff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }

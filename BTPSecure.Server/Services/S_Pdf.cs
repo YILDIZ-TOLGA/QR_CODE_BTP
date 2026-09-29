@@ -9,7 +9,7 @@ public class S_Pdf
 {
     // Logo officiel KEYDO (mot-symbole). fill explicite : currentColor n'existe pas dans un PDF.
     private const string _logoKeydo = """
-<svg viewBox="322.09 362.01 650.16 96.51" xmlns="http://www.w3.org/2000/svg" fill="#00C9B7" fill-rule="evenodd">
+<svg viewBox="322.09 362.01 650.16 96.51" xmlns="http://www.w3.org/2000/svg" fill="#00D6FF" fill-rule="evenodd">
 <path d="M322.091302,458.501414 L322.091302,362.262806 L351.171577,362.325152 L351.171577,402.586954 L396.820066,362.236044 L435.264676,362.236044 L381.729481,408.760145 L439.237181,458.227564 L397.794518,458.227564 L351.356369,418.325748 L351.356369,458.520145 Z"/>
 <path d="M448.272721,458.351546 L448.272721,362.260321 L553.406725,362.260321 L553.406725,385.444912 L478.318632,385.444912 L478.318632,401.432090 L547.423793,401.432090 L547.423793,420.457502 L478.331166,420.457502 L478.331166,436.496380 L558.459171,436.496380 L558.424549,458.351546 Z"/>
 <path d="M563.394995,362.247835 L602.415323,362.247835 L633.733670,393.731772 L664.488747,362.362528 L702.785907,362.362528 L647.379518,418.051182 L647.379518,458.406426 L619.294186,458.406426 L619.294186,419.413596 Z"/>
@@ -34,7 +34,7 @@ public class S_Pdf
                 {
                     col.Item().Width(150).Svg(_logoKeydo);
                     col.Item().Text("Confirmation de Transaction").FontSize(16).FontColor(Colors.Grey.Darken1);
-                    col.Item().PaddingTop(10).LineHorizontal(1).LineColor("#00C9B7");
+                    col.Item().PaddingTop(10).LineHorizontal(1).LineColor("#00D6FF");
                 });
 
                 page.Content().PaddingVertical(20).Column(col =>
@@ -46,7 +46,7 @@ public class S_Pdf
                     col.Item().PaddingBottom(10).Row(row =>
                     {
                         row.RelativeItem().Text("Code utilisé :").Bold();
-                        row.RelativeItem().Text(p_code.Valeur).FontSize(16).Bold().FontColor("#00C9B7");
+                        row.RelativeItem().Text(p_code.Valeur).FontSize(16).Bold().FontColor("#00D6FF");
                     });
 
                     string _destinataire;
