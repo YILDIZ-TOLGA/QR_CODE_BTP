@@ -6,12 +6,14 @@ namespace BTPSecure.Server.Services;
 public class S_Admin
 {
     private readonly DAO_Admin _daoAdmin;
+    private readonly DAO_Parrainage _daoParrainage;
     private readonly S_CacheComptes _cacheComptes;
     private readonly ILogger<S_Admin> _logger;
 
-    public S_Admin(DAO_Admin p_daoAdmin, S_CacheComptes p_cacheComptes, ILogger<S_Admin> p_logger)
+    public S_Admin(DAO_Admin p_daoAdmin, DAO_Parrainage p_daoParrainage, S_CacheComptes p_cacheComptes, ILogger<S_Admin> p_logger)
     {
         _daoAdmin = p_daoAdmin;
+        _daoParrainage = p_daoParrainage;
         _cacheComptes = p_cacheComptes;
         _logger = p_logger;
     }
@@ -23,7 +25,7 @@ public class S_Admin
 
         foreach (var _e in _entreprises)
         {
-            _result.Add(new DTO_EntrepriseAdmin
+            var _dto = new DTO_EntrepriseAdmin
             {
                 Id = _e.Id,
                 Nom = _e.Nom,
@@ -37,7 +39,27 @@ public class S_Admin
                 NombreCodes = await _daoAdmin.CompterCodes(_e.Id),
                 LimiteResponsables = _e.LimiteResponsables,
                 NombreResponsables = await _daoAdmin.CompterResponsables(_e.Id)
-            });
+            };
+
+            // Parrainage du dirigeant : l'admin doit savoir s'il devra fixer une
+            // commission en autorisant cette entreprise.
+            var _parrainage = await _daoParrainage.ObtenirParFilleul(_e.DirigeantId);
+            if (_parrainage != null)
+            {
+                _dto.EstParrainee = true;
+                _dto.CodeParrainageUtilise = _parrainage.CodeUtilise;
+                _dto.MontantCommission = _parrainage.MontantCommission;
+                if (_parrainage.Statut == BTPSecure.Shared.Enums.Enum_StatutParrainage.Valide)
+                {
+                    _dto.ParrainageDejaValide = true;
+                }
+                if (_parrainage.Apporteur != null)
+                {
+                    _dto.NomApporteur = (_parrainage.Apporteur.Prenom + " " + _parrainage.Apporteur.Nom).Trim();
+                }
+            }
+
+            _result.Add(_dto);
         }
 
         return _result;
@@ -200,18 +222,55 @@ public class S_Admin
         return (true, $"Limite fixée à {p_limite} responsable(s).");
     }
 
-    public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId)
+    // p_montantCommission n'est lu que si l'entreprise est parrainée, que le parrainage
+    // est encore en attente, et que la bascule AUTORISE l'entreprise.
+    // p_adminId sert à tracer qui a fixé le montant.
+    public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId, decimal p_montantCommission, int p_adminId)
     {
         var _entreprise = await _daoAdmin.ObtenirEntrepriseParId(p_entrepriseId);
         if (_entreprise == null)
             return (false, "Entreprise non trouvée.");
 
+        if (p_montantCommission < 0m)
+            return (false, "Le montant de la commission ne peut pas être négatif.");
+
         _entreprise.EstAutorisee = !_entreprise.EstAutorisee;
         await _daoAdmin.Sauvegarder();
 
-        var _statut = _entreprise.EstAutorisee ? "autorisée" : "bloquée";
+        string _statut;
+        if (_entreprise.EstAutorisee)
+        {
+            _statut = "autorisée";
+        }
+        else
+        {
+            _statut = "bloquée";
+        }
         _logger.LogInformation("Entreprise {Nom} (ID:{Id}) {Statut} par l'admin.", _entreprise.Nom, _entreprise.Id, _statut);
 
-        return (true, $"Entreprise {_entreprise.Nom} {_statut}.");
+        var _message = $"Entreprise {_entreprise.Nom} {_statut}.";
+
+        // ⚠️ La commission se fixe UNE SEULE FOIS, à la première autorisation. L'autorisation
+        // étant une bascule, bloquer puis réautoriser ne doit pas repayer l'apporteur : on ne
+        // touche donc qu'un parrainage encore EnAttente.
+        if (_entreprise.EstAutorisee)
+        {
+            var _parrainage = await _daoParrainage.ObtenirParFilleul(_entreprise.DirigeantId);
+            if (_parrainage != null && _parrainage.Statut == BTPSecure.Shared.Enums.Enum_StatutParrainage.EnAttente)
+            {
+                _parrainage.Statut = BTPSecure.Shared.Enums.Enum_StatutParrainage.Valide;
+                _parrainage.MontantCommission = p_montantCommission;
+                _parrainage.DateValidation = DateTime.UtcNow;
+                _parrainage.ValidateurId = p_adminId;
+                await _daoParrainage.Sauvegarder();
+
+                _logger.LogInformation("Parrainage {Id} valide : commission {Montant} EUR pour l'apporteur {Apporteur}",
+                    _parrainage.Id, p_montantCommission, _parrainage.ApporteurId);
+
+                _message = _message + $" Commission de {p_montantCommission:0.##} € attribuée à l'apporteur.";
+            }
+        }
+
+        return (true, _message);
     }
 }

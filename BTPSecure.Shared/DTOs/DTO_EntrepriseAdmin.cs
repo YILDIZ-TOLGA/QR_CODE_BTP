@@ -15,4 +15,12 @@ public class DTO_EntrepriseAdmin
     // Plafond commun Responsable + Responsable Admin, et son occupation actuelle
     public int LimiteResponsables { get; set; }
     public int NombreResponsables { get; set; }
+    // Parrainage du dirigeant, pour que l'admin sache s'il doit fixer une commission
+    // au moment ou il autorise l'entreprise.
+    public bool EstParrainee { get; set; }
+    public string? NomApporteur { get; set; }
+    public string? CodeParrainageUtilise { get; set; }
+    // Vrai si la commission a deja ete fixee : on ne la redemande jamais (pas de double paiement)
+    public bool ParrainageDejaValide { get; set; }
+    public decimal MontantCommission { get; set; }
 }

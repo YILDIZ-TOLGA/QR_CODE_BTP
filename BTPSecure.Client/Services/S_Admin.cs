@@ -18,9 +18,13 @@ public class S_Admin
         return _result ?? new List<DTO_EntrepriseAdmin>();
     }
 
-    public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId)
+    // p_montantCommission n'est pris en compte par le serveur que si l'entreprise est
+    // parrainee et que son parrainage est encore en attente.
+    public async Task<(bool Succes, string Message)> BasculerAutorisation(int p_entrepriseId, decimal p_montantCommission)
     {
-        var _reponse = await _http.PostAsJsonAsync($"api/admin/basculer-autorisation/{p_entrepriseId}", new { });
+        var _dto = new DTO_AutoriserEntreprise();
+        _dto.MontantCommission = p_montantCommission;
+        var _reponse = await _http.PostAsJsonAsync($"api/admin/basculer-autorisation/{p_entrepriseId}", _dto);
         if (!_reponse.IsSuccessStatusCode)
         {
             try

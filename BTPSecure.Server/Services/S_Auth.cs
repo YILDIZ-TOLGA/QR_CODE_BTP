@@ -17,9 +17,10 @@ public class S_Auth
     private readonly BTPSecure.Server.Data.AppDbContext _context;
     private readonly S_Email _sEmail;
     private readonly S_CacheComptes _cacheComptes;
+    private readonly S_Apporteur _sApporteur;
 
     public S_Auth(DAO_Utilisateur p_daoUtilisateur, DAO_Entreprise p_daoEntreprise, IConfiguration p_config, ILogger<S_Auth> p_logger,
-        BTPSecure.Server.Data.AppDbContext p_context, S_Email p_sEmail, S_CacheComptes p_cacheComptes)
+        BTPSecure.Server.Data.AppDbContext p_context, S_Email p_sEmail, S_CacheComptes p_cacheComptes, S_Apporteur p_sApporteur)
     {
         _daoUtilisateur = p_daoUtilisateur;
         _daoEntreprise = p_daoEntreprise;
@@ -28,6 +29,7 @@ public class S_Auth
         _context = p_context;
         _sEmail = p_sEmail;
         _cacheComptes = p_cacheComptes;
+        _sApporteur = p_sApporteur;
     }
 
     public async Task<(bool Succes, string Message)> DemanderResetMotDePasse(string p_email)
@@ -141,6 +143,18 @@ public class S_Auth
 
     public async Task<(bool Succes, string Message, DTO_ReponseAuth? Reponse)> Inscrire(DTO_Inscription p_dto)
     {
+        // 🔒 Le rôle vient du navigateur : sans cette liste blanche, un POST avec
+        // Role = Admin créerait un administrateur. Seuls ces quatre rôles s'auto-inscrivent ;
+        // Admin se crée uniquement par le seed de démarrage.
+        if (p_dto.Role != BTPSecure.Shared.Enums.Enum_Role.Dirigeant
+            && p_dto.Role != BTPSecure.Shared.Enums.Enum_Role.Collaborateur
+            && p_dto.Role != BTPSecure.Shared.Enums.Enum_Role.Fournisseur
+            && p_dto.Role != BTPSecure.Shared.Enums.Enum_Role.ApporteurAffaire)
+        {
+            _logger.LogWarning("Inscription refusée : rôle {Role} non auto-inscriptible (email {Email})", p_dto.Role, p_dto.Email);
+            return (false, "Ce type de compte ne peut pas être créé depuis l'inscription.", null);
+        }
+
         if (string.IsNullOrWhiteSpace(p_dto.Email) || string.IsNullOrWhiteSpace(p_dto.MotDePasse))
             return (false, "L'email et le mot de passe sont obligatoires.", null);
 
@@ -191,6 +205,25 @@ public class S_Auth
             }
         }
 
+        // Parrainage : seul un dirigeant peut arriver avec un code. On le résout AVANT de
+        // créer quoi que ce soit, et un code inconnu REFUSE l'inscription au lieu d'être
+        // ignoré en silence — sinon l'apporteur perdrait sa commission sans que personne
+        // ne s'en aperçoive.
+        BTPSecure.Shared.Entites.E_Utilisateur? _apporteur = null;
+        var _codeParrainage = BTPSecure.Shared.Helpers.H_CodeParrainage.Normaliser(p_dto.CodeParrainage);
+        if (!string.IsNullOrWhiteSpace(p_dto.CodeParrainage))
+        {
+            if (p_dto.Role != BTPSecure.Shared.Enums.Enum_Role.Dirigeant)
+                return (false, "Un code de parrainage ne peut être utilisé que pour un compte dirigeant.", null);
+
+            if (_codeParrainage.Length == 0)
+                return (false, "Le format du code de parrainage est invalide (attendu : AB-01).", null);
+
+            _apporteur = await _sApporteur.ResoudreApporteur(_codeParrainage);
+            if (_apporteur == null)
+                return (false, "Ce code de parrainage n'existe pas.", null);
+        }
+
         var _sel = BCrypt.Net.BCrypt.GenerateSalt();
         var _hash = BCrypt.Net.BCrypt.HashPassword(p_dto.MotDePasse, _sel);
 
@@ -236,8 +269,25 @@ public class S_Auth
         _utilisateur.TokenVerification = GenererToken();
         _utilisateur.TokenVerificationExpiration = DateTime.UtcNow.AddHours(24);
 
-        await _daoUtilisateur.Creer(_utilisateur);
+        // Un apporteur reçoit son code de parrainage à la création : l'insertion et
+        // l'attribution du code sont groupées, car l'unicité du code se joue en base.
+        if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.ApporteurAffaire)
+        {
+            var _codeAttribue = await _sApporteur.CreerApporteur(_utilisateur);
+            if (_codeAttribue == null)
+                return (false, "Impossible d'attribuer un code de parrainage. Réessayez.", null);
+        }
+        else
+        {
+            await _daoUtilisateur.Creer(_utilisateur);
+        }
         _logger.LogInformation("Nouvel utilisateur inscrit : {Email} avec le rôle {Role}", _utilisateur.Email, _utilisateur.Role);
+
+        // Lien de parrainage, une fois le filleul doté d'un identifiant
+        if (_apporteur != null)
+        {
+            await _sApporteur.EnregistrerParrainage(_apporteur.Id, _utilisateur.Id, _codeParrainage);
+        }
 
         // Dirigeant : l'entreprise est créée immédiatement (plus de formulaire à la première connexion)
         if (p_dto.Role == BTPSecure.Shared.Enums.Enum_Role.Dirigeant && _nomSociete != null)

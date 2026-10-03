@@ -18,6 +18,10 @@ public class E_Utilisateur
     // Nombre maximum de sous-comptes autorisés (modifiable par l'admin)
     public int LimiteSousComptes { get; set; } = 3;
     public Enum_Role Role { get; set; }
+    // Code de parrainage personnel d'un apporteur d'affaires (ex. « TY-01 »).
+    // Null pour tous les autres rôles. Unique en base : c'est lui qui identifie
+    // l'apporteur à l'inscription d'un dirigeant.
+    public string? CodeParrainage { get; set; }
     public DateTime DateCreation { get; set; }
     public int? ParentFournisseurId { get; set; }
     public bool EstActif { get; set; } = true;

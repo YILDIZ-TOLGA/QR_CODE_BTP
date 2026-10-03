@@ -164,6 +164,10 @@
         {
             _url = "/fournisseur";
         }
+        else if (_claimRole.Value == "ApporteurAffaire")
+        {
+            _url = "/apporteur";
+        }
 
         if (_url != "/")
         {
@@ -209,6 +213,10 @@
         else if (_reponse.Role == Enum_Role.Fournisseur)
         {
             _url = "/fournisseur";
+        }
+        else if (_reponse.Role == Enum_Role.ApporteurAffaire)
+        {
+            _url = "/apporteur";
         }
 
         Navigation.NavigateTo(_url);

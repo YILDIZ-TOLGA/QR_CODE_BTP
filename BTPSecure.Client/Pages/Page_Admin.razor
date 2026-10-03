@@ -3,6 +3,7 @@
 @inject Services.S_Admin SAdmin
 @inject NotificationService Notification
 @inject DialogService Dialog
+@inject Services.S_Apporteur SApporteur
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="margin-bottom: 1.5rem;">
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -126,6 +127,33 @@ else
                                     <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"{_ent.NombreCollaborateurs} collaborateur(s)")" IsPill="true" />
                                     <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_ent.NombreCodes} code(s)")" IsPill="true" />
                                 </RadzenStack>
+
+                                @* Parrainage : l'admin doit le voir AVANT de cliquer sur Autoriser *@
+                                @if (_ent.EstParrainee)
+                                {
+                                    <RadzenStack Gap="0.25rem" Style="border-left: 3px solid var(--rz-primary); padding-left: 0.6rem;">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.4rem" Wrap="FlexWrap.Wrap">
+                                            <RadzenIcon Icon="handshake" Style="font-size: 1rem; color: var(--rz-primary);" />
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: 600;">Parrainée</RadzenText>
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Primary" Text="@_ent.CodeParrainageUtilise" IsPill="true" />
+                                        </RadzenStack>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                            Apporteur : @_ent.NomApporteur
+                                        </RadzenText>
+                                        @if (_ent.ParrainageDejaValide)
+                                        {
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                                Commission fixée : @_ent.MontantCommission.ToString("0.##") €
+                                            </RadzenText>
+                                        }
+                                        else
+                                        {
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-warning-dark);">
+                                                Commission à fixer en autorisant
+                                            </RadzenText>
+                                        }
+                                    </RadzenStack>
+                                }
 
                                 @* Plafond commun Responsable + Responsable Admin *@
                                 <RadzenButton Text="@($"Limite responsables : {_ent.NombreResponsables} / {_ent.LimiteResponsables}")" Icon="shield"
@@ -279,15 +307,87 @@ else
     </RadzenCard>
 }
 
+@* Apporteurs d'affaires : de quoi savoir qui payer, et combien *@
+@if (!_chargement)
+{
+    <RadzenCard Variant="Variant.Outlined" Style="margin-top: 1.5rem;">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1rem;">
+            <RadzenIcon Icon="handshake" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Apporteurs d'affaires</RadzenText>
+            @if (_apporteurs.Count > 0)
+            {
+                <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@_apporteurs.Count.ToString()" IsPill="true" />
+            }
+        </RadzenStack>
+
+        @if (_apporteurs.Count == 0)
+        {
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                Aucun apporteur d'affaires inscrit.
+            </RadzenText>
+        }
+        else
+        {
+            <RadzenStack Gap="0.75rem">
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                    Le cumul ne compte que les parrainages validés. Un parrainage en attente
+                    devient payable quand vous autorisez l'entreprise du filleul.
+                </RadzenText>
+
+                <RadzenRow Gap="1rem">
+                    @foreach (var _a in _apporteurs)
+                    {
+                        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                                <RadzenStack Gap="0.6rem">
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin: 0;">@_a.Prenom @_a.Nom</RadzenText>
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Primary" Text="@_a.CodeParrainage" IsPill="true" />
+                                    </RadzenStack>
+
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@_a.Email</RadzenText>
+
+                                    @if (!_a.EstActif)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Compte bloqué" IsPill="true" />
+                                    }
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.4rem" Wrap="FlexWrap.Wrap">
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@($"{_a.NombreFilleuls} filleul(s)")" IsPill="true" />
+                                        @if (_a.NombreEnAttente > 0)
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@($"{_a.NombreEnAttente} en attente")" IsPill="true" />
+                                        }
+                                    </RadzenStack>
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.4rem">
+                                        <RadzenIcon Icon="euro" Style="font-size: 1.1rem; color: var(--rz-primary);" />
+                                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">@_a.TotalCumule.ToString("0.##") €</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">cumulés</RadzenText>
+                                    </RadzenStack>
+
+                                </RadzenStack>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    }
+                </RadzenRow>
+            </RadzenStack>
+        }
+    </RadzenCard>
+}
+
 @code {
     private List<DTO_EntrepriseAdmin> _entreprises = new();
     private List<DTO_FournisseurAdmin> _fournisseurs = new();
+    private List<DTO_ApporteurAdmin> _apporteurs = new();
     private bool _chargement = true;
 
     protected override async Task OnInitializedAsync()
     {
         _entreprises = await SAdmin.ObtenirEntreprises();
         _fournisseurs = await SAdmin.ObtenirFournisseurs();
+        _apporteurs = await SApporteur.ObtenirApporteursAdmin();
         _chargement = false;
     }
 
@@ -295,6 +395,7 @@ else
     {
         _entreprises = await SAdmin.ObtenirEntreprises();
         _fournisseurs = await SAdmin.ObtenirFournisseurs();
+        _apporteurs = await SApporteur.ObtenirApporteursAdmin();
         StateHasChanged();
     }
 
@@ -425,6 +526,14 @@ else
     {
         try
         {
+            // Autoriser une entreprise parrainée dont la commission n'est pas encore fixée
+            // passe par un dialogue dédié : c'est le seul moment où le montant se décide.
+            if (!p_entreprise.EstAutorisee && p_entreprise.EstParrainee && !p_entreprise.ParrainageDejaValide)
+            {
+                await AutoriserAvecCommission(p_entreprise);
+                return;
+            }
+
             var _estAutorisee = p_entreprise.EstAutorisee;
             string _texteAction;
             if (_estAutorisee)
@@ -442,12 +551,11 @@ else
 
             if (_confirm == true)
             {
-                var (_succes, _message) = await SAdmin.BasculerAutorisation(p_entreprise.Id);
+                var (_succes, _message) = await SAdmin.BasculerAutorisation(p_entreprise.Id, 0m);
                 if (_succes)
                 {
                     Notification.Notify(NotificationSeverity.Success, "Succès", _message);
-                    _entreprises = await SAdmin.ObtenirEntreprises();
-                    StateHasChanged();
+                    await Recharger();
                 }
                 else
                     Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
@@ -457,5 +565,52 @@ else
         {
             Notification.Notify(NotificationSeverity.Error, "Erreur", ex.Message);
         }
+    }
+
+    // Montant proposé par défaut dans le dialogue. L'admin reste libre de le changer :
+    // c'est lui qui décide, ce chiffre n'est qu'un point de départ.
+    private const decimal c_commissionProposee = 20m;
+
+    private async Task AutoriserAvecCommission(DTO_EntrepriseAdmin p_entreprise)
+    {
+        var _nomApporteur = string.Empty;
+        if (p_entreprise.NomApporteur != null)
+        {
+            _nomApporteur = p_entreprise.NomApporteur;
+        }
+        var _code = string.Empty;
+        if (p_entreprise.CodeParrainageUtilise != null)
+        {
+            _code = p_entreprise.CodeParrainageUtilise;
+        }
+
+        var _result = await Dialog.OpenAsync<Comp_DialogAutoriserParrainage>("Autoriser et fixer la commission",
+            new Dictionary<string, object?>
+            {
+                { "NomEntreprise", p_entreprise.Nom },
+                { "NomApporteur", _nomApporteur },
+                { "CodeParrainage", _code },
+                { "MontantPropose", c_commissionProposee }
+            },
+            new DialogOptions { Width = "480px", CloseDialogOnOverlayClick = false });
+
+        if (_result is decimal _montant)
+        {
+            var (_succes, _message) = await SAdmin.BasculerAutorisation(p_entreprise.Id, _montant);
+            if (_succes)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Succès", _message);
+                await Recharger();
+            }
+            else
+                Notification.Notify(NotificationSeverity.Error, "Erreur", _message);
+        }
+    }
+
+    private async Task Recharger()
+    {
+        _entreprises = await SAdmin.ObtenirEntreprises();
+        _apporteurs = await SApporteur.ObtenirApporteursAdmin();
+        StateHasChanged();
     }
 }

@@ -14,4 +14,8 @@ public class DTO_Inscription
     public string? Siret { get; set; }
     public string? Siren { get; set; }
     public Enum_Role Role { get; set; }
+    // Code de parrainage d'un apporteur d'affaires, saisi par un DIRIGEANT a l'inscription.
+    // Optionnel ; s'il est renseigne mais inconnu, l'inscription est refusee plutot
+    // qu'ignoree silencieusement (sinon l'apporteur perdrait sa commission sans le savoir).
+    public string? CodeParrainage { get; set; }
 }

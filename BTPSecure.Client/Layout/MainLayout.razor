@@ -135,7 +135,13 @@
                             <RadzenPanelMenuItem Text="Historique" Icon="history" Path="fournisseur/historique" Match="NavLinkMatch.All" />
                         }
                     }
-                    @if (_role != "Admin")
+                    @if (_role == "ApporteurAffaire")
+                    {
+                        <RadzenPanelMenuItem Text="Mon parrainage" Icon="handshake" Path="apporteur" Match="NavLinkMatch.All" />
+                    }
+                    @* Un apporteur n'appartient a aucune structure : il n'apparait dans
+                       aucun annuaire, la messagerie serait vide *@
+                    @if (_role != "Admin" && _role != "ApporteurAffaire")
                     {
                         <RadzenPanelMenuItem Text="@LibelleMessagerie()" Icon="forum" Path="messagerie" Match="NavLinkMatch.All" />
                     }

@@ -66,7 +66,8 @@ BTPSecure/
 - ✅ Tout le texte UI en français
 
 ## Rôles & Auth
-- `Enum_Role` : `Admin=0`, `Dirigeant=1`, `Collaborateur=2`, `Fournisseur=3`
+- `Enum_Role` : `Admin=0`, `Dirigeant=1`, `Collaborateur=2`, `Fournisseur=3`, `ApporteurAffaire=4`
+- 🔒 **Liste blanche des rôles à l'inscription** (`S_Auth.Inscrire`) : le rôle arrive **du navigateur**. Sans garde, un `POST api/auth/inscription` avec `"Role": 0` créait un **administrateur** — élévation de privilège complète. Seuls **Dirigeant, Collaborateur, Fournisseur et ApporteurAffaire** s'auto-inscrivent ; `Admin` ne naît que du seed de démarrage. **Toute nouvelle valeur de `Enum_Role` doit être ajoutée explicitement à cette liste** pour être inscriptible — le refus est le défaut, c'est voulu.
 - **Admin seed** : créé au démarrage si aucun admin, à partir des variables d'env `ADMIN_EMAIL` (défaut `admin_acc@keydopro.com`) + `ADMIN_PASSWORD` (**obligatoire, jamais en dur**). Sans `ADMIN_PASSWORD`, l'admin n'est pas créé.
 - **Flow** : login → `S_Auth.Connecter` → JWT en localStorage (clé `"token"`) → `S_AuthStateProvider` lit + set `HttpClient.Authorization`
 - **Claims JWT** : `NameIdentifier` (Id), `Email`, `Role`
@@ -111,6 +112,13 @@ git push   # Railway redéploie auto via webhook GitHub
 13. 🔒 **Un Responsable (Admin) ne voit JAMAIS la valeur d'un code destiné à un collègue.** Il le voit dans sa liste (suivi + révocation conservés) mais la valeur est remplacée par `••••-••••`, car le code est un **porteur** : la connaître = pouvoir la dépenser. Masquage **côté serveur** (la valeur n'atteint pas son navigateur, la cacher en CSS ne protégerait rien) en trois points : `S_Code.Creer` (valeur vidée dans le DTO retourné), `S_Code.Modifier` (`NouvelleValeur` vidée — sinon régénérer un code servirait de porte dérobée) et `ObtenirContexteDashboard` (vide `Valeur` pour tout code dont il n'est pas le destinataire). Il voit en clair les codes qui **lui** sont destinés, dont son code permanent. Le Dirigeant (`EstProprietaire`) garde la visibilité totale. `api/codes/dirigeant` est déjà `[Authorize(Roles="Dirigeant")]` et `notifications-dirigeant` ne renvoie pas la valeur.
 14. 🔒 **Un compte bloqué perd l'accès IMMÉDIATEMENT**, sans attendre l'expiration de son jeton (24 h). Contrôle dans `OnTokenValidated` (Program.cs) : il couvre **toutes** les routes d'un coup, impossible d'en oublier une, et vaut aussi pour un appel API hors navigateur. Adossé à `S_CacheComptes` (singleton, TTL 5 min) pour ne pas lire la base à chaque requête — **toute modification de `EstActif` doit appeler `Invalider(id)`**, sinon le blocage attendrait l'expiration du cache. Côté client, `S_GestionnaireAuth` (DelegatingHandler) intercepte les 401, efface le jeton et renvoie vers `/connexion` : une connexion refusée renvoie **400**, donc un 401 signifie bien « jeton rejeté ».
 15. **Un serveur de test local verrouille `publish/`** : si `dotnet publish` échoue sur `MSB3027 / fichier verrouillé`, c'est qu'une instance tourne encore (`Stop-Process` sur le PID qui écoute le port).
+16. **Vérifier une chaîne dans un assembly publié : DEUX encodages.** C'est le principal contrôle local disponible (pas de PostgreSQL ici), autant ne pas conclure à tort. Les **littéraux de code** vivent dans le heap `#US` en **UTF-16LE** ; les **arguments d'attributs** (`[Route("api/x")]`, `[Authorize(Roles = "Y")]`) vivent dans le heap `#Blob` en **UTF-8**. Chercher une route en UTF-16 renvoie donc **0 alors que l'endpoint existe** — piège vécu. Tester les deux :
+    ```python
+    d = open('publish/BTPSecure.Server.dll','rb').read()
+    d.count('api/apporteur'.encode('utf-8'))      # routes, rôles  -> UTF-8
+    d.count('Message d'erreur'.encode('utf-16-le'))  # littéraux  -> UTF-16LE
+    ```
+    Le plus fiable reste de **lancer l'artefact publié** et d'interroger l'endpoint (401 = présent et protégé).
 
 ## Endpoints diagnostiques
 - `GET /health` → `200 ok` (utilisé par Railway healthcheck)
@@ -166,6 +174,9 @@ git push   # Railway redéploie auto via webhook GitHub
 - **Entreprise du dirigeant créée dès l'inscription** : le champ « Nom de l'entreprise » est demandé au formulaire, l'`E_Entreprise` est créée dans la foulée. L'écran « Créer votre entreprise » du tableau de bord ne subsiste qu'en **filet de sécurité** pour d'anciens comptes. La société d'un dirigeant vit **uniquement** dans `E_Entreprise` (`E_Utilisateur.NomSociete` reste réservé aux fournisseurs — pas de duplication).
 - **Mémos / « Prêt de matériel »** (`E_Memo`, `S_Memo`, `C_Memo`, `Page_Memo`, `Comp_DialogMemo`) : pense-bête **strictement personnel**, ouvert à **tout compte connecté** (`[Authorize]` sans rôle). Chaque lecture, enregistrement et suppression est borné à `UtilisateurId` **côté serveur** — personne ne voit les notes d'un autre, pas même le dirigeant ou l'admin. ⚠️ **Contrairement aux tickets, un mémo n'expire pas** : pas de TTL 24 h, `S_NettoyageTickets` ne le touche pas. Bornes de saisie : titre 200 caractères, contenu 10 000. Recherche client sur titre + contenu.
 - **Historique des validations côté fournisseur** (`Page_HistoriqueValidations`, `/fournisseur/historique`, `[Authorize(Roles="Fournisseur")]`) : ce qu'a validé le compte principal **et ses sous-comptes**. ⚠️ À ne pas confondre avec `Page_GestionCodesPermanents` (côté **dirigeant**, via `C_HistoriqueCode`) : deux publics, deux endpoints, deux bornages distincts.
+- **Apporteur d'affaires (rôle `ApporteurAffaire`)** : amène des dirigeants via un **code de parrainage** personnel et touche une commission par filleul. Inscription par une 4ᵉ carte sur `Page_Inscription` ; **nom et prénom obligatoires** (ils fabriquent le code). Compte actif immédiatement, **sans validation admin** (contrairement au fournisseur) : rien ne le justifiait, l'argent ne se décide qu'au parrainage. Pas d'entrée **Messagerie** dans sa sidebar : il n'appartient à aucune structure, donc à aucun annuaire — le menu serait vide. Tableau de bord `Page_DashboardApporteur` (`/apporteur`) : son code en grand, trois compteurs (amenés / en attente / cumul €) et la liste de ses filleuls.
+- **Code de parrainage, et comment les doublons sont exclus** (`H_CodeParrainage`, dans `Shared/Helpers` car client + serveur) : **initiales prénom+nom puis numéro d'ordre** — Tolga YILDIZ → `TY-01`. Le numéro est un **compteur par préfixe** : un second porteur de deux initiales `TY` reçoit `TY-02`, quel que soit son nom. ⚠️ **L'unicité est garantie par l'INDEX UNIQUE en base, pas par le calcul** : deux inscriptions simultanées aux mêmes initiales liraient le même maximum — `DAO_Parrainage.CreerApporteur` rattrape la collision en relisant le maximum et en retentant (5 essais, l'entité n'est ajoutée au tracker qu'une fois). ⚠️ **Pas de `string.Normalize(FormD)`** pour retirer les accents : le WASM client est trimmé et sa globalisation peut être réduite — table d'équivalences explicite (français + turc, utile pour « YILDIZ »), et **garde-fou ASCII** qui remplace par `X` tout caractère n'aboutissant pas à une lettre A-Z (le « ı » turc, un prénom non latin…). La saisie est **tolérante** (`ty01`, `ty 01`, `TY-01` → `TY-01`) : le code circule à l'oral.
+- **Parrainage — la commission se fixe À LA VALIDATION, une seule fois** (`E_Parrainage`, table `parrainages`) : à l'inscription d'un dirigeant avec un code, le lien naît **`EnAttente`** avec un montant à 0. Il passe **`Valide`** quand un admin **autorise l'entreprise du filleul** (`EstAutorisee`) — c'est là que l'admin saisit le montant, dans `Comp_DialogAutoriserParrainage` (pré-rempli à 20 €, librement modifiable ; **il n'y a pas de réglage global** du montant, chaque validation décide la sienne). ⚠️ **L'autorisation est une BASCULE** : bloquer puis réautoriser ne doit pas repayer l'apporteur → seul un parrainage encore `EnAttente` est touché, et le montant n'est **jamais** recalculé ensuite. ⚠️ Un **code inconnu REFUSE l'inscription** au lieu d'être ignoré : ignoré en silence, l'apporteur perdrait sa commission sans que personne ne s'en aperçoive. Un compte apporteur **désactivé** voit son code cesser de fonctionner. Index **unique sur `FilleulId`** : un filleul n'est parrainé qu'une fois. Clés étrangères en `Restrict` : la trace d'une commission ne disparaît pas avec un compte. Montant en `numeric(10,2)`, **jamais un `double`** (arrondis sur des euros). Côté admin, une section « Apporteurs d'affaires » (`Page_Admin`) dit qui payer et combien, et la carte entreprise affiche le parrainage **avant** le clic sur « Autoriser ». RGPD : `DTO_FilleulAffichage` **ne porte ni email ni téléphone** du filleul — l'apporteur a droit au suivi de sa commission, pas aux coordonnées des gens qu'il a amenés.
 - **Sidebar conditionnelle** : cachée si non connecté ; menu burger caché aussi
 - **Highlight exact** des items menu : `Match="NavLinkMatch.All"`
 - **Loader index.html** stylisé : monogramme « K » dans un carré glassmorphism + mot-symbole KEYDO, dégradé turquoise. ⚠️ Écrit en dur dans `index.html` car il s'affiche **avant** le démarrage de Blazor : `Comp_Logo` n'y est pas utilisable.
@@ -177,6 +188,7 @@ git push   # Railway redéploie auto via webhook GitHub
 | Helper | Rôle |
 |---|---|
 | `H_Siret` *(Shared)* | Nettoyage + validation de la clé de Luhn SIREN/SIRET, hors ligne. Exception La Poste (`356000000`) gérée. |
+| `H_CodeParrainage` *(Shared)* | Code d'apporteur : initiales + numéro (`TY-01`), saisie tolérante, garde-fou ASCII. Serveur génère, client valide. |
 | `H_RoleEntreprise` | Libellé / pluriel / couleur / icône / badge / description des droits d'un rôle |
 | `H_TexteLibre` | Seuil de troncature (140), « … », style `pre-wrap + overflow-wrap`, curseur si cliquable |
 | `H_Code` | Formatage de la saisie d'un code : majuscules, `-` auto après 4 caractères, 8 max |
@@ -200,6 +212,7 @@ git push   # Railway redéploie auto via webhook GitHub
 | `Comp_Inactivite` | Déconnexion auto après 10 min d'inactivité (Dirigeant / Responsable / RA) |
 | `Comp_PieceJointe` | Affichage + téléchargement d'une pièce jointe de message |
 | `Comp_DialogMemo` | Création / édition d'un mémo personnel |
+| `Comp_DialogAutoriserParrainage` | Autorisation d'une entreprise parrainée + saisie de la commission (admin) |
 
 ## Pattern services client (HTTP)
 ```csharp
@@ -218,7 +231,9 @@ if (!_reponse.IsSuccessStatusCode)
 Revenir à l'un d'eux : `git reset --hard <tag>` (⚠️ efface les modifications non commitées).
 
 ## ⚠️ Limite de vérification locale
-**Aucun PostgreSQL sur la machine de dev** (ni Docker, ni `psql`, ni service installé — vérifié). On peut donc valider en local : la compilation, le `publish`, le démarrage du serveur (l'injection de dépendances, les erreurs Npgsql au boot étant normales), les 401 sur les endpoints protégés et le contenu du WASM publié. **Tout ce qui touche la base se valide en prod.** Fonctionnalités livrées dont le parcours complet n'a jamais tourné en local : session unique (2 appareils), historique des codes permanents, notification « commande prête » au destinataire, annuaire de messagerie élargi.
+**Aucun PostgreSQL sur la machine de dev** (ni Docker, ni `psql`, ni service installé — vérifié). On peut donc valider en local : la compilation, le `publish`, le démarrage du serveur (l'injection de dépendances, les erreurs Npgsql au boot étant normales), les 401 sur les endpoints protégés et le contenu du WASM publié. **Tout ce qui touche la base se valide en prod.** Fonctionnalités livrées dont le parcours complet n'a jamais tourné en local : session unique (2 appareils), historique des codes permanents, notification « commande prête » au destinataire, annuaire de messagerie élargi, **parrainage apporteur d'affaires** (attribution du code, filleul, validation de la commission).
+
+✅ **`H_CodeParrainage` est en revanche testé** : logique pure, sans base. 44 assertions passées dans un projet isolé (initiales accentuées et turques, saisies à rejeter dont une injection SQL, séquence sans doublon sur 6 attributions, aller-retour `Composer`/`Normaliser`). Reproductible en compilant le seul fichier du helper dans un projet à part (avec `<UseAppHost>false</UseAppHost>`, cf. Smart App Control).
 
 ## Commandes utiles
 ```bash

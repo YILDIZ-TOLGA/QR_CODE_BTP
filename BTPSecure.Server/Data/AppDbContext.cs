@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<E_Memo> Memos => Set<E_Memo>();
     public DbSet<E_Notification> Notifications => Set<E_Notification>();
     public DbSet<E_ValidationCode> ValidationsCodes => Set<E_ValidationCode>();
+    public DbSet<E_Parrainage> Parrainages => Set<E_Parrainage>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -42,6 +43,10 @@ public class AppDbContext : DbContext
             e.Property(u => u.EmailVerifie).HasDefaultValue(false);
             e.Property(u => u.TokenVerification).HasMaxLength(128);
             e.Property(u => u.SessionId).HasMaxLength(64);
+            e.Property(u => u.CodeParrainage).HasMaxLength(16);
+            // Unique : c'est la base qui garantit l'absence de doublon, pas le code applicatif
+            // (deux inscriptions simultanees avec les memes initiales se croiseraient sinon).
+            e.HasIndex(u => u.CodeParrainage).IsUnique();
             e.HasIndex(u => u.TokenVerification);
             e.HasIndex(u => u.ParentFournisseurId);
             e.HasOne<E_Utilisateur>()
@@ -255,6 +260,33 @@ public class AppDbContext : DbContext
             e.HasOne(t => t.Destinataire)
                 .WithMany()
                 .HasForeignKey(t => t.DestinataireId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // E_Parrainage (apporteur d'affaires -> dirigeant amene ; voir l'entite pour le pourquoi)
+        p_modelBuilder.Entity<E_Parrainage>(e =>
+        {
+            e.ToTable("parrainages");
+            e.HasKey(pa => pa.Id);
+            e.Property(pa => pa.CodeUtilise).IsRequired().HasMaxLength(16);
+            e.Property(pa => pa.Statut).HasConversion<int>();
+            // numeric(10,2) : des euros, jamais un double (arrondis)
+            e.Property(pa => pa.MontantCommission).HasPrecision(10, 2).HasDefaultValue(0m);
+            // Un filleul n'est parraine qu'une seule fois
+            e.HasIndex(pa => pa.FilleulId).IsUnique();
+            e.HasIndex(pa => new { pa.ApporteurId, pa.Statut });
+            // Restrict partout : la trace d'une commission ne doit pas disparaitre avec un compte
+            e.HasOne(pa => pa.Apporteur)
+                .WithMany()
+                .HasForeignKey(pa => pa.ApporteurId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(pa => pa.Filleul)
+                .WithMany()
+                .HasForeignKey(pa => pa.FilleulId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(pa => pa.Validateur)
+                .WithMany()
+                .HasForeignKey(pa => pa.ValidateurId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

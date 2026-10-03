@@ -190,6 +190,7 @@ builder.Services.AddScoped<DAO_Ticket>();
 builder.Services.AddScoped<DAO_Memo>();
 builder.Services.AddScoped<DAO_Notification>();
 builder.Services.AddScoped<DAO_ValidationCode>();
+builder.Services.AddScoped<DAO_Parrainage>();
 
 // Services
 builder.Services.AddScoped<S_Auth>();
@@ -204,6 +205,7 @@ builder.Services.AddScoped<S_Ticket>();
 builder.Services.AddScoped<S_Memo>();
 builder.Services.AddScoped<S_Notification>();
 builder.Services.AddScoped<S_HistoriqueCode>();
+builder.Services.AddScoped<S_Apporteur>();
 // Annuaire public des entreprises : timeout court, l'écran ne doit jamais rester bloqué
 builder.Services.AddHttpClient<S_RechercheEntreprise>(client =>
 {

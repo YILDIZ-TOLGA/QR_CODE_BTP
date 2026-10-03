@@ -21,7 +21,7 @@
                     </RadzenText>
 
                     <RadzenRow Gap="1rem" Style="width: 100%;">
-                        <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenColumn Size="12" SizeSM="6">
                             <RadzenCard Variant="Variant.Outlined" Style="cursor: pointer; height: 100%;" @onclick="() => ChoisirType(Enum_Role.Dirigeant)">
                                 <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 1rem 0;">
                                     <RadzenIcon Icon="business_center" Style="font-size: 2.5rem; color: var(--rz-primary);" />
@@ -32,7 +32,7 @@
                                 </RadzenStack>
                             </RadzenCard>
                         </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenColumn Size="12" SizeSM="6">
                             <RadzenCard Variant="Variant.Outlined" Style="cursor: pointer; height: 100%;" @onclick="() => ChoisirType(Enum_Role.Collaborateur)">
                                 <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 1rem 0;">
                                     <RadzenIcon Icon="engineering" Style="font-size: 2.5rem; color: var(--rz-primary);" />
@@ -43,13 +43,24 @@
                                 </RadzenStack>
                             </RadzenCard>
                         </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenColumn Size="12" SizeSM="6">
                             <RadzenCard Variant="Variant.Outlined" Style="cursor: pointer; height: 100%;" @onclick="() => ChoisirType(Enum_Role.Fournisseur)">
                                 <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 1rem 0;">
                                     <RadzenIcon Icon="local_shipping" Style="font-size: 2.5rem; color: var(--rz-primary);" />
                                     <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Fournisseur</RadzenText>
                                     <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
                                         Je valide les codes des acheteurs
+                                    </RadzenText>
+                                </RadzenStack>
+                            </RadzenCard>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeSM="6">
+                            <RadzenCard Variant="Variant.Outlined" Style="cursor: pointer; height: 100%;" @onclick="() => ChoisirType(Enum_Role.ApporteurAffaire)">
+                                <RadzenStack AlignItems="AlignItems.Center" Gap="0.75rem" Style="padding: 1rem 0;">
+                                    <RadzenIcon Icon="handshake" Style="font-size: 2.5rem; color: var(--rz-primary);" />
+                                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Apporteur d'affaires</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center" Style="color: var(--rz-text-secondary-color);">
+                                        J'amène des entreprises et je suis commissionné
                                     </RadzenText>
                                 </RadzenStack>
                             </RadzenCard>
@@ -150,6 +161,23 @@
                                         </RadzenFormField>
                                     </RadzenColumn>
                                 </RadzenRow>
+                            }
+
+                            @* Parrainage : un code inconnu refuse l'inscription, l'utilisateur
+                               doit donc pouvoir le corriger ou vider le champ *@
+                            @if (_dto.Role == Enum_Role.Dirigeant)
+                            {
+                                <RadzenFormField Text="Code de parrainage (optionnel)" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <Start><RadzenIcon Icon="handshake" /></Start>
+                                    <ChildContent>
+                                        <RadzenTextBox @bind-Value="_dto.CodeParrainage" Style="width: 100%;" MaxLength="16" Placeholder="Ex. AB-01" />
+                                    </ChildContent>
+                                    <Helper>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                            Si un apporteur d'affaires vous a orienté vers KEYDO, saisissez son code.
+                                        </RadzenText>
+                                    </Helper>
+                                </RadzenFormField>
                             }
 
                             <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
@@ -270,6 +298,11 @@
         {
             return "Collaborateur";
         }
+        if (p_role == Enum_Role.ApporteurAffaire)
+        {
+            return "Apporteur d'affaires";
+        }
+
         if (p_role == Enum_Role.Fournisseur)
         {
             return "Fournisseur";

@@ -1,0 +1,65 @@
+@inject DialogService Dialog
+
+@* Autorisation d'une entreprise PARRAINÉE : l'admin fixe ici la commission de l'apporteur.
+   C'est le seul moment où ce montant se décide — ensuite il n'est plus modifiable. *@
+<RadzenStack Gap="1rem">
+
+    <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter"
+                 ShowIcon="true" AllowClose="false">
+        <RadzenStack Gap="0.25rem">
+            <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0;">
+                Cette entreprise a été amenée par un apporteur d'affaires.
+            </RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">@NomApporteur</RadzenText>
+                <RadzenBadge BadgeStyle="BadgeStyle.Primary" Text="@CodeParrainage" IsPill="true" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenAlert>
+
+    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+        En autorisant « @NomEntreprise », vous validez son parrainage et fixez la commission
+        due à l'apporteur.
+    </RadzenText>
+
+    <RadzenFormField Text="Commission de l'apporteur (€)" Variant="Variant.Outlined" Style="width: 100%;">
+        <Start><RadzenIcon Icon="euro" /></Start>
+        <ChildContent>
+            <RadzenNumeric TValue="decimal" @bind-Value="_montant" Min="0" Max="100000" Step="5" Style="width: 100%;" />
+        </ChildContent>
+    </RadzenFormField>
+
+    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+        Ce montant est définitif : bloquer puis réautoriser l'entreprise ne le recalcule pas.
+        Mettez 0 pour valider le parrainage sans commission.
+    </RadzenText>
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="Annuler" Variant="Variant.Outlined" Click="Annuler" />
+        <RadzenButton Text="Autoriser" Icon="check_circle" ButtonStyle="ButtonStyle.Success" Click="Valider" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public string NomEntreprise { get; set; } = string.Empty;
+    [Parameter] public string NomApporteur { get; set; } = string.Empty;
+    [Parameter] public string CodeParrainage { get; set; } = string.Empty;
+    [Parameter] public decimal MontantPropose { get; set; }
+
+    private decimal _montant;
+
+    protected override void OnInitialized()
+    {
+        _montant = MontantPropose;
+    }
+
+    private void Valider()
+    {
+        Dialog.Close(_montant);
+    }
+
+    private void Annuler()
+    {
+        Dialog.Close(null);
+    }
+}
