@@ -394,12 +394,38 @@ else
                 sans rien detruire.
             </RadzenText>
 
-            <RadzenFormField Text="Rechercher (nom, email, role)" Variant="Variant.Outlined" Style="width: 100%;">
-                <Start><RadzenIcon Icon="search" /></Start>
-                <ChildContent>
-                    <RadzenTextBox Value="@_recherche" @oninput="MajRecherche" Style="width: 100%;" />
-                </ChildContent>
-            </RadzenFormField>
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="7">
+                    <RadzenFormField Text="Rechercher (nom, email, entreprise)" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start><RadzenIcon Icon="search" /></Start>
+                        <ChildContent>
+                            <RadzenTextBox Value="@_recherche" @oninput="MajRecherche" Style="width: 100%;" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="5">
+                    @* Les effectifs sont dans les libellés : l'admin voit la répartition
+                       sans avoir à filtrer un par un *@
+                    <RadzenFormField Text="Rôle" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start><RadzenIcon Icon="filter_list" /></Start>
+                        <ChildContent>
+                            <RadzenDropDown @bind-Value="_roleFiltre" Data="OptionsRole()" TextProperty="Label"
+                                            ValueProperty="Valeur" Style="width: 100%;" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            @if (_roleFiltre.Length > 0 || _recherche.Trim().Length > 0)
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                    <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; color: var(--rz-text-secondary-color);">
+                        @ComptesFiltres().Count compte(s) sur @_comptes.Count
+                    </RadzenText>
+                    <RadzenButton Text="Tout afficher" Icon="close" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base"
+                                  Size="ButtonSize.Small" Click="ReinitialiserFiltres" />
+                </RadzenStack>
+            }
 
             @if (ComptesFiltres().Count == 0)
             {
@@ -475,6 +501,8 @@ else
     private List<DTO_ApporteurAdmin> _apporteurs = new();
     private List<DTO_CompteAdmin> _comptes = new();
     private string _recherche = string.Empty;
+    // Chaine vide = tous les roles
+    private string _roleFiltre = string.Empty;
     private bool _chargement = true;
 
     protected override async Task OnInitializedAsync()
@@ -736,10 +764,51 @@ else
         return p_role;
     }
 
+    private class OptionRole
+    {
+        public string Valeur { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+    }
+
+    // Liste FIXE de rôles, même à zéro : si une option disparaissait après une
+    // suppression, le libellé sélectionné deviendrait incohérent.
+    // Écrite en dur plutôt que par réflexion sur l'enum (pièges du trimmer .NET 10).
+    private static readonly string[] c_rolesConnus = new[]
+    {
+        "Admin", "Dirigeant", "Collaborateur", "Fournisseur", "ApporteurAffaire"
+    };
+
+    private List<OptionRole> OptionsRole()
+    {
+        var _options = new List<OptionRole>();
+        _options.Add(new OptionRole { Valeur = string.Empty, Label = $"Tous les rôles ({_comptes.Count})" });
+
+        foreach (var _role in c_rolesConnus)
+        {
+            var _nombre = 0;
+            foreach (var _c in _comptes)
+            {
+                if (_c.Role == _role)
+                {
+                    _nombre++;
+                }
+            }
+            _options.Add(new OptionRole { Valeur = _role, Label = $"{LibelleRole(_role)} ({_nombre})" });
+        }
+
+        return _options;
+    }
+
+    private void ReinitialiserFiltres()
+    {
+        _recherche = string.Empty;
+        _roleFiltre = string.Empty;
+    }
+
     private List<DTO_CompteAdmin> ComptesFiltres()
     {
         var _terme = _recherche.Trim().ToLower();
-        if (_terme.Length == 0)
+        if (_terme.Length == 0 && _roleFiltre.Length == 0)
         {
             return _comptes;
         }
@@ -747,15 +816,25 @@ else
         var _result = new List<DTO_CompteAdmin>();
         foreach (var _c in _comptes)
         {
-            var _cible = (_c.Prenom + " " + _c.Nom + " " + _c.Email + " " + LibelleRole(_c.Role)).ToLower();
-            if (_c.NomSociete != null)
+            if (_roleFiltre.Length > 0 && _c.Role != _roleFiltre)
             {
-                _cible = _cible + " " + _c.NomSociete.ToLower();
+                continue;
             }
-            if (_cible.Contains(_terme))
+
+            if (_terme.Length > 0)
             {
-                _result.Add(_c);
+                var _cible = (_c.Prenom + " " + _c.Nom + " " + _c.Email + " " + LibelleRole(_c.Role)).ToLower();
+                if (_c.NomSociete != null)
+                {
+                    _cible = _cible + " " + _c.NomSociete.ToLower();
+                }
+                if (!_cible.Contains(_terme))
+                {
+                    continue;
+                }
             }
+
+            _result.Add(_c);
         }
         return _result;
     }
