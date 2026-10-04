@@ -377,10 +377,104 @@ else
     </RadzenCard>
 }
 
+@* Comptes utilisateurs : consultation et suppression definitive *@
+@if (!_chargement)
+{
+    <RadzenCard Variant="Variant.Outlined" Style="margin-top: 1.5rem;">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1rem;">
+            <RadzenIcon Icon="manage_accounts" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Comptes utilisateurs</RadzenText>
+            <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@_comptes.Count.ToString()" IsPill="true" />
+        </RadzenStack>
+
+        <RadzenStack Gap="0.75rem">
+            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                La suppression est definitive. Un compte ancre dans un historique d'achat ou
+                une commission validee n'est pas supprimable : bloquez-le, l'acces est coupe
+                sans rien detruire.
+            </RadzenText>
+
+            <RadzenFormField Text="Rechercher (nom, email, role)" Variant="Variant.Outlined" Style="width: 100%;">
+                <Start><RadzenIcon Icon="search" /></Start>
+                <ChildContent>
+                    <RadzenTextBox Value="@_recherche" @oninput="MajRecherche" Style="width: 100%;" />
+                </ChildContent>
+            </RadzenFormField>
+
+            @if (ComptesFiltres().Count == 0)
+            {
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                    Aucun compte ne correspond.
+                </RadzenText>
+            }
+            else
+            {
+                <RadzenRow Gap="1rem">
+                    @foreach (var _c in ComptesFiltres())
+                    {
+                        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+                            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                                <RadzenStack Gap="0.5rem">
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin: 0;">@_c.Prenom @_c.Nom</RadzenText>
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@LibelleRole(_c.Role)" IsPill="true" />
+                                    </RadzenStack>
+
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color); overflow-wrap: anywhere;">@_c.Email</RadzenText>
+
+                                    @if (!string.IsNullOrEmpty(_c.NomSociete))
+                                    {
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.4rem">
+                                            <RadzenIcon Icon="business" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@_c.NomSociete</RadzenText>
+                                        </RadzenStack>
+                                    }
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.4rem" Wrap="FlexWrap.Wrap">
+                                        @if (!_c.EstActif)
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Bloque" IsPill="true" />
+                                        }
+                                        @if (_c.EstSousCompte)
+                                        {
+                                            <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="Sous-compte" IsPill="true" />
+                                        }
+                                    </RadzenStack>
+
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                        Cree le @_c.DateCreation.ToLocalTime().ToString("dd/MM/yyyy")
+                                    </RadzenText>
+
+                                    @if (_c.Role == "Admin")
+                                    {
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                            Compte administrateur : non supprimable ici.
+                                        </RadzenText>
+                                    }
+                                    else
+                                    {
+                                        <RadzenButton Text="Supprimer" Icon="delete_forever" ButtonStyle="ButtonStyle.Danger"
+                                                      Variant="Variant.Outlined" Size="ButtonSize.Small" Style="width: 100%;"
+                                                      Click="() => SupprimerCompte(_c)" />
+                                    }
+
+                                </RadzenStack>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    }
+                </RadzenRow>
+            }
+        </RadzenStack>
+    </RadzenCard>
+}
+
 @code {
     private List<DTO_EntrepriseAdmin> _entreprises = new();
     private List<DTO_FournisseurAdmin> _fournisseurs = new();
     private List<DTO_ApporteurAdmin> _apporteurs = new();
+    private List<DTO_CompteAdmin> _comptes = new();
+    private string _recherche = string.Empty;
     private bool _chargement = true;
 
     protected override async Task OnInitializedAsync()
@@ -388,6 +482,7 @@ else
         _entreprises = await SAdmin.ObtenirEntreprises();
         _fournisseurs = await SAdmin.ObtenirFournisseurs();
         _apporteurs = await SApporteur.ObtenirApporteursAdmin();
+        _comptes = await SAdmin.ObtenirComptes();
         _chargement = false;
     }
 
@@ -396,6 +491,7 @@ else
         _entreprises = await SAdmin.ObtenirEntreprises();
         _fournisseurs = await SAdmin.ObtenirFournisseurs();
         _apporteurs = await SApporteur.ObtenirApporteursAdmin();
+        _comptes = await SAdmin.ObtenirComptes();
         StateHasChanged();
     }
 
@@ -611,6 +707,81 @@ else
     {
         _entreprises = await SAdmin.ObtenirEntreprises();
         _apporteurs = await SApporteur.ObtenirApporteursAdmin();
+        _comptes = await SAdmin.ObtenirComptes();
         StateHasChanged();
+    }
+
+    private void MajRecherche(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+        {
+            _recherche = string.Empty;
+            return;
+        }
+        var _valeur = p_e.Value.ToString();
+        if (_valeur == null)
+        {
+            _recherche = string.Empty;
+            return;
+        }
+        _recherche = _valeur;
+    }
+
+    private static string LibelleRole(string p_role)
+    {
+        if (p_role == "ApporteurAffaire")
+        {
+            return "Apporteur d'affaires";
+        }
+        return p_role;
+    }
+
+    private List<DTO_CompteAdmin> ComptesFiltres()
+    {
+        var _terme = _recherche.Trim().ToLower();
+        if (_terme.Length == 0)
+        {
+            return _comptes;
+        }
+
+        var _result = new List<DTO_CompteAdmin>();
+        foreach (var _c in _comptes)
+        {
+            var _cible = (_c.Prenom + " " + _c.Nom + " " + _c.Email + " " + LibelleRole(_c.Role)).ToLower();
+            if (_c.NomSociete != null)
+            {
+                _cible = _cible + " " + _c.NomSociete.ToLower();
+            }
+            if (_cible.Contains(_terme))
+            {
+                _result.Add(_c);
+            }
+        }
+        return _result;
+    }
+
+    // Suppression definitive : le dialogue porte les DEUX confirmations
+    // (etendue des degats, puis email a recopier).
+    private async Task SupprimerCompte(DTO_CompteAdmin p_compte)
+    {
+        var _resultat = await Dialog.OpenAsync<Comp_DialogSupprimerCompte>("Supprimer un compte",
+            new Dictionary<string, object?>
+            {
+                { "UtilisateurId", p_compte.Id }
+            },
+            new DialogOptions { Width = "520px", CloseDialogOnOverlayClick = false });
+
+        if (_resultat is ValueTuple<bool, string> _retour)
+        {
+            if (_retour.Item1)
+            {
+                Notification.Notify(NotificationSeverity.Success, "Compte supprime", _retour.Item2);
+                await Recharger();
+            }
+            else
+            {
+                Notification.Notify(NotificationSeverity.Error, "Suppression refusee", _retour.Item2);
+            }
+        }
     }
 }

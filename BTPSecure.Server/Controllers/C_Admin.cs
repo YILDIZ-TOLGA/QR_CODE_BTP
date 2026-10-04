@@ -12,11 +12,46 @@ public class C_Admin : ControllerBase
 {
     private readonly S_Admin _sAdmin;
     private readonly S_Apporteur _sApporteur;
+    private readonly S_Suppression _sSuppression;
 
-    public C_Admin(S_Admin p_sAdmin, S_Apporteur p_sApporteur)
+    public C_Admin(S_Admin p_sAdmin, S_Apporteur p_sApporteur, S_Suppression p_sSuppression)
     {
         _sAdmin = p_sAdmin;
         _sApporteur = p_sApporteur;
+        _sSuppression = p_sSuppression;
+    }
+
+    // Tous les comptes, pour l'administration des comptes
+    [HttpGet("comptes")]
+    public async Task<IActionResult> ObtenirComptes()
+    {
+        var _liste = await _sAdmin.ObtenirTousLesComptes();
+        return Ok(_liste);
+    }
+
+    // Ce qu'une suppression detruirait, et ce qui l'empeche. A appeler AVANT de proposer
+    // la suppression : l'admin doit decider en connaissance de cause.
+    [HttpGet("apercu-suppression/{p_id}")]
+    public async Task<IActionResult> ObtenirApercuSuppression(int p_id)
+    {
+        var _apercu = await _sSuppression.ObtenirApercu(p_id, ObtenirUtilisateurId());
+        if (_apercu == null) return NotFound(new { message = "Compte introuvable." });
+        return Ok(_apercu);
+    }
+
+    // ⚠️ IRREVERSIBLE. L'email du compte doit etre retape dans le corps de la requete.
+    [HttpPost("supprimer-compte/{p_id}")]
+    public async Task<IActionResult> SupprimerCompte(int p_id, [FromBody] BTPSecure.Shared.DTOs.DTO_ConfirmerSuppression p_dto)
+    {
+        string? _email = null;
+        if (p_dto != null)
+        {
+            _email = p_dto.Email;
+        }
+
+        var (_succes, _message) = await _sSuppression.Supprimer(p_id, ObtenirUtilisateurId(), _email);
+        if (!_succes) return BadRequest(new { message = _message });
+        return Ok(new { message = _message });
     }
 
     private int ObtenirUtilisateurId()

@@ -1,0 +1,274 @@
+@inject Services.S_Admin SAdmin
+@inject DialogService Dialog
+
+@* Suppression définitive d'un compte, en DEUX temps :
+   1. ce que la suppression détruirait (ou ce qui l'empêche) ;
+   2. l'email du compte à retaper.
+   La seconde étape n'est pas une formalité : c'est elle qui empêche de supprimer
+   la mauvaise ligne d'une liste. *@
+
+<RadzenStack Gap="1rem" Style="min-width: 320px;">
+
+    @if (_chargement)
+    {
+        <RadzenRow JustifyContent="JustifyContent.Center" Style="padding: 2rem 0;">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+        </RadzenRow>
+    }
+    else if (_apercu == null)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+            Impossible de lire les informations de ce compte.
+        </RadzenAlert>
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Fermer" Variant="Variant.Outlined" Click="@(() => Dialog.Close(false))" />
+        </RadzenStack>
+    }
+    else
+    {
+        @* Identité du compte visé, toujours visible *@
+        <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); padding: 0.75rem;">
+            <RadzenStack Gap="0.25rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                    <RadzenIcon Icon="person" Style="color: var(--rz-primary);" />
+                    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">@_apercu.NomComplet</RadzenText>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@_apercu.Role" IsPill="true" />
+                </RadzenStack>
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">@_apercu.Email</RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+
+        @if (!_apercu.EstSupprimable)
+        {
+            @* Refus : on explique précisément ce qui bloque, et quoi faire à la place *@
+            <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+                        Ce compte ne peut pas être supprimé.
+                    </RadzenText>
+                    @foreach (var _blocage in _apercu.Blocages)
+                    {
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" Gap="0.4rem">
+                            <RadzenIcon Icon="block" Style="font-size: 1rem;" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0;">@_blocage</RadzenText>
+                        </RadzenStack>
+                    }
+                </RadzenStack>
+            </RadzenAlert>
+
+            <RadzenStack Gap="0.2rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+                    Vous pouvez en revanche bloquer le compte.
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; color: var(--rz-text-secondary-color);">
+                    L'accès est coupé immédiatement et rien n'est détruit.
+                </RadzenText>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+                <RadzenButton Text="Fermer" Variant="Variant.Outlined" Click="@(() => Dialog.Close(false))" />
+            </RadzenStack>
+        }
+        else if (_etape == 1)
+        {
+            @* ÉTAPE 1 : l'étendue des dégâts *@
+            <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+                <RadzenStack Gap="0.2rem">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+                        La suppression est définitive : il n'y a pas de corbeille.
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0;">
+                        Les données ci-dessous seront effacées avec le compte.
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenAlert>
+
+            @if (_apercu.NomEntreprise != null)
+            {
+                <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+                            Son entreprise « @_apercu.NomEntreprise » sera supprimée avec lui.
+                        </RadzenText>
+                        @if (_apercu.NombreCollaborateursDetaches > 0)
+                        {
+                            <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0;">
+                                @_apercu.NombreCollaborateursDetaches collaborateur(s) en seront détachés.
+                                Leurs comptes subsistent, mais ils perdent ce rattachement.
+                            </RadzenText>
+                        }
+                    </RadzenStack>
+                </RadzenAlert>
+            }
+
+            <RadzenStack Gap="0.4rem">
+                @if (_lignes.Count == 0)
+                {
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                        Ce compte n'a produit aucune donnée rattachée.
+                    </RadzenText>
+                }
+                else
+                {
+                    @foreach (var _ligne in _lignes)
+                    {
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenIcon Icon="delete_outline" Style="font-size: 1rem; color: var(--rz-danger);" />
+                            <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0;">@_ligne</RadzenText>
+                        </RadzenStack>
+                    }
+                }
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+                <RadzenButton Text="Annuler" Variant="Variant.Outlined" Click="@(() => Dialog.Close(false))" />
+                <RadzenButton Text="Continuer" Icon="arrow_forward" ButtonStyle="ButtonStyle.Danger"
+                              Variant="Variant.Outlined" Click="PasserEtape2" />
+            </RadzenStack>
+        }
+        else
+        {
+            @* ÉTAPE 2 : la sur-confirmation — retaper l'email *@
+            <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" ShowIcon="true" AllowClose="false">
+                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+                    Dernière étape — cette action est irréversible.
+                </RadzenText>
+            </RadzenAlert>
+
+            <RadzenStack Gap="0.4rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0;">
+                    Pour confirmer, recopiez l'email du compte :
+                </RadzenText>
+                <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-200); padding: 0.5rem 0.75rem;">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-family: monospace;">@_apercu.Email</RadzenText>
+                </RadzenCard>
+            </RadzenStack>
+
+            <RadzenFormField Text="Email du compte" Variant="Variant.Outlined" Style="width: 100%;">
+                <Start><RadzenIcon Icon="mail" /></Start>
+                <ChildContent>
+                    <RadzenTextBox Value="@_saisie" @oninput="MajSaisie" Style="width: 100%;" MaxLength="256" Placeholder="Recopiez l'email ci-dessus" />
+                </ChildContent>
+            </RadzenFormField>
+
+            @if (_saisie.Length > 0 && !EmailCorrespond())
+            {
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger);">
+                    L'email ne correspond pas encore.
+                </RadzenText>
+            }
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+                <RadzenButton Text="Retour" Variant="Variant.Text" ButtonStyle="ButtonStyle.Base" Click="@(() => _etape = 1)" Disabled="_suppressionEnCours" />
+                <RadzenButton Text="Supprimer définitivement" Icon="delete_forever" ButtonStyle="ButtonStyle.Danger"
+                              Click="Supprimer" Disabled="@(!EmailCorrespond() || _suppressionEnCours)" />
+            </RadzenStack>
+        }
+    }
+</RadzenStack>
+
+@code {
+    [Parameter] public int UtilisateurId { get; set; }
+
+    private DTO_ApercuSuppression? _apercu;
+    private bool _chargement = true;
+    private int _etape = 1;
+    private string _saisie = string.Empty;
+    private bool _suppressionEnCours = false;
+    private List<string> _lignes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _apercu = await SAdmin.ObtenirApercuSuppression(UtilisateurId);
+        if (_apercu != null)
+        {
+            _lignes = ConstruireLignes(_apercu);
+        }
+        _chargement = false;
+    }
+
+    // Seuls les volumes non nuls sont listés : une liste de zéros n'informe personne
+    private static List<string> ConstruireLignes(DTO_ApercuSuppression p_a)
+    {
+        var _liste = new List<string>();
+
+        if (p_a.NombreCodes > 0)
+        {
+            _liste.Add($"{p_a.NombreCodes} code(s) QR");
+        }
+        if (p_a.NombreMessages > 0)
+        {
+            _liste.Add($"{p_a.NombreMessages} message(s)");
+        }
+        if (p_a.NombreMemos > 0)
+        {
+            _liste.Add($"{p_a.NombreMemos} note(s) de prêt de matériel");
+        }
+        if (p_a.NombreNotifications > 0)
+        {
+            _liste.Add($"{p_a.NombreNotifications} notification(s)");
+        }
+        if (p_a.NombreLiensEntreprise > 0)
+        {
+            _liste.Add($"{p_a.NombreLiensEntreprise} rattachement(s) à une entreprise");
+        }
+        if (p_a.NombreContactsFournisseur > 0)
+        {
+            _liste.Add($"{p_a.NombreContactsFournisseur} fournisseur(s) dans son carnet");
+        }
+        if (p_a.NombreBlacklist > 0)
+        {
+            _liste.Add($"{p_a.NombreBlacklist} entrée(s) de blacklist");
+        }
+        if (p_a.NombreParrainagesEnAttente > 0)
+        {
+            _liste.Add($"{p_a.NombreParrainagesEnAttente} parrainage(s) en attente (aucune commission validée)");
+        }
+
+        return _liste;
+    }
+
+    private void PasserEtape2()
+    {
+        _saisie = string.Empty;
+        _etape = 2;
+    }
+
+    private void MajSaisie(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+        {
+            _saisie = string.Empty;
+            return;
+        }
+        var _valeur = p_e.Value.ToString();
+        if (_valeur == null)
+        {
+            _saisie = string.Empty;
+            return;
+        }
+        _saisie = _valeur;
+    }
+
+    private bool EmailCorrespond()
+    {
+        if (_apercu == null)
+            return false;
+        return _saisie.Trim().ToLower() == _apercu.Email.Trim().ToLower();
+    }
+
+    private async Task Supprimer()
+    {
+        if (_apercu == null)
+            return;
+        if (!EmailCorrespond())
+            return;
+
+        _suppressionEnCours = true;
+        var _resultat = await SAdmin.SupprimerCompte(_apercu.UtilisateurId, _saisie.Trim());
+        _suppressionEnCours = false;
+
+        // Le parent affiche le message et recharge la liste
+        Dialog.Close(_resultat);
+    }
+}

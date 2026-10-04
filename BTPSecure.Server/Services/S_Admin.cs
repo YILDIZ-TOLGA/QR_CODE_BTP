@@ -65,6 +65,36 @@ public class S_Admin
         return _result;
     }
 
+    public async Task<List<DTO_CompteAdmin>> ObtenirTousLesComptes()
+    {
+        var _comptes = await _daoAdmin.ObtenirTousLesComptes();
+        var _result = new List<DTO_CompteAdmin>();
+
+        foreach (var _c in _comptes)
+        {
+            var _estSousCompte = false;
+            if (_c.ParentFournisseurId.HasValue)
+            {
+                _estSousCompte = true;
+            }
+
+            _result.Add(new DTO_CompteAdmin
+            {
+                Id = _c.Id,
+                Nom = _c.Nom,
+                Prenom = _c.Prenom,
+                Email = _c.Email,
+                Role = _c.Role.ToString(),
+                NomSociete = _c.NomSociete,
+                DateCreation = _c.DateCreation,
+                EstActif = _c.EstActif,
+                EstSousCompte = _estSousCompte
+            });
+        }
+
+        return _result;
+    }
+
     public async Task<List<DTO_FournisseurAdmin>> ObtenirFournisseurs()
     {
         var _fournisseurs = await _daoAdmin.ObtenirFournisseurs();

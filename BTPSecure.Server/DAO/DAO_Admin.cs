@@ -72,6 +72,18 @@ public class DAO_Admin
             .ToListAsync();
     }
 
+    // Tous les comptes, pour l'administration des comptes (suppression incluse).
+    // Les admins sont inclus volontairement : ils doivent etre visibles, meme s'ils
+    // ne sont pas supprimables.
+    public async Task<List<E_Utilisateur>> ObtenirTousLesComptes()
+    {
+        return await _context.Utilisateurs
+            .OrderBy(u => u.Role)
+            .ThenBy(u => u.Nom)
+            .ThenBy(u => u.Prenom)
+            .ToListAsync();
+    }
+
     public async Task Sauvegarder()
     {
         await _context.SaveChangesAsync();

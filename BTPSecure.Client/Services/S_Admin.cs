@@ -109,6 +109,50 @@ public class S_Admin
         return (false, await LireErreur(_reponse));
     }
 
+    // ---------- Administration des comptes ----------
+
+    public async Task<List<DTO_CompteAdmin>> ObtenirComptes()
+    {
+        try
+        {
+            var _result = await _http.GetFromJsonAsync<List<DTO_CompteAdmin>>("api/admin/comptes");
+            if (_result == null)
+                return new List<DTO_CompteAdmin>();
+            return _result;
+        }
+        catch
+        {
+            return new List<DTO_CompteAdmin>();
+        }
+    }
+
+    public async Task<DTO_ApercuSuppression?> ObtenirApercuSuppression(int p_id)
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<DTO_ApercuSuppression>($"api/admin/apercu-suppression/{p_id}");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // p_email : l'email du compte, retape par l'admin. Reverifie cote serveur.
+    public async Task<(bool Succes, string Message)> SupprimerCompte(int p_id, string p_email)
+    {
+        var _dto = new DTO_ConfirmerSuppression();
+        _dto.Email = p_email;
+        var _reponse = await _http.PostAsJsonAsync($"api/admin/supprimer-compte/{p_id}", _dto);
+        if (!_reponse.IsSuccessStatusCode)
+            return (false, await LireErreur(_reponse));
+
+        var _ok = await _reponse.Content.ReadFromJsonAsync<MessageReponse>();
+        if (_ok == null)
+            return (true, "Compte supprime.");
+        return (true, _ok.Message);
+    }
+
     private static async Task<string> LireErreur(HttpResponseMessage p_reponse)
     {
         try
