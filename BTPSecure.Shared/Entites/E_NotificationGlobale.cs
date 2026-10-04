@@ -9,7 +9,8 @@ namespace BTPSecure.Shared.Entites;
 //  - la fenêtre de dates reste vraie (une copie existerait déjà avant la date de début) ;
 //  - un compte créé APRÈS la diffusion la reçoit quand même, tant qu'elle est active ;
 //  - modifier ou désactiver la diffusion agit immédiatement sur tout le monde.
-// Le suivi « qui l'a vue » vit dans E_NotificationGlobaleVue.
+// Le message revient à CHAQUE connexion tant que la période court ; E_NotificationGlobaleVue
+// ne sert qu'à mesurer la portée, pas à le masquer.
 public class E_NotificationGlobale
 {
     public int Id { get; set; }

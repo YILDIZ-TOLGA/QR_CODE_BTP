@@ -48,25 +48,34 @@ public class DAO_NotificationGlobale
             .ToListAsync();
     }
 
-    // Identifiants des diffusions déjà vues par un utilisateur
-    public async Task<List<int>> ObtenirIdsVues(int p_utilisateurId)
-    {
-        return await _context.NotificationsGlobalesVues
-            .Where(v => v.UtilisateurId == p_utilisateurId)
-            .Select(v => v.NotificationGlobaleId)
-            .ToListAsync();
-    }
-
-    // Marque plusieurs diffusions comme vues.
-    // ⚠️ L'index unique (diffusion, utilisateur) est le vrai garde-fou : deux onglets
-    // ouverts simultanément peuvent déclencher deux insertions. On ignore l'échec
-    // plutôt que de faire échouer l'affichage pour un doublon sans conséquence.
+    // Enregistre la PREMIÈRE vue de chaque diffusion par cet utilisateur.
+    // ⚠️ Appelé à chaque connexion (la diffusion se réaffiche tant que la période court),
+    // donc on relit d'abord ce qui existe et on n'insère que le manquant : laisser la
+    // contrainte d'unicité lever une exception à chaque connexion coûterait cher pour rien.
+    // L'index unique reste le garde-fou final (deux onglets ouverts en même temps).
     public async Task MarquerVues(int p_utilisateurId, List<int> p_notificationIds)
     {
         if (p_notificationIds.Count == 0)
             return;
 
+        var _dejaEnregistrees = await _context.NotificationsGlobalesVues
+            .Where(v => v.UtilisateurId == p_utilisateurId && p_notificationIds.Contains(v.NotificationGlobaleId))
+            .Select(v => v.NotificationGlobaleId)
+            .ToListAsync();
+
+        var _manquantes = new List<int>();
         foreach (var _id in p_notificationIds)
+        {
+            if (!_dejaEnregistrees.Contains(_id))
+            {
+                _manquantes.Add(_id);
+            }
+        }
+
+        if (_manquantes.Count == 0)
+            return;
+
+        foreach (var _id in _manquantes)
         {
             _context.NotificationsGlobalesVues.Add(new E_NotificationGlobaleVue
             {

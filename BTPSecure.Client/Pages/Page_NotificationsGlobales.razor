@@ -101,10 +101,11 @@
             <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true" AllowClose="false">
                 <RadzenStack Gap="0.2rem">
                     <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; font-weight: 600;">
-                        Chaque destinataire voit le message une seule fois.
+                        Le message s'affiche à chaque connexion pendant la période.
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0;">
-                        À sa première connexion dans la période. Les deux dates sont incluses.
+                        Une fois par connexion, pas à chaque page. Les deux dates sont incluses.
+                        Désactivez la notification pour cesser de l'afficher avant la date de fin.
                     </RadzenText>
                 </RadzenStack>
             </RadzenAlert>
@@ -177,7 +178,7 @@
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.4rem">
                                     <RadzenIcon Icon="visibility" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
                                     <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
-                                        @_n.NombreVues vue(s) sur @_n.NombreDestinataires destinataire(s)
+                                        vue par @_n.NombreVues destinataire(s) sur @_n.NombreDestinataires
                                     </RadzenText>
                                 </RadzenStack>
                             </RadzenStack>

@@ -151,22 +151,23 @@ public class S_NotificationGlobale
         return (true, "Notification supprimée.");
     }
 
-    // Diffusions à afficher à cet utilisateur : actives, dans la fenêtre, visant son
-    // rôle, et qu'il n'a pas encore vues.
+    // Diffusions à afficher à cet utilisateur : actives, dans la fenêtre, visant son rôle.
+    // ⚠️ On ne filtre PAS sur « déjà vue » : le message doit revenir à CHAQUE connexion
+    // tant que la période court. La table des vues ne sert donc qu'à mesurer la portée
+    // (combien de destinataires distincts l'ont vue au moins une fois).
+    // Pas de risque d'affichage en boucle : MainLayout n'interroge les notifications
+    // qu'une fois par session (garde `_notificationsVerifiees`).
     public async Task<List<E_NotificationGlobale>> ObtenirPourUtilisateur(int p_utilisateurId, Enum_Role p_role)
     {
         var _actives = await _dao.ObtenirActives(DateTime.UtcNow);
         if (_actives.Count == 0)
             return new List<E_NotificationGlobale>();
 
-        var _dejaVues = await _dao.ObtenirIdsVues(p_utilisateurId);
         var _role = p_role.ToString();
         var _result = new List<E_NotificationGlobale>();
 
         foreach (var _n in _actives)
         {
-            if (_dejaVues.Contains(_n.Id))
-                continue;
             if (!DecouperRoles(_n.RolesCibles).Contains(_role))
                 continue;
             _result.Add(_n);
