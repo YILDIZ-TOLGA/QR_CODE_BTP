@@ -39,6 +39,7 @@ builder.Services.AddScoped<S_Notification>();
 builder.Services.AddScoped<S_RechercheEntreprise>();
 builder.Services.AddScoped<S_HistoriqueCode>();
 builder.Services.AddScoped<S_Apporteur>();
+builder.Services.AddScoped<S_NotificationGlobale>();
 
 builder.Services.AddRadzenComponents();
 

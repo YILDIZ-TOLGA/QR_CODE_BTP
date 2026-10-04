@@ -129,6 +129,13 @@ public class DAO_Suppression
                 .Where(pa => pa.ValidateurId == p_id)
                 .ExecuteUpdateAsync(s => s.SetProperty(pa => pa.ValidateurId, (int?)null));
 
+            // 2 ter) Diffusions globales : sa trace de lecture part, et s'il en a redige
+            //        une (admin), on la detache pour que le message survive au compte.
+            await _context.NotificationsGlobalesVues.Where(v => v.UtilisateurId == p_id).ExecuteDeleteAsync();
+            await _context.NotificationsGlobales
+                .Where(n => n.CreateurId == p_id)
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.CreateurId, (int?)null));
+
             // 3) Codes d'AUTRES entreprises où ce compte n'est qu'un intervenant :
             //    on détache sans détruire — un code vivant ne doit pas disparaître
             //    parce que son auteur ou son fournisseur est supprimé.

@@ -1,0 +1,438 @@
+@page "/admin/notifications"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@inject Services.S_NotificationGlobale SGlobale
+@inject NotificationService Notification
+@inject DialogService Dialog
+
+@* Diffusion d'un message aux comptes d'un ou plusieurs rôles, affiché à leur
+   connexion pendant une fenêtre de dates. *@
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Wrap="FlexWrap.Wrap" Gap="0.5rem" Style="margin-bottom: 1.5rem;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+        <RadzenIcon Icon="campaign" Style="font-size: 2rem; color: var(--rz-primary);" />
+        <RadzenText TextStyle="TextStyle.H4" Style="margin: 0;">Envoi de notification</RadzenText>
+    </RadzenStack>
+    <Comp_AutoRefresh OnRefresh="RafraichirUi" />
+</RadzenStack>
+
+<RadzenStack Gap="1.5rem">
+
+    @* ---------- Formulaire ---------- *@
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1rem;">
+            <RadzenIcon Icon="add_circle" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Nouvelle notification</RadzenText>
+        </RadzenStack>
+
+        <RadzenStack Gap="1.25rem">
+
+            <RadzenFormField Text="Titre" Variant="Variant.Outlined" Style="width: 100%;">
+                <Start><RadzenIcon Icon="title" /></Start>
+                <ChildContent>
+                    <RadzenTextBox Value="@_titre" @oninput="MajTitre" Style="width: 100%;" MaxLength="150" />
+                </ChildContent>
+            </RadzenFormField>
+
+            <RadzenFormField Text="Message" Variant="Variant.Outlined" Style="width: 100%;">
+                <ChildContent>
+                    <RadzenTextArea Value="@_message" @oninput="MajMessage" Rows="4" Style="width: 100%;" MaxLength="2000" />
+                </ChildContent>
+            </RadzenFormField>
+
+            @* Rôles : liste de cases à cocher plutôt qu'une liste déroulante multiple.
+               Quatre rôles tiennent à l'écran, et on évite le piège du label flottant
+               sur un composant sans valeur (cf. CLAUDE.md, piège 17). *@
+            <RadzenStack Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600;">
+                    Rôles destinataires
+                </RadzenText>
+                @if (_rolesDisponibles.Count == 0)
+                {
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                        Chargement…
+                    </RadzenText>
+                }
+                else
+                {
+                    <RadzenCheckBoxList @bind-Value="_rolesChoisis" Orientation="Orientation.Horizontal" Style="flex-wrap: wrap; gap: 1rem;">
+                        <Items>
+                            @foreach (var _role in _rolesDisponibles)
+                            {
+                                <RadzenCheckBoxListItem TValue="string" Text="@LibelleRole(_role)" Value="@_role" />
+                            }
+                        </Items>
+                    </RadzenCheckBoxList>
+                }
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                    Les administrateurs ne sont jamais destinataires d'une diffusion.
+                </RadzenText>
+            </RadzenStack>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="4">
+                    @* Valeur non vide : une liste déroulante « vide » dans un FormField
+                       superpose son label à la valeur (piège 17) *@
+                    <RadzenFormField Text="Importance" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start><RadzenIcon Icon="priority_high" /></Start>
+                        <ChildContent>
+                            <RadzenDropDown @bind-Value="_severite" Data="_severites" TextProperty="Label"
+                                            ValueProperty="Valeur" Style="width: 100%;" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="Début" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start><RadzenIcon Icon="event" /></Start>
+                        <ChildContent>
+                            <RadzenDatePicker @bind-Value="_dateDebut" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="Fin (incluse)" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start><RadzenIcon Icon="event_available" /></Start>
+                        <ChildContent>
+                            <RadzenDatePicker @bind-Value="_dateFin" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true" AllowClose="false">
+                <RadzenStack Gap="0.2rem">
+                    <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; font-weight: 600;">
+                        Chaque destinataire voit le message une seule fois.
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0;">
+                        À sa première connexion dans la période. Les deux dates sont incluses.
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenAlert>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                <RadzenButton Text="Programmer" Icon="send" ButtonStyle="ButtonStyle.Primary"
+                              Click="Creer" Disabled="_envoiEnCours" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+
+    @* ---------- Liste ---------- *@
+    <RadzenCard Variant="Variant.Outlined">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-bottom: 1rem;">
+            <RadzenIcon Icon="list" Style="font-size: 1.5rem; color: var(--rz-primary);" />
+            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">Notifications programmées</RadzenText>
+            @if (_liste.Count > 0)
+            {
+                <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@_liste.Count.ToString()" IsPill="true" />
+            }
+        </RadzenStack>
+
+        @if (_chargement)
+        {
+            <RadzenRow JustifyContent="JustifyContent.Center" Style="padding: 2rem 0;">
+                <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+            </RadzenRow>
+        }
+        else if (_liste.Count == 0)
+        {
+            <RadzenStack AlignItems="AlignItems.Center" Gap="1rem" Style="padding: 2.5rem 0;">
+                <RadzenIcon Icon="notifications_off" Style="font-size: 3rem; color: var(--rz-text-disabled-color);" />
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                    Aucune notification programmée.
+                </RadzenText>
+            </RadzenStack>
+        }
+        else
+        {
+            <RadzenStack Gap="1rem">
+                @foreach (var _n in _liste)
+                {
+                    <RadzenCard Variant="Variant.Outlined">
+                        <RadzenStack Gap="0.6rem">
+
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                    <RadzenIcon Icon="@IconeSeverite(_n.Severite)" Style="font-size: 1.2rem; color: var(--rz-primary);" />
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin: 0;">@_n.Titre</RadzenText>
+                                </RadzenStack>
+                                <RadzenBadge BadgeStyle="@StyleEtat(_n.Etat)" Text="@LibelleEtat(_n.Etat)" IsPill="true" />
+                            </RadzenStack>
+
+                            <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--rz-text-secondary-color);">@_n.Message</RadzenText>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.4rem" Wrap="FlexWrap.Wrap">
+                                @foreach (var _role in _n.RolesCibles)
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@LibelleRole(_role)" IsPill="true" />
+                                }
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.4rem">
+                                    <RadzenIcon Icon="date_range" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                        du @_n.DateDebut.ToLocalTime().ToString("dd/MM/yyyy") au @_n.DateFin.ToLocalTime().ToString("dd/MM/yyyy")
+                                    </RadzenText>
+                                </RadzenStack>
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.4rem">
+                                    <RadzenIcon Icon="visibility" Style="font-size: 1rem; color: var(--rz-text-secondary-color);" />
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                        @_n.NombreVues vue(s) sur @_n.NombreDestinataires destinataire(s)
+                                    </RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                @if (_n.EstActive)
+                                {
+                                    <RadzenButton Text="Désactiver" Icon="notifications_off" ButtonStyle="ButtonStyle.Warning"
+                                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Click="() => Basculer(_n)" />
+                                }
+                                else
+                                {
+                                    <RadzenButton Text="Réactiver" Icon="notifications_active" ButtonStyle="ButtonStyle.Primary"
+                                                  Variant="Variant.Outlined" Size="ButtonSize.Small" Click="() => Basculer(_n)" />
+                                }
+                                <RadzenButton Text="Supprimer" Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                                              Variant="Variant.Outlined" Size="ButtonSize.Small" Click="() => Supprimer(_n)" />
+                            </RadzenStack>
+
+                        </RadzenStack>
+                    </RadzenCard>
+                }
+            </RadzenStack>
+        }
+    </RadzenCard>
+
+</RadzenStack>
+
+@code {
+    private class OptionSeverite
+    {
+        public string Valeur { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+    }
+
+    private List<DTO_NotificationGlobaleAdmin> _liste = new();
+    private List<string> _rolesDisponibles = new();
+    private bool _chargement = true;
+    private bool _envoiEnCours = false;
+
+    private string _titre = string.Empty;
+    private string _message = string.Empty;
+    private IEnumerable<string> _rolesChoisis = new List<string>();
+    // Valeur NON vide dès le départ (piège 17)
+    private string _severite = "Info";
+    private DateTime? _dateDebut = DateTime.Today;
+    private DateTime? _dateFin = DateTime.Today.AddDays(7);
+
+    private List<OptionSeverite> _severites = new()
+    {
+        new OptionSeverite { Valeur = "Info", Label = "Information" },
+        new OptionSeverite { Valeur = "Succes", Label = "Bonne nouvelle" },
+        new OptionSeverite { Valeur = "Avertissement", Label = "Avertissement" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _rolesDisponibles = await SGlobale.ObtenirRoles();
+        _liste = await SGlobale.ObtenirToutes();
+        _chargement = false;
+    }
+
+    private async Task RafraichirUi()
+    {
+        _liste = await SGlobale.ObtenirToutes();
+        StateHasChanged();
+    }
+
+    private void MajTitre(ChangeEventArgs p_e)
+    {
+        _titre = LireTexte(p_e);
+    }
+
+    private void MajMessage(ChangeEventArgs p_e)
+    {
+        _message = LireTexte(p_e);
+    }
+
+    private static string LireTexte(ChangeEventArgs p_e)
+    {
+        if (p_e.Value == null)
+            return string.Empty;
+        var _valeur = p_e.Value.ToString();
+        if (_valeur == null)
+            return string.Empty;
+        return _valeur;
+    }
+
+    private async Task Creer()
+    {
+        if (string.IsNullOrWhiteSpace(_titre))
+        {
+            Notification.Notify(NotificationSeverity.Error, "Titre manquant", "Indiquez un titre.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_message))
+        {
+            Notification.Notify(NotificationSeverity.Error, "Message vide", "Écrivez un message.");
+            return;
+        }
+
+        var _roles = _rolesChoisis.ToList();
+        if (_roles.Count == 0)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Aucun rôle", "Choisissez au moins un rôle destinataire.");
+            return;
+        }
+        if (!_dateDebut.HasValue || !_dateFin.HasValue)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Dates manquantes", "Indiquez une date de début et une date de fin.");
+            return;
+        }
+        if (_dateFin.Value.Date < _dateDebut.Value.Date)
+        {
+            Notification.Notify(NotificationSeverity.Error, "Dates incohérentes", "La fin ne peut pas précéder le début.");
+            return;
+        }
+
+        // ⚠️ Conversion en UTC ICI, dans le navigateur : c'est le fuseau de l'admin qui
+        // fait foi, pas celui du serveur Railway. La fin couvre toute la journée choisie.
+        var _debut = DateTime.SpecifyKind(_dateDebut.Value.Date, DateTimeKind.Local).ToUniversalTime();
+        var _fin = DateTime.SpecifyKind(_dateFin.Value.Date.AddDays(1).AddSeconds(-1), DateTimeKind.Local).ToUniversalTime();
+
+        var _dto = new DTO_CreerNotificationGlobale
+        {
+            Titre = _titre.Trim(),
+            Message = _message.Trim(),
+            Severite = ConvertirSeverite(_severite),
+            RolesCibles = _roles,
+            DateDebut = _debut,
+            DateFin = _fin
+        };
+
+        _envoiEnCours = true;
+        var (_succes, _msg) = await SGlobale.Creer(_dto);
+        _envoiEnCours = false;
+
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Notification programmée", _msg);
+            _titre = string.Empty;
+            _message = string.Empty;
+            _rolesChoisis = new List<string>();
+            _severite = "Info";
+            _dateDebut = DateTime.Today;
+            _dateFin = DateTime.Today.AddDays(7);
+            _liste = await SGlobale.ObtenirToutes();
+            StateHasChanged();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _msg);
+        }
+    }
+
+    private async Task Basculer(DTO_NotificationGlobaleAdmin p_n)
+    {
+        var (_succes, _msg) = await SGlobale.BasculerActivation(p_n.Id);
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Succès", _msg);
+            _liste = await SGlobale.ObtenirToutes();
+            StateHasChanged();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _msg);
+        }
+    }
+
+    private async Task Supprimer(DTO_NotificationGlobaleAdmin p_n)
+    {
+        var _confirm = await Dialog.Confirm(
+            $"Supprimer la notification « {p_n.Titre} » ? Les destinataires qui ne l'ont pas encore vue ne la verront jamais.",
+            "Confirmation",
+            new ConfirmOptions { OkButtonText = "Supprimer", CancelButtonText = "Annuler" });
+
+        if (_confirm != true)
+            return;
+
+        var (_succes, _msg) = await SGlobale.Supprimer(p_n.Id);
+        if (_succes)
+        {
+            Notification.Notify(NotificationSeverity.Success, "Supprimée", _msg);
+            _liste = await SGlobale.ObtenirToutes();
+            StateHasChanged();
+        }
+        else
+        {
+            Notification.Notify(NotificationSeverity.Error, "Erreur", _msg);
+        }
+    }
+
+    private static Enum_SeveriteNotification ConvertirSeverite(string p_valeur)
+    {
+        if (p_valeur == "Succes")
+        {
+            return Enum_SeveriteNotification.Succes;
+        }
+        if (p_valeur == "Avertissement")
+        {
+            return Enum_SeveriteNotification.Avertissement;
+        }
+        return Enum_SeveriteNotification.Info;
+    }
+
+    private static string IconeSeverite(Enum_SeveriteNotification p_severite)
+    {
+        if (p_severite == Enum_SeveriteNotification.Succes)
+        {
+            return "check_circle";
+        }
+        if (p_severite == Enum_SeveriteNotification.Avertissement)
+        {
+            return "warning";
+        }
+        return "info";
+    }
+
+    private static string LibelleRole(string p_role)
+    {
+        if (p_role == "ApporteurAffaire")
+        {
+            return "Apporteur d'affaires";
+        }
+        return p_role;
+    }
+
+    private static string LibelleEtat(string p_etat)
+    {
+        if (p_etat == "AVenir")
+        {
+            return "À venir";
+        }
+        if (p_etat == "EnCours")
+        {
+            return "En cours";
+        }
+        if (p_etat == "Terminee")
+        {
+            return "Terminée";
+        }
+        return "Désactivée";
+    }
+
+    private static BadgeStyle StyleEtat(string p_etat)
+    {
+        if (p_etat == "EnCours")
+        {
+            return BadgeStyle.Success;
+        }
+        if (p_etat == "AVenir")
+        {
+            return BadgeStyle.Info;
+        }
+        return BadgeStyle.Light;
+    }
+}

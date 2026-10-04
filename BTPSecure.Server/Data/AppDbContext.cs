@@ -20,6 +20,8 @@ public class AppDbContext : DbContext
     public DbSet<E_Notification> Notifications => Set<E_Notification>();
     public DbSet<E_ValidationCode> ValidationsCodes => Set<E_ValidationCode>();
     public DbSet<E_Parrainage> Parrainages => Set<E_Parrainage>();
+    public DbSet<E_NotificationGlobale> NotificationsGlobales => Set<E_NotificationGlobale>();
+    public DbSet<E_NotificationGlobaleVue> NotificationsGlobalesVues => Set<E_NotificationGlobaleVue>();
 
     protected override void OnModelCreating(ModelBuilder p_modelBuilder)
     {
@@ -287,6 +289,44 @@ public class AppDbContext : DbContext
             e.HasOne(pa => pa.Validateur)
                 .WithMany()
                 .HasForeignKey(pa => pa.ValidateurId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // E_NotificationGlobale (diffusion admin par role ; voir l'entite pour le pourquoi)
+        p_modelBuilder.Entity<E_NotificationGlobale>(e =>
+        {
+            e.ToTable("notifications_globales");
+            e.HasKey(n => n.Id);
+            e.Property(n => n.Titre).IsRequired().HasMaxLength(150);
+            e.Property(n => n.Message).IsRequired().HasMaxLength(2000);
+            e.Property(n => n.Severite).HasConversion<int>();
+            e.Property(n => n.RolesCibles).IsRequired().HasMaxLength(200);
+            e.Property(n => n.EstActive).HasDefaultValue(true);
+            // Les lectures filtrent toujours sur la fenetre de dates
+            e.HasIndex(n => new { n.EstActive, n.DateDebut, n.DateFin });
+            e.HasOne(n => n.Createur)
+                .WithMany()
+                .HasForeignKey(n => n.CreateurId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // E_NotificationGlobaleVue (qui a deja vu quelle diffusion)
+        p_modelBuilder.Entity<E_NotificationGlobaleVue>(e =>
+        {
+            e.ToTable("notifications_globales_vues");
+            e.HasKey(v => v.Id);
+            // Une seule trace par couple : c'est elle qui garantit qu'on n'affiche qu'une fois
+            e.HasIndex(v => new { v.NotificationGlobaleId, v.UtilisateurId }).IsUnique();
+            e.HasIndex(v => v.UtilisateurId);
+            // Cascade ici, contrairement au reste du schema : une trace de lecture n'a
+            // aucune valeur sans sa diffusion, supprimer l'une doit emporter l'autre.
+            e.HasOne(v => v.NotificationGlobale)
+                .WithMany()
+                .HasForeignKey(v => v.NotificationGlobaleId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(v => v.Utilisateur)
+                .WithMany()
+                .HasForeignKey(v => v.UtilisateurId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
