@@ -416,7 +416,7 @@ else
                 </RadzenColumn>
             </RadzenRow>
 
-            @if (_roleFiltre.Length > 0 || _recherche.Trim().Length > 0)
+            @if (_roleFiltre != c_tousLesRoles || _recherche.Trim().Length > 0)
             {
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
                     <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; color: var(--rz-text-secondary-color);">
@@ -501,8 +501,12 @@ else
     private List<DTO_ApporteurAdmin> _apporteurs = new();
     private List<DTO_CompteAdmin> _comptes = new();
     private string _recherche = string.Empty;
-    // Chaine vide = tous les roles
-    private string _roleFiltre = string.Empty;
+    // ⚠️ Sentinelle NON VIDE : avec une chaine vide, Radzen marque la liste
+    // `rz-state-empty`, et la regle CSS `:not(.rz-state-empty) ~ .rz-form-field-label`
+    // ne s'applique plus : le label « Rôle » reste en place et se superpose a la
+    // valeur affichee. Verifie dans le navigateur.
+    private const string c_tousLesRoles = "TOUS";
+    private string _roleFiltre = c_tousLesRoles;
     private bool _chargement = true;
 
     protected override async Task OnInitializedAsync()
@@ -781,7 +785,7 @@ else
     private List<OptionRole> OptionsRole()
     {
         var _options = new List<OptionRole>();
-        _options.Add(new OptionRole { Valeur = string.Empty, Label = $"Tous les rôles ({_comptes.Count})" });
+        _options.Add(new OptionRole { Valeur = c_tousLesRoles, Label = $"Tous les rôles ({_comptes.Count})" });
 
         foreach (var _role in c_rolesConnus)
         {
@@ -802,13 +806,13 @@ else
     private void ReinitialiserFiltres()
     {
         _recherche = string.Empty;
-        _roleFiltre = string.Empty;
+        _roleFiltre = c_tousLesRoles;
     }
 
     private List<DTO_CompteAdmin> ComptesFiltres()
     {
         var _terme = _recherche.Trim().ToLower();
-        if (_terme.Length == 0 && _roleFiltre.Length == 0)
+        if (_terme.Length == 0 && _roleFiltre == c_tousLesRoles)
         {
             return _comptes;
         }
@@ -816,7 +820,7 @@ else
         var _result = new List<DTO_CompteAdmin>();
         foreach (var _c in _comptes)
         {
-            if (_roleFiltre.Length > 0 && _c.Role != _roleFiltre)
+            if (_roleFiltre != c_tousLesRoles && _c.Role != _roleFiltre)
             {
                 continue;
             }

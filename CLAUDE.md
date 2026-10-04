@@ -119,6 +119,7 @@ git push   # Railway redéploie auto via webhook GitHub
     d.count('Message d'erreur'.encode('utf-16-le'))  # littéraux  -> UTF-16LE
     ```
     Le plus fiable reste de **lancer l'artefact publié** et d'interroger l'endpoint (401 = présent et protégé).
+17. **`RadzenFormField` + `RadzenDropDown` : une valeur « vide » superpose le label à la valeur.** Le label ne remonte que grâce à la règle CSS `.rz-form-field-content > :not(.rz-state-empty) ~ .rz-form-field-label`. Or Radzen pose `rz-state-empty` sur une liste dont la valeur liée est une **chaîne vide** — le label reste alors en place et **se superpose au texte sélectionné**, bien que la liste affiche correctement son libellé. → Pour une option « tout / aucun filtre », utiliser une **sentinelle non vide** (`"TOUS"`), jamais `string.Empty`. L'icône `<Start>` n'y est pour rien (vérifié). **Méthode de diagnostic** : une page Razor jetable en `@page` anonyme, publiée et ouverte dans le navigateur, suffit à trancher ce genre de question **sans base de données** — comparer les variantes côte à côte puis lire `el.classList` plutôt que de corriger au jugé.
 
 ## Endpoints diagnostiques
 - `GET /health` → `200 ok` (utilisé par Railway healthcheck)
